@@ -7,8 +7,11 @@ import models.*
 // ============================================================================
 
 registrarRotas(kof.web.App app, String conn, String oauthProvider) {
+    // Serve o Frontend KOF Web compilado (--target js) em /ui (RNF01, RNF06)
+    app.serveDir("/ui", "public")
+
     app.get("/") {
-        return "{\"service\":\"kof-gado-api\",\"status\":\"OK\"}"
+        return "{\"service\":\"kof-gado-api\",\"status\":\"OK\",\"ui\":\"/ui\"}"
     }
 
     // Healthcheck da API

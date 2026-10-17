@@ -1,7 +1,7 @@
 // ============================================================================
-// Interface Multiplataforma Web & Mobile em KOF (RNF01, RNF06, RNF07)
+// Frontend Completo Multiplataforma Web & Mobile em KOF (RNF01, RNF06, RNF07)
 // Targets:
-//   Web (KofJS):   kof run ui/app_ui.kf --target=js
+//   Web (KofJS):   kof build ui/app_ui.kf --target js --output public
 //   Mobile (APK):  kof build ui/app_ui.kf --target android --apk
 // ============================================================================
 
@@ -9,7 +9,17 @@ class UiState {
     static Int fontScale = 16
     static Bool darkTheme = true
     static String apiBase = "http://localhost:8080"
-    static String pastoFiltro = ""
+}
+
+Int calcularEscala(Int atual, Int delta) {
+    var nova = atual + delta
+    if (nova > 32) {
+        return 32
+    }
+    if (nova < 12) {
+        return 12
+    }
+    return nova
 }
 
 aplicarEscala(Label titulo, Label subtitulo, Label statusLabel) {
@@ -20,88 +30,287 @@ aplicarEscala(Label titulo, Label subtitulo, Label statusLabel) {
 
 main() {
     var w = Window("Sistema de Gestao de Gado - KOF")
-    w.size(1024, 720)
+    w.size(1200, 860)
     w.theme = Theme.dark()
 
-    var titulo = Label("Gestao de Gado (Web & Mobile)")
+    var titulo = Label("Sistema de Gestao de Gado — Frontend KOF (Web & Mobile)")
     titulo.bold = true
     titulo.fontSize = 22
 
-    var subtitulo = Label("Backend Unico KOF + PostgreSQL + OAuth2 (Google / GitHub)")
+    var subtitulo = Label("Arquitetura Unificada 100% KOF + Banco Nativo SQLite + OAuth2 (Google / GitHub)")
     subtitulo.fontSize = 16
 
-    var statusLabel = Label("Pronto. Selecione um modulo ou ajuste a escala de acessibilidade.")
+    var statusLabel = Label("Pronto. Utilize os formularios abaixo para gerenciar Pastos, Gado, Remedios, Tratamentos e Perfil.")
     statusLabel.fontSize = 16
 
     // ------------------------------------------------------------------------
     // RNF07 - Barra de Acessibilidade: Aumentar/Diminuir Escala de Fontes e Tema
     // ------------------------------------------------------------------------
     var btnAumentarFonte = Button("+A (Aumentar Escala)", () -> {
-        if (UiState.fontScale < 32) {
-            UiState.fontScale = UiState.fontScale + 2
-        }
+        UiState.fontScale = calcularEscala(UiState.fontScale, 2)
         aplicarEscala(titulo, subtitulo, statusLabel)
-        statusLabel.text = "Acessibilidade: Escala de fonte ajustada para " + UiState.fontScale + "px"
+        statusLabel.text = "Acessibilidade (RNF07): Escala de fonte ajustada para " + UiState.fontScale + "px"
     })
 
     var btnDiminuirFonte = Button("-A (Diminuir Escala)", () -> {
-        if (UiState.fontScale > 12) {
-            UiState.fontScale = UiState.fontScale - 2
-        }
+        UiState.fontScale = calcularEscala(UiState.fontScale, -2)
         aplicarEscala(titulo, subtitulo, statusLabel)
-        statusLabel.text = "Acessibilidade: Escala de fonte ajustada para " + UiState.fontScale + "px"
+        statusLabel.text = "Acessibilidade (RNF07): Escala de fonte ajustada para " + UiState.fontScale + "px"
     })
 
-    var btnAlternarTema = Button("Alternar Contraste/Tema", () -> {
+    var btnAlternarTema = Button("Alternar Contraste / Tema (Dark / Light)", () -> {
         UiState.darkTheme = !UiState.darkTheme
         if (UiState.darkTheme) {
             w.theme = Theme.dark()
+            statusLabel.text = "Acessibilidade: Tema escuro de alto contraste ativado"
         } else {
             w.theme = Theme.light()
+            statusLabel.text = "Acessibilidade: Tema claro ativado"
         }
     })
 
-    var barraAcessibilidade = Row(listOf(btnAumentarFonte, btnDiminuirFonte, btnAlternarTema))
+    var barraAcessibilidade = Fieldset(
+        listOf(Row(listOf(btnAumentarFonte, btnDiminuirFonte, btnAlternarTema))),
+        "Acessibilidade e Escala Dinamica de Fontes (RNF06, RNF07)"
+    )
 
     // ------------------------------------------------------------------------
-    // Acoes Operacionais dos Modulos (RF01 a RF07)
+    // Modulo 1: Gestao de Pastos (RF02)
     // ------------------------------------------------------------------------
-    var inputFiltroPasto = Input("UUID do Pasto para filtrar gado (RF07)")
+    var inpPastoId = Input("UUID do Pasto (para atualizar/consultar)")
+    var inpPastoNome = Input("Nome do Pasto (ex: Pasto da Serra)")
+    var opcoesDono = listOf("true", "false")
+    var selPastoDono = Select(opcoesDono)
+    var inpPastoValor = Input("150")
 
-    var btnListarGado = Button("Gados (RF01)", () -> {
-        var res = http.get(UiState.apiBase + "/gados")
-        statusLabel.text = "Gados cadastrados: " + res
+    var btnCriarPasto = Button("Cadastrar Pasto (POST)", () -> {
+        var donoStr = opcoesDono.get(selPastoDono.selected())
+        var valorStr = inpPastoValor.text()
+        if (valorStr == "") {
+            valorStr = "0"
+        }
+        var payload = "{\"nome\":\"" + inpPastoNome.text() + "\",\"dono\":" + donoStr + ",\"valor_cabeca\":" + valorStr + "}"
+        var res = http.post(UiState.apiBase + "/pastos", payload)
+        statusLabel.text = "Pasto cadastrado (RF02): " + res
     })
 
-    var btnFiltrarPorPasto = Button("Filtrar por Pasto (RF07)", () -> {
-        var pastoId = inputFiltroPasto.text()
-        var res = http.get(UiState.apiBase + "/pastos/" + pastoId + "/gados")
-        statusLabel.text = "Gados no pasto [" + pastoId + "]: " + res
+    var btnAtualizarPasto = Button("Atualizar Pasto (PUT)", () -> {
+        var donoStr = opcoesDono.get(selPastoDono.selected())
+        var valorStr = inpPastoValor.text()
+        if (valorStr == "") {
+            valorStr = "0"
+        }
+        var payload = "{\"nome\":\"" + inpPastoNome.text() + "\",\"dono\":" + donoStr + ",\"valor_cabeca\":" + valorStr + "}"
+        var res = http.put(UiState.apiBase + "/pastos/" + inpPastoId.text(), payload)
+        statusLabel.text = "Pasto atualizado (RF02): " + res
     })
 
-    var btnListarPastos = Button("Pastos (RF02)", () -> {
+    var btnListarPastos = Button("Listar Pastos (GET)", () -> {
         var res = http.get(UiState.apiBase + "/pastos")
-        statusLabel.text = "Pastos: " + res
+        statusLabel.text = "Pastos cadastrados (RF02): " + res
     })
 
-    var btnEstoqueRemedios = Button("Estoque de Remedios (RF03/RF06)", () -> {
+    var secaoPastos = Fieldset(
+        listOf(
+            Row(listOf(inpPastoId, inpPastoNome, selPastoDono, inpPastoValor)),
+            Row(listOf(btnCriarPasto, btnAtualizarPasto, btnListarPastos))
+        ),
+        "1. Gestao de Pastos e Piquetes (RF02)"
+    )
+
+    // ------------------------------------------------------------------------
+    // Modulo 2: Gestao de Gado e Filtragem por Pasto (RF01, RF07)
+    // ------------------------------------------------------------------------
+    var inpGadoId = Input("UUID do Gado (para editar/excluir)")
+    var inpGadoNome = Input("Nome do Animal (ex: Mimosa)")
+    var inpGadoRegistro = Input("Registro (ex: BR-101)")
+    var inpGadoPasto = Input("UUID do Pasto Alocado (RF07)")
+    var inpGadoMae = Input("UUID da Mae (opcional)")
+    var inpGadoNasc = Input("2024-01-15")
+
+    var opcoesSaude = listOf("SAUDAVEL", "RECUPERACAO", "DOENTE", "MORTO")
+    var selGadoSaude = Select(opcoesSaude)
+
+    var opcoesSexo = listOf("FEMEA", "MACHO")
+    var selGadoSexo = Select(opcoesSexo)
+
+    var opcoesLeiteira = listOf("true", "false")
+    var selGadoLeiteira = Select(opcoesLeiteira)
+
+    var btnCriarGado = Button("Cadastrar Gado (POST)", () -> {
+        var saude = opcoesSaude.get(selGadoSaude.selected())
+        var sexo = opcoesSexo.get(selGadoSexo.selected())
+        var leiteira = opcoesLeiteira.get(selGadoLeiteira.selected())
+        var payload = "{\"nome\":\"" + inpGadoNome.text() + "\",\"vaca_leitera\":" + leiteira + ",\"pasto_uuid\":\"" + inpGadoPasto.text() + "\",\"saudeVaca\":\"" + saude + "\",\"numero_registro\":\"" + inpGadoRegistro.text() + "\",\"mae\":\"" + inpGadoMae.text() + "\",\"sexo\":\"" + sexo + "\",\"historico_tratamento_uuid\":\"\",\"data_nascimento\":\"" + inpGadoNasc.text() + "\"}"
+        var res = http.post(UiState.apiBase + "/gados", payload)
+        statusLabel.text = "Gado cadastrado (RF01): " + res
+    })
+
+    var btnAtualizarGado = Button("Atualizar Gado (PUT)", () -> {
+        var saude = opcoesSaude.get(selGadoSaude.selected())
+        var sexo = opcoesSexo.get(selGadoSexo.selected())
+        var leiteira = opcoesLeiteira.get(selGadoLeiteira.selected())
+        var payload = "{\"nome\":\"" + inpGadoNome.text() + "\",\"vaca_leitera\":" + leiteira + ",\"pasto_uuid\":\"" + inpGadoPasto.text() + "\",\"saudeVaca\":\"" + saude + "\",\"numero_registro\":\"" + inpGadoRegistro.text() + "\",\"mae\":\"" + inpGadoMae.text() + "\",\"sexo\":\"" + sexo + "\",\"historico_tratamento_uuid\":\"\",\"data_nascimento\":\"" + inpGadoNasc.text() + "\"}"
+        var res = http.put(UiState.apiBase + "/gados/" + inpGadoId.text(), payload)
+        statusLabel.text = "Gado atualizado (RF01): " + res
+    })
+
+    var btnExcluirGado = Button("Excluir Gado (DELETE)", () -> {
+        var res = http.delete(UiState.apiBase + "/gados/" + inpGadoId.text())
+        statusLabel.text = "Gado removido (RF01): " + res
+    })
+
+    var btnListarGado = Button("Listar Todo o Rebanho (GET)", () -> {
+        var res = http.get(UiState.apiBase + "/gados")
+        statusLabel.text = "Rebanho completo (RF01): " + res
+    })
+
+    var btnFiltrarPorPasto = Button("Filtrar Gado por Pasto (RF07)", () -> {
+        var pastoId = inpGadoPasto.text()
+        var res = http.get(UiState.apiBase + "/pastos/" + pastoId + "/gados")
+        statusLabel.text = "Gados no pasto [" + pastoId + "] (RF07): " + res
+    })
+
+    var secaoGado = Fieldset(
+        listOf(
+            Row(listOf(inpGadoId, inpGadoNome, inpGadoRegistro, inpGadoPasto)),
+            Row(listOf(inpGadoMae, inpGadoNasc, selGadoSaude, selGadoSexo, selGadoLeiteira)),
+            Row(listOf(btnCriarGado, btnAtualizarGado, btnExcluirGado, btnListarGado, btnFiltrarPorPasto))
+        ),
+        "2. Gestao de Gado e Filtragem por Pasto (RF01, RF07)"
+    )
+
+    // ------------------------------------------------------------------------
+    // Modulo 3: Medicamentos e Controle de Estoque (RF03, RF06)
+    // ------------------------------------------------------------------------
+    var inpRemId = Input("UUID do Remedio (para atualizar estoque)")
+    var inpRemNome = Input("Nome do Remedio (ex: Ivermectina)")
+    var inpRemCompra = Input("2026-01-10")
+    var inpRemVenc = Input("2027-01-10")
+    var inpRemValor = Input("45.0")
+    var inpRemEstoque = Input("20")
+
+    var opcoesAplicacao = listOf("TOMAR", "PASSAR", "INJECAO", "SORO_FISIOLOGICO", "CURA_FERIDAS")
+    var selRemAplicacao = Select(opcoesAplicacao)
+
+    var btnCriarRemedio = Button("Cadastrar Remedio (POST)", () -> {
+        var aplic = opcoesAplicacao.get(selRemAplicacao.selected())
+        var valorStr = inpRemValor.text()
+        if (valorStr == "") {
+            valorStr = "0.0"
+        }
+        var estStr = inpRemEstoque.text()
+        if (estStr == "") {
+            estStr = "0"
+        }
+        var payload = "{\"nome\":\"" + inpRemNome.text() + "\",\"data_compra\":\"" + inpRemCompra.text() + "\",\"data_vencimento\":\"" + inpRemVenc.text() + "\",\"valor\":" + valorStr + ",\"aplicacao\":\"" + aplic + "\",\"estoque\":" + estStr + "}"
+        var res = http.post(UiState.apiBase + "/remedios", payload)
+        statusLabel.text = "Medicamento cadastrado (RF03): " + res
+    })
+
+    var btnAtualizarEstoque = Button("Atualizar Estoque (PUT)", () -> {
+        var estStr = inpRemEstoque.text()
+        if (estStr == "") {
+            estStr = "0"
+        }
+        var res = http.put(UiState.apiBase + "/remedios/" + inpRemId.text() + "/estoque", "{\"estoque\":" + estStr + "}")
+        statusLabel.text = "Estoque atualizado (RF06): " + res
+    })
+
+    var btnEstoqueRemedios = Button("Consultar Estoque (GET)", () -> {
         var res = http.get(UiState.apiBase + "/remedios/estoque")
-        statusLabel.text = "Estoque de Medicamentos: " + res
+        statusLabel.text = "Estoque de Medicamentos (RF06): " + res
     })
 
-    var btnPerfilOAuth = Button("Meu Perfil OAuth2 (RF04/RNF08)", () -> {
+    var secaoRemedios = Fieldset(
+        listOf(
+            Row(listOf(inpRemId, inpRemNome, inpRemCompra, inpRemVenc)),
+            Row(listOf(inpRemValor, inpRemEstoque, selRemAplicacao)),
+            Row(listOf(btnCriarRemedio, btnAtualizarEstoque, btnEstoqueRemedios))
+        ),
+        "3. Medicamentos e Controle de Estoque (RF03, RF06)"
+    )
+
+    // ------------------------------------------------------------------------
+    // Modulo 4: Historico de Tratamentos e Dosagens (RF05, RF06)
+    // ------------------------------------------------------------------------
+    var inpTratId = Input("UUID do Tratamento (para ver remedios)")
+    var inpTratDoenca = Input("Nome da Doenca (ex: Mastite)")
+    var inpTratGado = Input("UUID do Gado em Tratamento")
+    var inpTratRemedio = Input("UUID do Remedio Aplicado")
+    var inpTratDosagem = Input("10.0")
+    var inpTratInicio = Input("2026-10-17")
+    var inpTratFim = Input("2026-10-24")
+    var taTratObs = Textarea("Observacoes veterinarias e posologia")
+
+    var btnRegistrarTratamento = Button("Registrar Tratamento + Baixar Estoque (POST)", () -> {
+        var dosStr = inpTratDosagem.text()
+        if (dosStr == "") {
+            dosStr = "1.0"
+        }
+        var payload = "{\"nome_doenca\":\"" + inpTratDoenca.text() + "\",\"gado_uuid\":\"" + inpTratGado.text() + "\",\"data_inicio\":\"" + inpTratInicio.text() + "\",\"data_fim\":\"" + inpTratFim.text() + "\",\"observacoes\":\"" + taTratObs.text() + "\",\"fk_remedio_uuid\":\"" + inpTratRemedio.text() + "\",\"dosagen\":" + dosStr + "}"
+        var res = http.post(UiState.apiBase + "/tratamentos", payload)
+        statusLabel.text = "Tratamento registrado (RF05/RF06): " + res
+    })
+
+    var btnHistoricoGado = Button("Historico do Animal (GET)", () -> {
+        var res = http.get(UiState.apiBase + "/gados/" + inpTratGado.text() + "/tratamentos")
+        statusLabel.text = "Historico de Tratamentos do Animal (RF05): " + res
+    })
+
+    var btnRemediosTratamento = Button("Remedios do Tratamento (GET)", () -> {
+        var res = http.get(UiState.apiBase + "/tratamentos/" + inpTratId.text() + "/remedios")
+        statusLabel.text = "Medicamentos e Dosagens do Tratamento (RF05): " + res
+    })
+
+    var secaoTratamentos = Fieldset(
+        listOf(
+            Row(listOf(inpTratId, inpTratDoenca, inpTratGado, inpTratRemedio)),
+            Row(listOf(inpTratDosagem, inpTratInicio, inpTratFim)),
+            taTratObs,
+            Row(listOf(btnRegistrarTratamento, btnHistoricoGado, btnRemediosTratamento))
+        ),
+        "4. Historico de Tratamentos e Dosagens Veterinarias (RF05, RF06)"
+    )
+
+    // ------------------------------------------------------------------------
+    // Modulo 5: Perfil do Usuario OAuth2 (RF04, RNF08, RNF09)
+    // ------------------------------------------------------------------------
+    var inpPerfilNome = Input("Nome do Usuario")
+    var inpPerfilEmail = Input("E-mail do Usuario")
+
+    var btnPerfilOAuth = Button("Consultar Meu Perfil OAuth2 (GET)", () -> {
         var res = http.get(UiState.apiBase + "/perfil")
-        statusLabel.text = "Perfil OAuth2: " + res
+        statusLabel.text = "Perfil OAuth2 (RF04/RNF08): " + res
     })
 
-    var barraNavegacao = Row(listOf(
-        btnListarGado,
-        btnListarPastos,
-        btnEstoqueRemedios,
-        btnPerfilOAuth
-    ))
+    var btnAtualizarPerfil = Button("Salvar Perfil OAuth2 (PUT)", () -> {
+        var payload = "{\"nome\":\"" + inpPerfilNome.text() + "\",\"email\":\"" + inpPerfilEmail.text() + "\"}"
+        var res = http.put(UiState.apiBase + "/perfil", payload)
+        statusLabel.text = "Perfil atualizado com privacidade estrita (RF04/RNF09): " + res
+    })
 
-    var barraFiltroPasto = Row(listOf(inputFiltroPasto, btnFiltrarPorPasto))
+    var secaoPerfil = Fieldset(
+        listOf(
+            Row(listOf(inpPerfilNome, inpPerfilEmail)),
+            Row(listOf(btnPerfilOAuth, btnAtualizarPerfil))
+        ),
+        "5. Perfil do Usuario Autenticado via OAuth2 - Google / GitHub (RF04, RNF08, RNF09)"
+    )
+
+    // ------------------------------------------------------------------------
+    // Tabela de Mapeamento de Requisitos na Interface
+    // ------------------------------------------------------------------------
+    var tabelaModulos = Table(
+        listOf("Modulo", "Requisitos", "Rotas Integradas"),
+        listOf(
+            listOf("Pastos e Piquetes", "RF02", "GET/POST /pastos, PUT /pastos/:id"),
+            listOf("Rebanho e Filtro por Pasto", "RF01, RF07", "CRUD /gados, GET /pastos/:id/gados"),
+            listOf("Medicamentos e Estoque", "RF03, RF06", "POST /remedios, GET /remedios/estoque, PUT /remedios/:id/estoque"),
+            listOf("Tratamentos e Dosagens", "RF05, RF06", "POST /tratamentos, GET /gados/:id/tratamentos"),
+            listOf("Perfil OAuth2 Privado", "RF04, RNF08, RNF09", "GET/PUT /perfil")
+        )
+    )
 
     var cardStyle = Style("background: #1e293b; padding: 16; border-radius: 8")
     var painelPrincipal = View(cardStyle)
@@ -109,9 +318,15 @@ main() {
         titulo,
         subtitulo,
         barraAcessibilidade,
-        barraNavegacao,
-        barraFiltroPasto,
-        statusLabel
+        Hr(),
+        statusLabel,
+        Hr(),
+        secaoPastos,
+        secaoGado,
+        secaoRemedios,
+        secaoTratamentos,
+        secaoPerfil,
+        tabelaModulos
     ))
 
     painelPrincipal.bind(layout)

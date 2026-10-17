@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Default — Kof</title>
+  <style>
+    :root {
+      --bg: #282a36; --fg: #f8f8f2; --panel: #21222c;
+      --border: #2e303e; --hover: #2e303e; --accent: #8be9fd;
+      --output: #50fa7b; --dim: #6272a4;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; overflow: hidden; }
+    body {
+      background: var(--bg); color: var(--fg);
+      font-family: "Cascadia Code", "Fira Code", Consolas, Menlo, monospace;
+      display: flex; flex-direction: column;
+    }
+    #kof-titlebar {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--panel); border-bottom: 1px solid var(--border);
+      padding: 7px 14px; font-size: 12px; user-select: none;
+    }
+    #kof-titlebar .dot { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
+    #kof-titlebar .dot.red { background: #ff5f57; }
+    #kof-titlebar .dot.yellow { background: #febc2e; }
+    #kof-titlebar .dot.green { background: #28c840; }
+    #kof-titlebar .name { color: var(--accent); font-weight: 600; }
+    #kof-titlebar .kind { color: var(--dim); margin-left: auto; }
+    #kof-root {
+      flex: 1; overflow: auto; padding: 14px 16px;
+      display: flex; flex-direction: column; gap: 2px;
+      background: var(--bg);
+    }
+    .kof-label {
+      font-size: 13px; line-height: 1.5; color: var(--output);
+      white-space: pre-wrap; word-break: break-word;
+    }
+    .kof-button {
+      font-size: 13px; padding: 6px 14px; cursor: pointer;
+      background: var(--panel); color: var(--fg);
+      border: 1px solid var(--border); border-radius: 6px;
+    }
+    .kof-button:hover { background: var(--hover); }
+    .kof-input {
+      font-size: 13px; padding: 6px 10px; width: 100%;
+      background: var(--panel); color: var(--fg);
+      border: 1px solid var(--border); border-radius: 6px;
+      font-family: inherit;
+    }
+    .kof-textarea, .kof-select {
+      font-size: 13px; padding: 6px 10px;
+      background: var(--panel); color: var(--fg);
+      border: 1px solid var(--border); border-radius: 6px;
+      font-family: inherit;
+    }
+    .kof-column { display: flex; flex-direction: column; gap: 8px; }
+    .kof-row { display: flex; flex-direction: row; gap: 8px; align-items: center; }
+    .kof-box { display: flex; gap: 8px; }
+    .kof-view { box-sizing: border-box; }
+    .kof-canvas { align-self: flex-start; max-width: 100%; height: auto; }
+    .kof-window {
+      box-sizing: border-box; padding: 16px; border-radius: 8px;
+      border: 1px solid var(--border); background: var(--bg);
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    #kof-status {
+      background: var(--panel); border-top: 1px solid var(--border);
+      color: var(--dim); font-size: 11px; padding: 4px 14px;
+    }
+    /* Responsivo (Android/WebView estreito): as Row quebram em
+       vez de estourar; paddings/fonte encolhem no aparelho. */
+    @media (max-width: 600px) {
+      #kof-titlebar { padding: 6px 10px; }
+      #kof-root { padding: 10px 12px; }
+      .kof-window { padding: 12px; }
+      .kof-row { flex-wrap: wrap; }
+      .kof-label, .kof-button, .kof-input,
+      .kof-textarea, .kof-select { font-size: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="kof-titlebar">
+    <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+    <span class="name">Default</span><span class="kind">Kof output</span>
+  </div>
+  <div id="kof-root"></div>
+  <div id="kof-status">terminated</div>
+  <script type="module" src="Default.mjs"></script>
+</body>
+</html>

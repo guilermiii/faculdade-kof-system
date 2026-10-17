@@ -1,6 +1,6 @@
 # Sistema de Gestão de Gado — KOF MVP
 
-Sistema completo (Backend, Persistência PostgreSQL e Interface Multiplataforma Web/Mobile) escrito **100% em KOF** (`https://koflang.github.io/docs`), seguindo a filosofia **"Feijão com Arroz" (KISS)** da skill `kof_engineering`, a [Especificação de Requisitos](./requisitos.md) e o [Diagrama de Classes](./diagram.png).
+Sistema completo (Backend, Persistência Nativa SQLite e Interface Multiplataforma Web/Mobile) escrito **100% em KOF** (`https://koflang.github.io/docs`), seguindo a filosofia **"Feijão com Arroz" (KISS)** da skill `kof_engineering`, a [Especificação de Requisitos](./requisitos.md) e o [Diagrama de Classes](./diagram.png).
 
 ---
 
@@ -9,11 +9,10 @@ Sistema completo (Backend, Persistência PostgreSQL e Interface Multiplataforma 
 ```text
 /
 ├── app.kf                       # Entrypoint da API (kof.web, OAuth2 Google/GitHub e rotas REST)
-├── kofdeps                      # Declaração de drivers JDBC (PostgreSQL e H2 para testes)
 ├── models/
 │   └── entities.kf              # Enums (SaudeVaca, SexoVaca, AplicacaoRemedio), Entities e Records
 ├── db/
-│   └── schema.kf                # Conexão PostgreSQL (kof.db) e inicialização tipada do KOF ORM (kof.orm)
+│   └── schema.kf                # Conexão com Banco Nativo KOF SQLite (kof.db) e KOF ORM (kof.orm)
 ├── handlers/
 │   ├── rotas.kf                 # Registro compartilhado de rotas REST (usado por app.kf e E2E)
 │   ├── pasto_handler.kf         # RF02 - CRUD de Pastos/Piquetes
@@ -27,7 +26,7 @@ Sistema completo (Backend, Persistência PostgreSQL e Interface Multiplataforma 
 │   ├── unit_models_test.kf      # RNF14 - Testes unitários de Enums, Entities, Records e JSON
 │   ├── unit_handlers_test.kf    # RNF14 - Testes de regras de negócio e persistência (RF01..RF07)
 │   └── e2e_api_test.kf          # RNF14 - Testes End-to-End HTTP reais com withServer e withDb
-├── Dockerfile                   # RNF10 - Empacotamento enxuto do runtime KOF em container
+├── Dockerfile                   # RNF10 - Empacotamento enxuto multi-stage com release oficial KofLang/Kof4j
 ├── diagram.png                  # RNF05 - Diagrama de classes do modelo de dados
 └── requisitos.md                # Especificação de Requisitos Funcionais (RF) e Não-Funcionais (RNF)
 ```
@@ -36,20 +35,13 @@ Sistema completo (Backend, Persistência PostgreSQL e Interface Multiplataforma 
 
 ## 🚀 Como Executar com o Toolchain KOF (`0.6.5`)
 
-### 1. Resolver Dependências JDBC (`kof deps`)
+### 1. Banco de Dados Nativo KOF (`sqlite:fazenda.db`) e Variáveis de Ambiente
+
+Por padrão, o sistema utiliza o banco de dados nativo embutido do KOF (`sqlite:fazenda.db` em produção e `sqlite::memory:` nos testes), provisionado automaticamente pelo compilador KOF sem necessidade de banco externo. Você pode customizar via variáveis de ambiente lidas por `kof.secrets`:
 
 ```bash
-kof deps resolve
-```
-
-### 2. Variáveis de Ambiente (PostgreSQL e OAuth2)
-
-Por padrão, o sistema conecta em `jdbc:postgresql://localhost:5432/kof_gado`. Você pode customizar via variáveis de ambiente lidas por `kof.secrets`:
-
-```bash
-export DB_URL="jdbc:postgresql://localhost:5432/kof_gado"
-export DB_USER="postgres"
-export DB_PASS="postgres"
+# Opcional: sobrescrever a URI do banco (padrão: sqlite:fazenda.db)
+export DB_URL="sqlite:fazenda.db"
 
 # OAuth2 Resource Server (Google ou GitHub - RNF08)
 export OAUTH_JWKS_URL="https://www.googleapis.com/oauth2/v3/certs"
@@ -81,15 +73,15 @@ A API responderá em `http://localhost:8080`.
   kof build ui/app_ui.kf --target android --apk
   ```
 
-### 5. Formatação e Verificação Estática (`kof fmt` & `kof check`)
+### 4. Formatação e Verificação Estática (`kof fmt` & `kof check`)
 
 ```bash
-kof fmt -w app.kf models db handlers ui test
+kof fmt app.kf models db handlers ui test
 kof check app.kf
 kof check ui/app_ui.kf
 ```
 
-### 6. Executar Testes Automatizados (Unitários e E2E)
+### 5. Executar Testes Automatizados (Unitários e E2E)
 
 ```bash
 # Executar todas as suítes do diretório test/ (Unitários + E2E HTTP)
@@ -133,13 +125,9 @@ kof test --module-root . test/ --tag e2e
 
 ## 🐳 Containerização (`Dockerfile`)
 
-Para empacotar e executar a aplicação via Docker:
+O `Dockerfile` baixa a distribuição oficial do [`KofLang/Kof4j`](https://github.com/KofLang/Kof4j) (`v0.6.5`), compila a aplicação em um fat JAR autocontido (`kof build app.kf --target jvm --fat --output /app/out`) já com o driver SQLite nativo embutido e gera a imagem final com `eclipse-temurin:25-jre-noble`:
 
 ```bash
 docker build -t kof-gado-system .
-docker run -p 8080:8080 \
-  -e DB_URL="jdbc:postgresql://host.docker.internal:5432/kof_gado" \
-  -e DB_USER="postgres" \
-  -e DB_PASS="postgres" \
-  kof-gado-system
+docker run -p 8080:8080 kof-gado-system
 ```

@@ -1,0 +1,111 @@
+import models.*
+import db.*
+import handlers.*
+import kof.test.db
+import kof.test.web
+
+// ============================================================================
+// Suite de Testes End-to-End (E2E) HTTP Reais (RNF03, RNF08, RNF14)
+// Sobe o servidor web KOF real em porta de teste via withServer e executa
+// chamadas HTTP (GET, POST, PUT, DELETE) sobre todas as rotas da API.
+// Execucao: kof test --module-root . test/e2e_api_test.kf
+// ============================================================================
+
+test "E2E HTTP - Healthcheck e Rota Raiz da API", "e2e" {
+    withDb("jdbc:h2:mem:e2e_health;DB_CLOSE_DELAY=-1", (conn: String) -> {
+        initSchema(conn)
+        var app = web.app()
+        registrarRotas(app, conn, "google")
+
+        withServer(app, 18101, (base: String) -> {
+            var rootRes = http.get(base + "/")
+            assert(rootRes.contains("kof-gado-api"), "Rota raiz deve identificar o servico kof-gado-api")
+
+            var healthRes = http.get(base + "/health")
+            assert(healthRes.contains("\"status\":\"UP\""), "GET /health deve retornar status UP")
+        })
+    })
+}
+
+test "E2E HTTP - Fluxo Completo Pastos, Gado e Filtragem por Pasto (RF01, RF02, RF07)", "e2e" {
+    withDb("jdbc:h2:mem:e2e_gado;DB_CLOSE_DELAY=-1", (conn: String) -> {
+        initSchema(conn)
+        var app = web.app()
+        registrarRotas(app, conn, "google")
+
+        withServer(app, 18102, (base: String) -> {
+            // 1. POST /pastos (RF02)
+            var pNorteJson = http.post(base + "/pastos", "{\"nome\":\"Pasto Norte E2E\",\"dono\":true,\"valor_cabeca\":130}")
+            var pNorte = json.decode<Pasto>(pNorteJson)
+            assert(pNorte.nome == "Pasto Norte E2E", "POST /pastos deve criar Pasto Norte E2E")
+
+            var pSulJson = http.post(base + "/pastos", "{\"nome\":\"Pasto Sul E2E\",\"dono\":false,\"valor_cabeca\":160}")
+            var pSul = json.decode<Pasto>(pSulJson)
+
+            // 2. GET /pastos e PUT /pastos/:id (RF02)
+            var listaPastos = http.get(base + "/pastos")
+            assert(listaPastos.contains("Pasto Norte E2E") && listaPastos.contains("Pasto Sul E2E"), "GET /pastos deve retornar ambos os pastos")
+
+            var pNorteEditado = http.put(base + "/pastos/" + pNorte.id, "{\"nome\":\"Pasto Norte Premium\",\"dono\":true,\"valor_cabeca\":175}")
+            assert(pNorteEditado.contains("Pasto Norte Premium"), "PUT /pastos/:id deve atualizar o pasto")
+
+            // 3. POST /gados (RF01)
+            var gado1Json = http.post(base + "/gados", "{\"nome\":\"Vaca Holandesa\",\"vaca_leitera\":true,\"pasto_uuid\":\"" + pNorte.id + "\",\"saudeVaca\":\"SAUDAVEL\",\"numero_registro\":\"E2E-001\",\"mae\":\"\",\"sexo\":\"FEMEA\",\"historico_tratamento_uuid\":\"\",\"data_nascimento\":\"2022-03-10\"}")
+            var gado1 = json.decode<Gado>(gado1Json)
+            assert(gado1.nome == "Vaca Holandesa", "POST /gados deve cadastrar Vaca Holandesa")
+
+            var gado2Json = http.post(base + "/gados", "{\"nome\":\"Touro Nelore\",\"vaca_leitera\":false,\"pasto_uuid\":\"" + pSul.id + "\",\"saudeVaca\":\"SAUDAVEL\",\"numero_registro\":\"E2E-002\",\"mae\":\"\",\"sexo\":\"MACHO\",\"historico_tratamento_uuid\":\"\",\"data_nascimento\":\"2021-11-05\"}")
+            var gado2 = json.decode<Gado>(gado2Json)
+
+            // 4. GET /pastos/:pastoId/gados (RF07 - Filtragem por Pasto via HTTP)
+            var gadosNorte = http.get(base + "/pastos/" + pNorte.id + "/gados")
+            assert(gadosNorte.contains("Vaca Holandesa"), "GET /pastos/:id/gados deve conter Vaca Holandesa")
+            assert(!gadosNorte.contains("Touro Nelore"), "GET /pastos/:id/gados nao deve conter animal de outro pasto")
+
+            // 5. PUT /gados/:id e DELETE /gados/:id (RF01)
+            var gado1Editado = http.put(base + "/gados/" + gado1.id, "{\"nome\":\"Vaca Holandesa Campea\",\"vaca_leitera\":true,\"pasto_uuid\":\"" + pNorte.id + "\",\"saudeVaca\":\"RECUPERACAO\",\"numero_registro\":\"E2E-001\",\"mae\":\"\",\"sexo\":\"FEMEA\",\"historico_tratamento_uuid\":\"\",\"data_nascimento\":\"2022-03-10\"}")
+            assert(gado1Editado.contains("Vaca Holandesa Campea"), "PUT /gados/:id deve atualizar dados do animal")
+
+            var delRes = http.delete(base + "/gados/" + gado2.id)
+            assert(delRes.contains("\"deleted\":true"), "DELETE /gados/:id deve confirmar remocao")
+        })
+    })
+}
+
+test "E2E HTTP - Fluxo Completo Remedios, Estoque e Historico de Tratamentos (RF03, RF05, RF06)", "e2e" {
+    withDb("jdbc:h2:mem:e2e_tratamento;DB_CLOSE_DELAY=-1", (conn: String) -> {
+        initSchema(conn)
+        var app = web.app()
+        registrarRotas(app, conn, "github")
+
+        withServer(app, 18103, (base: String) -> {
+            var pasto = json.decode<Pasto>(http.post(base + "/pastos", "{\"nome\":\"Pasto Quarentena\",\"dono\":true,\"valor_cabeca\":110}"))
+            var gado = json.decode<Gado>(http.post(base + "/gados", "{\"nome\":\"Bezerra Lua\",\"vaca_leitera\":false,\"pasto_uuid\":\"" + pasto.id + "\",\"saudeVaca\":\"DOENTE\",\"numero_registro\":\"E2E-010\",\"mae\":\"\",\"sexo\":\"FEMEA\",\"historico_tratamento_uuid\":\"\",\"data_nascimento\":\"2025-01-20\"}"))
+
+            // 1. POST /remedios (RF03)
+            var remJson = http.post(base + "/remedios", "{\"nome\":\"Terramicina LA\",\"data_compra\":\"2026-02-10\",\"data_vencimento\":\"2028-02-10\",\"valor\":72.0,\"aplicacao\":\"INJECAO\",\"estoque\":8}")
+            var rem = json.decode<Remedio>(remJson)
+            assert(rem.estoque == 8, "POST /remedios deve cadastrar estoque inicial 8")
+
+            // 2. GET /remedios/estoque (RF06)
+            var estoqueInicial = http.get(base + "/remedios/estoque")
+            assert(estoqueInicial.contains("Terramicina LA"), "GET /remedios/estoque deve listar Terramicina LA")
+
+            // 3. POST /tratamentos (RF05 + RF06)
+            var tratJson = http.post(base + "/tratamentos", "{\"nome_doenca\":\"Febre Aftosa Suspeita\",\"gado_uuid\":\"" + gado.id + "\",\"data_inicio\":\"2026-10-17\",\"data_fim\":\"2026-10-27\",\"observacoes\":\"Isolamento no Pasto Quarentena\",\"fk_remedio_uuid\":\"" + rem.id + "\",\"dosagen\":15.0}")
+            var trat = json.decode<Tratamento>(tratJson)
+            assert(trat.nome_doenca == "Febre Aftosa Suspeita", "POST /tratamentos deve registrar o tratamento")
+
+            // 4. GET /gados/:gadoId/tratamentos e GET /tratamentos/:id/remedios (RF05)
+            var historicoHttp = http.get(base + "/gados/" + gado.id + "/tratamentos")
+            assert(historicoHttp.contains("Febre Aftosa Suspeita"), "GET /gados/:gadoId/tratamentos deve retornar o historico")
+
+            var remediosAplicadosHttp = http.get(base + "/tratamentos/" + trat.id + "/remedios")
+            assert(remediosAplicadosHttp.contains(rem.id), "GET /tratamentos/:id/remedios deve retornar o vinculo do medicamento")
+
+            // 5. PUT /remedios/:id/estoque (RF06 - reposicao de estoque)
+            var estoqueReposto = http.put(base + "/remedios/" + rem.id + "/estoque", "{\"estoque\":25}")
+            assert(estoqueReposto.contains("25"), "PUT /remedios/:id/estoque deve atualizar o saldo em estoque")
+        })
+    })
+}

@@ -1,0 +1,171 @@
+import models.*
+import db.*
+import handlers.*
+import kof.test.db
+
+// ============================================================================
+// Suite de Testes de Handlers e Regras de Negocio (RF01 a RF07, RNF09, RNF14)
+// Execucao: kof test --module-root . test/unit_handlers_test.kf
+// ============================================================================
+
+test "RF02 - CRUD completo de Pasto e validacao de campos obrigatorios", "unit" {
+    withDb("jdbc:h2:mem:test_pasto;DB_CLOSE_DELAY=-1", (conn: String) -> {
+        initSchema(conn)
+
+        var criadoJson = criarPasto(conn, "{\"nome\":\"Pasto da Serra\",\"dono\":true,\"valor_cabeca\":140}")
+        var criado = json.decode<Pasto>(criadoJson)
+        assert(criado.nome == "Pasto da Serra", "Deve criar Pasto da Serra")
+        assert(criado.valor_cabeca == 140, "Valor por cabeca deve ser 140")
+
+        var buscadoJson = buscarPastoPorId(conn, criado.id)
+        assert(buscadoJson != null, "Deve encontrar o pasto recem-criado")
+
+        var inexistente = buscarPastoPorId(conn, "id-inexistente")
+        assert(inexistente == null, "Busca por ID inexistente deve retornar null")
+
+        var atualizadoJson = atualizarPasto(conn, criado.id, "{\"nome\":\"Pasto da Serra II\",\"dono\":false,\"valor_cabeca\":200}")
+        assert(atualizadoJson != null, "Atualizacao de pasto existente nao deve ser null")
+        if (atualizadoJson != null) {
+            var atualizado = json.decode<Pasto>(atualizadoJson)
+            assert(atualizado.nome == "Pasto da Serra II", "Nome do pasto deve ser atualizado")
+            assert(atualizado.dono == false, "Flag dono deve ser atualizada")
+            assert(atualizado.valor_cabeca == 200, "Valor por cabeca deve ser atualizado para 200")
+        }
+
+        var todosJson = listarPastos(conn)
+        assert(todosJson.contains("Pasto da Serra II"), "Listagem deve conter o pasto atualizado")
+
+        var rejeitouNomeVazio = false
+        try {
+            criarPasto(conn, "{\"nome\":\"\",\"dono\":true,\"valor_cabeca\":100}")
+        } catch (String e) {
+            rejeitouNomeVazio = true
+        }
+        assert(rejeitouNomeVazio, "Deve rejeitar criacao de pasto com nome vazio")
+    })
+}
+
+test "RF01 & RF07 - CRUD completo de Gado e Filtragem de Gado por Pasto", "unit" {
+    withDb("jdbc:h2:mem:test_gado;DB_CLOSE_DELAY=-1", (conn: String) -> {
+        initSchema(conn)
+
+        var p1 = json.decode<Pasto>(criarPasto(conn, "{\"nome\":\"Pasto A\",\"dono\":true,\"valor_cabeca\":100}"))
+        var p2 = json.decode<Pasto>(criarPasto(conn, "{\"nome\":\"Pasto B\",\"dono\":false,\"valor_cabeca\":150}"))
+
+        var g1Json = criarGado(conn, "{\"nome\":\"Mimosa\",\"vaca_leitera\":true,\"pasto_uuid\":\"" + p1.id + "\",\"saudeVaca\":\"SAUDAVEL\",\"numero_registro\":\"BR-101\",\"mae\":\"\",\"sexo\":\"FEMEA\",\"historico_tratamento_uuid\":\"\",\"data_nascimento\":\"2023-01-15\"}")
+        var g1 = json.decode<Gado>(g1Json)
+
+        var g2Json = criarGado(conn, "{\"nome\":\"Trovao\",\"vaca_leitera\":false,\"pasto_uuid\":\"" + p2.id + "\",\"saudeVaca\":\"RECUPERACAO\",\"numero_registro\":\"BR-102\",\"mae\":\"" + g1.id + "\",\"sexo\":\"MACHO\",\"historico_tratamento_uuid\":\"\",\"data_nascimento\":\"2024-02-20\"}")
+        var g2 = json.decode<Gado>(g2Json)
+
+        // RF07 - Filtrar por Pasto A deve trazer apenas Mimosa
+        var filtroP1 = filtrarGadoPorPasto(conn, p1.id)
+        assert(filtroP1.contains("Mimosa"), "Pasto A deve conter Mimosa")
+        assert(!filtroP1.contains("Trovao"), "Pasto A nao deve conter Trovao")
+
+        // RF07 - Filtrar por Pasto B deve trazer apenas Trovao
+        var filtroP2 = filtrarGadoPorPasto(conn, p2.id)
+        assert(filtroP2.contains("Trovao"), "Pasto B deve conter Trovao")
+        assert(!filtroP2.contains("Mimosa"), "Pasto B nao deve conter Mimosa")
+
+        // Atualizacao de estado de saude e alocacao de pasto
+        var g1AtualizadoJson = atualizarGado(conn, g1.id, "{\"nome\":\"Mimosa\",\"vaca_leitera\":true,\"pasto_uuid\":\"" + p2.id + "\",\"saudeVaca\":\"DOENTE\",\"numero_registro\":\"BR-101\",\"mae\":\"\",\"sexo\":\"FEMEA\",\"historico_tratamento_uuid\":\"\",\"data_nascimento\":\"2023-01-15\"}")
+        assert(g1AtualizadoJson != null, "Deve atualizar Mimosa")
+
+        var filtroP2AposMudanca = filtrarGadoPorPasto(conn, p2.id)
+        assert(filtroP2AposMudanca.contains("Mimosa") && filtroP2AposMudanca.contains("Trovao"), "Pasto B agora deve conter Mimosa e Trovao")
+
+        // Exclusao de Gado (RF01)
+        assert(removerGado(conn, g2.id), "Deve remover Trovao com sucesso")
+        assert(buscarGadoPorId(conn, g2.id) == null, "Trovao nao deve mais existir apos exclusao")
+
+        // Validacao de Enum invalido
+        var rejeitouEnum = false
+        try {
+            criarGado(conn, "{\"nome\":\"Invalido\",\"vaca_leitera\":false,\"pasto_uuid\":\"" + p1.id + "\",\"saudeVaca\":\"INVALIDO\",\"numero_registro\":\"BR-999\",\"mae\":\"\",\"sexo\":\"MACHO\",\"historico_tratamento_uuid\":\"\",\"data_nascimento\":\"2024-01-01\"}")
+        } catch (String e) {
+            rejeitouEnum = true
+        }
+        assert(rejeitouEnum, "Deve rejeitar Gado com saudeVaca invalida")
+    })
+}
+
+test "RF03 & RF06 - Cadastro de Medicamentos e Controle de Estoque", "unit" {
+    withDb("jdbc:h2:mem:test_remedio;DB_CLOSE_DELAY=-1", (conn: String) -> {
+        initSchema(conn)
+
+        var r1 = json.decode<Remedio>(criarRemedio(conn, "{\"nome\":\"Soro Vitaminado\",\"data_compra\":\"2026-01-01\",\"data_vencimento\":\"2027-01-01\",\"valor\":35.0,\"aplicacao\":\"SORO_FISIOLOGICO\",\"estoque\":50}"))
+        var r2 = json.decode<Remedio>(criarRemedio(conn, "{\"nome\":\"Spray Cicatrizante\",\"data_compra\":\"2026-02-01\",\"data_vencimento\":\"2027-02-01\",\"valor\":28.5,\"aplicacao\":\"CURA_FERIDAS\",\"estoque\":5}"))
+
+        var estoqueJson = consultarEstoqueRemedios(conn)
+        assert(estoqueJson.contains("Spray Cicatrizante") && estoqueJson.contains("Soro Vitaminado"), "Consulta de estoque deve listar todos os medicamentos")
+
+        var atualizadoJson = atualizarEstoqueRemedio(conn, r2.id, "{\"estoque\":20}")
+        assert(atualizadoJson != null, "Atualizacao de estoque deve retornar o medicamento atualizado")
+        if (atualizadoJson != null) {
+            var r2Atualizado = json.decode<Remedio>(atualizadoJson)
+            assert(r2Atualizado.estoque == 20, "Novo saldo em estoque deve ser 20")
+        }
+
+        var rejeitouNegativo = false
+        try {
+            atualizarEstoqueRemedio(conn, r1.id, "{\"estoque\":-5}")
+        } catch (String e) {
+            rejeitouNegativo = true
+        }
+        assert(rejeitouNegativo, "Deve rejeitar atualizacao para estoque negativo")
+    })
+}
+
+test "RF05 & RF06 - Historico de Tratamentos, Vinculo de Dosagem e Abatimento de Estoque", "unit" {
+    withDb("jdbc:h2:mem:test_tratamento;DB_CLOSE_DELAY=-1", (conn: String) -> {
+        initSchema(conn)
+
+        var p = json.decode<Pasto>(criarPasto(conn, "{\"nome\":\"Pasto Hospital\",\"dono\":true,\"valor_cabeca\":120}"))
+        var g = json.decode<Gado>(criarGado(conn, "{\"nome\":\"Boneca\",\"vaca_leitera\":true,\"pasto_uuid\":\"" + p.id + "\",\"saudeVaca\":\"DOENTE\",\"numero_registro\":\"BR-500\",\"mae\":\"\",\"sexo\":\"FEMEA\",\"historico_tratamento_uuid\":\"\",\"data_nascimento\":\"2021-06-10\"}"))
+        var rem = json.decode<Remedio>(criarRemedio(conn, "{\"nome\":\"Penicilina Bovina\",\"data_compra\":\"2026-01-01\",\"data_vencimento\":\"2027-01-01\",\"valor\":95.0,\"aplicacao\":\"INJECAO\",\"estoque\":3}"))
+
+        var tratJson = registrarTratamento(conn, "{\"nome_doenca\":\"Infeccao Respiratoria\",\"gado_uuid\":\"" + g.id + "\",\"data_inicio\":\"2026-10-17\",\"data_fim\":\"2026-10-25\",\"observacoes\":\"Aplicar 10ml intramuscular\",\"fk_remedio_uuid\":\"" + rem.id + "\",\"dosagen\":10.0}")
+        var trat = json.decode<Tratamento>(tratJson)
+
+        // Verifica historico do animal (RF05)
+        var histJson = listarTratamentosPorGado(conn, g.id)
+        assert(histJson.contains("Infeccao Respiratoria"), "Historico do gado deve conter o tratamento")
+
+        // Verifica itens e dosagem em TRATAMENTO_REMEDIO (RF05)
+        var itensJson = listarRemediosDoTratamento(conn, trat.id)
+        assert(itensJson.contains(rem.id), "TRATAMENTO_REMEDIO deve referenciar o medicamento aplicado")
+
+        // Verifica abatimento automatico no estoque do remedio (RF06: 3 -> 2)
+        var remAposJson = buscarRemedioPorId(conn, rem.id)
+        assert(remAposJson != null, "Remedio deve continuar cadastrado")
+        if (remAposJson != null) {
+            var remApos = json.decode<Remedio>(remAposJson)
+            assert(remApos.estoque == 2, "Estoque do remedio deve ser abatido de 3 para 2")
+        }
+
+        // Verifica atualizacao do ponteiro historico_tratamento_uuid no Gado (RNF05)
+        var gadoAposJson = buscarGadoPorId(conn, g.id)
+        assert(gadoAposJson != null, "Gado deve continuar cadastrado")
+        if (gadoAposJson != null) {
+            var gadoApos = json.decode<Gado>(gadoAposJson)
+            assert(gadoApos.historico_tratamento_uuid == trat.id, "Gado deve apontar para o ultimo tratamento registrado")
+        }
+    })
+}
+
+test "RF04 & RNF09 - Gestao de Perfil do Usuario OAuth2 e Privacidade", "unit" {
+    withDb("jdbc:h2:mem:test_perfil;DB_CLOSE_DELAY=-1", (conn: String) -> {
+        initSchema(conn)
+
+        var inicialJson = obterOuCriarPerfil(conn, "google-user-42", "google")
+        var inicial = json.decode<UsuarioPerfil>(inicialJson)
+        assert(inicial.id == "google-user-42", "Deve criar perfil inicial para o sub OAuth2")
+        assert(inicial.provedor == "google", "Deve registrar o provedor OAuth2")
+
+        var editadoJson = atualizarPerfil(conn, "google-user-42", "google", "{\"nome\":\"Joao Fazendeiro\",\"email\":\"joao@fazenda.com.br\"}")
+        var editado = json.decode<UsuarioPerfil>(editadoJson)
+        assert(editado.nome == "Joao Fazendeiro", "Nome do perfil deve ser atualizado")
+        assert(editado.email == "joao@fazenda.com.br", "Email do perfil deve ser atualizado")
+    })
+}

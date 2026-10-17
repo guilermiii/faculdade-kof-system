@@ -1,0 +1,121 @@
+import models.*
+
+// ============================================================================
+// Suite de Testes Unitarios de Modelos, Enums, Records e Validadores (RNF05, RNF14)
+// Execucao: kof test --module-root . test/unit_models_test.kf
+// ============================================================================
+
+test "RNF05 - Validacao de valores do Enum SaudeVaca", "unit" {
+    assert(saudeVacaValida("DOENTE"), "DOENTE deve ser aceito")
+    assert(saudeVacaValida("SAUDAVEL"), "SAUDAVEL deve ser aceito")
+    assert(saudeVacaValida("RECUPERACAO"), "RECUPERACAO deve ser aceito")
+    assert(saudeVacaValida("MORTA"), "MORTA deve ser aceito")
+    assert(!saudeVacaValida(""), "String vazia deve ser rejeitada")
+    assert(!saudeVacaValida("CRITICO"), "Valor fora do enum SaudeVaca deve ser rejeitado")
+}
+
+test "RNF05 - Validacao de valores do Enum SexoVaca", "unit" {
+    assert(sexoVacaValido("MACHO"), "MACHO deve ser aceito")
+    assert(sexoVacaValido("FEMEA"), "FEMEA deve ser aceito")
+    assert(!sexoVacaValido(""), "String vazia deve ser rejeitada")
+    assert(!sexoVacaValido("INDEFINIDO"), "Valor fora do enum SexoVaca deve ser rejeitado")
+}
+
+test "RNF05 - Validacao de valores do Enum AplicacaoRemedio", "unit" {
+    assert(aplicacaoRemedioValida("INJECAO"), "INJECAO deve ser aceito")
+    assert(aplicacaoRemedioValida("CURA_FERIDAS"), "CURA_FERIDAS deve ser aceito")
+    assert(aplicacaoRemedioValida("SORO_FISIOLOGICO"), "SORO_FISIOLOGICO deve ser aceito")
+    assert(!aplicacaoRemedioValida(""), "String vazia deve ser rejeitada")
+    assert(!aplicacaoRemedioValida("COMPRIMIDO"), "Valor fora do enum AplicacaoRemedio deve ser rejeitado")
+}
+
+test "RF02 & RNF05 - Entidade Pasto e serializacao JSON tipada", "unit" {
+    var id = uuid.v4()
+    assert(uuid.isUuid(id), "UUID v4 gerado deve ser valido")
+
+    var p = Pasto(id, "Piquete Central", true, 180)
+    assert(p.id == id, "Campo id deve corresponder")
+    assert(p.nome == "Piquete Central", "Campo nome deve corresponder")
+    assert(p.dono == true, "Campo dono deve ser true")
+    assert(p.valor_cabeca == 180, "Campo valor_cabeca deve ser 180")
+
+    var jsonStr = json.encode(p)
+    var decodificado = json.decode<Pasto>(jsonStr)
+    assert(decodificado.id == id, "Decode JSON deve preservar id")
+    assert(decodificado.nome == "Piquete Central", "Decode JSON deve preservar nome")
+    assert(decodificado.dono == true, "Decode JSON deve preservar dono")
+    assert(decodificado.valor_cabeca == 180, "Decode JSON deve preservar valor_cabeca")
+}
+
+test "RF01 & RNF05 - Entidade Gado e serializacao JSON tipada", "unit" {
+    var gadoId = uuid.v4()
+    var pastoId = uuid.v4()
+    var maeId = uuid.v4()
+    var histId = uuid.v4()
+
+    var g = Gado(
+        gadoId,
+        "Estrela",
+        true,
+        pastoId,
+        "SAUDAVEL",
+        "REG-2026-01",
+        maeId,
+        "FEMEA",
+        histId,
+        "2022-08-15"
+    )
+
+    assert(g.id == gadoId, "ID do gado deve corresponder")
+    assert(g.vaca_leitera == true, "vaca_leitera deve ser true")
+    assert(g.pasto_uuid == pastoId, "pasto_uuid deve corresponder")
+    assert(g.saudeVaca == "SAUDAVEL", "saudeVaca deve ser SAUDAVEL")
+    assert(g.sexo == "FEMEA", "sexo deve ser FEMEA")
+
+    var payload = json.encode(g)
+    var lido = json.decode<Gado>(payload)
+    assert(lido.nome == "Estrela", "Decode JSON deve preservar nome do animal")
+    assert(lido.numero_registro == "REG-2026-01", "Decode JSON deve preservar numero_registro")
+    assert(lido.mae == maeId, "Decode JSON deve preservar UUID da mae")
+}
+
+test "RF03 & RF06 - Entidade Remedio e controle de estoque em JSON", "unit" {
+    var remId = uuid.v4()
+    var r = Remedio(remId, "Ivermectina 1%", "2026-01-10", "2027-06-10", 64.90, "INJECAO", 30)
+
+    assert(r.id == remId, "ID do remedio deve corresponder")
+    assert(r.estoque == 30, "Estoque deve ser 30")
+    assert(r.aplicacao == "INJECAO", "Aplicacao deve ser INJECAO")
+
+    var payload = json.encode(r)
+    var lido = json.decode<Remedio>(payload)
+    assert(lido.nome == "Ivermectina 1%", "Decode JSON deve preservar nome do remedio")
+    assert(lido.estoque == 30, "Decode JSON deve preservar estoque")
+}
+
+test "RF05 - Entidades Tratamento e TratamentoRemedio em JSON", "unit" {
+    var tratId = uuid.v4()
+    var gadoId = uuid.v4()
+    var remId = uuid.v4()
+
+    var t = Tratamento(tratId, "Tristeza Parasitaria", gadoId, "2026-10-01", "2026-10-10", "Animal em observacao")
+    var tr = TratamentoRemedio(uuid.v4(), tratId, remId, 12.5)
+
+    var tLido = json.decode<Tratamento>(json.encode(t))
+    var trLido = json.decode<TratamentoRemedio>(json.encode(tr))
+
+    assert(tLido.nome_doenca == "Tristeza Parasitaria", "Diagnostico preservado")
+    assert(tLido.gado_uuid == gadoId, "FK gado_uuid preservada")
+    assert(trLido.fk_tratamento_uuid == tratId, "FK tratamento preservada")
+    assert(trLido.fk_remedio_uuid == remId, "FK remedio preservada")
+    assert(trLido.dosagen == 12.5, "Dosagem preservada")
+}
+
+test "RF04 & RNF09 - Entidade UsuarioPerfil OAuth2 com dados minimos de privacidade", "unit" {
+    var u = UsuarioPerfil("github-998877", "Guilherme", "guilherme@exemplo.br", "github")
+    var lido = json.decode<UsuarioPerfil>(json.encode(u))
+    assert(lido.id == "github-998877", "ID OAuth2 preservado")
+    assert(lido.nome == "Guilherme", "Nome preservado")
+    assert(lido.email == "guilherme@exemplo.br", "Email preservado")
+    assert(lido.provedor == "github", "Provedor OAuth2 preservado")
+}

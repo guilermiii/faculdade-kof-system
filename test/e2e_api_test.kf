@@ -22,14 +22,17 @@ test "E2E HTTP - Healthcheck, Rota Raiz e Frontend KOF Web (/ui)", "e2e" {
             assert(rootRes.contains("kof-gado-api"), "Rota raiz deve identificar o servico kof-gado-api")
             assert(rootRes.contains("\"/ui\""), "Rota raiz deve indicar o caminho do frontend /ui")
 
+            var apiRes = http.get(base + "/api")
+            assert(apiRes.contains("kof-gado-api") && apiRes.contains("\"OK\""), "GET /api deve retornar metadados JSON da API")
+
             var healthRes = http.get(base + "/health")
             assert(healthRes.contains("\"status\":\"UP\""), "GET /health deve retornar status UP")
 
             var uiHtml = http.get(base + "/ui")
-            assert(uiHtml.contains("kof-root") && uiHtml.contains("Default.mjs"), "GET /ui deve servir o index.html do frontend KOF")
+            assert(uiHtml.contains("kof-root") && uiHtml.contains("/ui/Default.mjs"), "GET /ui deve servir o index.html moderno do frontend KOF")
 
             var uiMjs = http.get(base + "/ui/Default.mjs")
-            assert(uiMjs.contains("Sistema de Gestao de Gado"), "GET /ui/Default.mjs deve servir o modulo KofJS compilado")
+            assert(uiMjs.contains("AgroKOF"), "GET /ui/Default.mjs deve servir o modulo KofJS compilado")
         })
     })
 }

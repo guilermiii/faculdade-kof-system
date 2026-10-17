@@ -13,7 +13,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certifi
 
 COPY . .
 RUN kof build app.kf --target jvm --fat --output /app/out \
-    && kof build ui/app_ui.kf --target js --output /app/public
+    && kof build ui/app_ui.kf --target js --output /app/public \
+    && ./scripts/patch_web_bundle.sh /app/public
 
 # Stage 2: Minimal JVM Runtime (Java 25 required by kof 0.6.5 bytecode v69.0)
 FROM eclipse-temurin:25-jre-noble

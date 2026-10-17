@@ -1,0 +1,626 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+PUBLIC_DIR="${1:-public}"
+RUNTIME_MJS="${PUBLIC_DIR}/kof-runtime.mjs"
+INDEX_HTML="${PUBLIC_DIR}/index.html"
+
+if [ ! -f "$RUNTIME_MJS" ]; then
+    echo "Erro: $RUNTIME_MJS nao encontrado." >&2
+    exit 1
+fi
+
+# 1. Patch idempotente e nao-destrutivo em kof-runtime.mjs
+if ! grep -q "XMLHttpRequest" "$RUNTIME_MJS"; then
+    awk '
+    /^function kofUiInjectTheme\(\) \{$/ {
+        print
+        print "    return;"
+        next
+    }
+    /^export function kofUiWindowSetTheme\(window, theme\) \{$/ {
+        print
+        print "    if (typeof document !== \"undefined\" && document.documentElement && document.documentElement.setAttribute) {"
+        print "        document.documentElement.setAttribute(\"data-theme\", theme ? \"dark\" : \"light\");"
+        print "    }"
+        print "    return;"
+        next
+    }
+    /^    if \(n\) n\.id = id;$/ {
+        print "    if (n) { n.id = id; if (typeof globalThis.__kofRegisterElement === \"function\") globalThis.__kofRegisterElement(id, n); }"
+        next
+    }
+    /^    if \(n\) n\.classList\.add\(cls\);$/ {
+        print "    if (n) { const base = String(n.className || \"\").split(/\\s+/).filter(c => c.startsWith(\"kof-\")).join(\" \"); n.className = (base ? base + \" \" : \"\") + String(cls || \"\").trim(); }"
+        next
+    }
+    /^        return window\.__kofNodes\[sel\]\.selectedIndex;$/ {
+        print "        const idx = window.__kofNodes[sel].selectedIndex; return idx >= 0 ? idx : 0;"
+        next
+    }
+    /action\.invoke\(\);/ {
+        print "            if (String(node.className || \"\").includes(\"tab-btn\") && node.parentNode) {"
+        print "                const siblings = node.parentNode.children || [];"
+        print "                for (const s of siblings) {"
+        print "                    if (String(s.className || \"\").includes(\"tab-btn\")) {"
+        print "                        s.className = \"kof-button tab-btn\";"
+        print "                    }"
+        print "                }"
+        print "                node.className = \"kof-button tab-btn active\";"
+        print "            }"
+        print "            action.invoke();"
+        next
+    }
+    /if \(typeof fetch !== \x27undefined\x27\) \{/ {
+        print "            if (typeof XMLHttpRequest !== \x27undefined\x27) {"
+        print "                const xhr = new XMLHttpRequest();"
+        print "                xhr.open(method, url, false);"
+        print "                let hasCt = false;"
+        print "                if (headers) {"
+        print "                    const lines = headers.split(\"\\n\");"
+        print "                    for (const line of lines) {"
+        print "                        const i = line.indexOf(\":\");"
+        print "                        if (i > 0) {"
+        print "                            const hk = line.substring(0, i).trim();"
+        print "                            const hv = line.substring(i + 1).trim();"
+        print "                            xhr.setRequestHeader(hk, hv);"
+        print "                            if (hk.toLowerCase() === \"content-type\") hasCt = true;"
+        print "                        }"
+        print "                    }"
+        print "                }"
+        print "                if (body != null && !hasCt) {"
+        print "                    xhr.setRequestHeader(\"Content-Type\", \"application/json\");"
+        print "                }"
+        print "                xhr.send(body != null ? body : null);"
+        print "                if (xhr.status >= 500) {"
+        print "                    lastErr = new Error(\"HTTP \" + xhr.status + \" from \" + url);"
+        print "                    kofHttpCircuitRecordFailure();"
+        print "                    continue;"
+        print "                }"
+        print "                kofHttpCircuitRecordSuccess();"
+        print "                return xhr.responseText != null ? xhr.responseText : \"\";"
+        print "            }"
+    }
+    { print }
+    ' "$RUNTIME_MJS" > "${RUNTIME_MJS}.tmp" && mv "${RUNTIME_MJS}.tmp" "$RUNTIME_MJS"
+fi
+
+# 2. Gerar index.html moderno (SaaS AgroTech Design System)
+cat > "$INDEX_HTML" << 'EOF'
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="service" content="kof-gado-api" data-ui="/ui">
+  <title>AgroKOF — Gestão Pecuária & Controle Sanitário</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root, html[data-theme="dark"] {
+      --bg: #0b1120;
+      --bg-subtle: #0f172a;
+      --surface: #151f32;
+      --surface-elevated: #1e293b;
+      --surface-hover: #26354d;
+      --border: #283548;
+      --border-strong: #384a64;
+      --fg: #f8fafc;
+      --fg-secondary: #cbd5e1;
+      --fg-muted: #94a3b8;
+      --primary: #10b981;
+      --primary-hover: #059669;
+      --primary-soft: rgba(16, 185, 129, 0.14);
+      --accent: #38bdf8;
+      --accent-soft: rgba(56, 189, 248, 0.12);
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35);
+      --shadow-md: 0 10px 30px -5px rgba(0, 0, 0, 0.45);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+    }
+
+    html[data-theme="light"] {
+      --bg: #f1f5f9;
+      --bg-subtle: #e2e8f0;
+      --surface: #ffffff;
+      --surface-elevated: #f8fafc;
+      --surface-hover: #f1f5f9;
+      --border: #cbd5e1;
+      --border-strong: #94a3b8;
+      --fg: #0f172a;
+      --fg-secondary: #334155;
+      --fg-muted: #64748b;
+      --primary: #059669;
+      --primary-hover: #047857;
+      --primary-soft: rgba(5, 150, 105, 0.10);
+      --accent: #0284c7;
+      --accent-soft: rgba(2, 132, 199, 0.10);
+      --danger: #dc2626;
+      --danger-hover: #b91c1c;
+      --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+      --shadow-md: 0 10px 25px -5px rgba(15, 23, 42, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 15px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    #kof-root {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 24px 28px 48px;
+    }
+
+    .kof-window {
+      width: 100% !important;
+      height: auto !important;
+      border: none;
+      background: transparent;
+      padding: 0;
+    }
+
+    .app-shell {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Topbar */
+    .app-topbar {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 18px 24px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .brand-col {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .brand-title {
+      color: var(--fg) !important;
+      font-weight: 700 !important;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-title::before {
+      content: "";
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--primary);
+      box-shadow: 0 0 0 4px var(--primary-soft);
+    }
+
+    .brand-subtitle {
+      color: var(--fg-muted) !important;
+      font-weight: 400;
+    }
+
+    .header-actions {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    /* KPI Grid */
+    .kpi-grid {
+      display: grid !important;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+      width: 100%;
+    }
+
+    .kpi-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 18px 20px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+
+    .kpi-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--primary);
+    }
+
+    .kpi-card:hover {
+      border-color: var(--border-strong);
+      transform: translateY(-1px);
+    }
+
+    .kpi-label {
+      color: var(--fg-muted) !important;
+      font-size: 11px !important;
+      font-weight: 700 !important;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .kpi-value {
+      color: var(--fg) !important;
+      font-size: 28px !important;
+      font-weight: 700 !important;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+    }
+
+    .kpi-sub {
+      color: var(--primary) !important;
+      font-size: 12.5px !important;
+      font-weight: 500;
+    }
+
+    /* Status / Notification Banner */
+    .status-banner {
+      display: block;
+      width: 100%;
+      background: var(--accent-soft);
+      border: 1px solid rgba(56, 189, 248, 0.28);
+      color: var(--fg) !important;
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 13.5px;
+      font-weight: 500;
+    }
+
+    /* Navigation Tabs */
+    .tabs-bar {
+      display: flex !important;
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 6px;
+      background: var(--surface);
+      padding: 6px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+    }
+
+    .tab-btn {
+      flex: 1 1 auto;
+      background: transparent !important;
+      color: var(--fg-secondary) !important;
+      border: 1px solid transparent !important;
+      border-radius: var(--radius-sm) !important;
+      padding: 10px 16px !important;
+      font-size: 13.5px !important;
+      font-weight: 600 !important;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-align: center;
+    }
+
+    .tab-btn:hover {
+      color: var(--fg) !important;
+      background: var(--surface-elevated) !important;
+    }
+
+    .tab-btn.active {
+      background: var(--primary) !important;
+      color: #ffffff !important;
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.30);
+    }
+
+    /* Tab Panels (2-Column Responsive Split) */
+    .tab-panel {
+      display: grid !important;
+      grid-template-columns: minmax(360px, 5fr) minmax(480px, 7fr);
+      gap: 20px;
+      align-items: start;
+      width: 100%;
+    }
+
+    .tab-panel.hidden {
+      display: none !important;
+    }
+
+    /* Cards & Fieldsets */
+    .kof-fieldset, .panel-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 22px;
+      margin: 0;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .kof-fieldset > legend {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--fg);
+      padding: 0 8px;
+      letter-spacing: -0.01em;
+    }
+
+    .kof-column {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .kof-row {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: flex-end;
+    }
+
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      flex: 1 1 180px;
+      min-width: 0;
+    }
+
+    .field-label {
+      color: var(--fg-secondary) !important;
+      font-size: 12.5px !important;
+      font-weight: 600 !important;
+      letter-spacing: 0.01em;
+    }
+
+    .kof-label {
+      color: var(--fg);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* Inputs, Selects, Textareas */
+    .kof-input, .kof-select, .kof-textarea {
+      width: 100%;
+      font-family: inherit;
+      font-size: 13.5px;
+      color: var(--fg);
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 9px 12px;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      outline: none;
+    }
+
+    .kof-input::placeholder, .kof-textarea::placeholder {
+      color: var(--fg-muted);
+      opacity: 0.75;
+    }
+
+    .kof-input:focus, .kof-select:focus, .kof-textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-soft);
+    }
+
+    .kof-textarea {
+      min-height: 78px;
+      resize: vertical;
+    }
+
+    /* Buttons */
+    .kof-button {
+      font-family: inherit;
+      font-size: 13.5px;
+      font-weight: 600;
+      padding: 9px 16px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--surface-elevated);
+      color: var(--fg);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .kof-button:hover {
+      background: var(--surface-hover);
+      border-color: var(--border-strong);
+    }
+
+    .btn-primary {
+      background: var(--primary) !important;
+      border-color: var(--primary) !important;
+      color: #ffffff !important;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover) !important;
+      border-color: var(--primary-hover) !important;
+    }
+
+    .btn-secondary {
+      background: var(--surface-elevated) !important;
+      border-color: var(--border-strong) !important;
+      color: var(--fg) !important;
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.14) !important;
+      border-color: rgba(239, 68, 68, 0.40) !important;
+      color: #fca5a5 !important;
+    }
+
+    html[data-theme="light"] .btn-danger {
+      color: var(--danger) !important;
+    }
+
+    .btn-danger:hover {
+      background: var(--danger) !important;
+      color: #ffffff !important;
+    }
+
+    .btn-ghost {
+      background: transparent !important;
+      border-color: var(--border) !important;
+      color: var(--fg-secondary) !important;
+    }
+
+    .btn-icon {
+      padding: 8px 12px !important;
+      font-size: 12.5px !important;
+      background: var(--surface-elevated) !important;
+    }
+
+    .kof-hr {
+      width: 100%;
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 4px 0;
+    }
+
+    .filter-bar {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      margin-bottom: 4px;
+    }
+
+    /* Data Tables */
+    .table-card {
+      overflow-x: auto;
+    }
+
+    .kof-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 13px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+    }
+
+    .kof-table thead th {
+      background: var(--bg-subtle);
+      color: var(--fg-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.05em;
+      padding: 11px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    .kof-table tbody td {
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--border);
+      color: var(--fg-secondary);
+      vertical-align: middle;
+    }
+
+    .kof-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .kof-table tbody tr:hover td {
+      background: var(--surface-elevated);
+      color: var(--fg);
+      cursor: pointer;
+    }
+
+    .kof-table tbody td:first-child {
+      font-weight: 600;
+      color: var(--fg);
+    }
+
+    .kof-table tbody td:last-child {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11.5px;
+      color: var(--fg-muted);
+    }
+
+    @media (max-width: 1080px) {
+      .kpi-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .tab-panel {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      #kof-root {
+        padding: 14px;
+      }
+      .kpi-grid {
+        grid-template-columns: 1fr;
+      }
+      .app-topbar {
+        padding: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="kof-root"></div>
+  <script type="module" src="/ui/Default.mjs"></script>
+  <script type="module">
+    window.addEventListener("load", () => {
+      setTimeout(() => {
+        const btnSync = document.getElementById("btn-sync");
+        const btnDemo = document.getElementById("btn-seed-demo");
+        const kpiPastos = document.getElementById("kpi-pastos-val");
+        if (btnSync) {
+          btnSync.click();
+          if (kpiPastos && kpiPastos.textContent.trim() === "0" && btnDemo) {
+            btnDemo.click();
+          }
+        }
+      }, 80);
+    });
+  </script>
+</body>
+</html>
+EOF
+
+echo "Bundle Web KOF atualizado com sucesso em ${PUBLIC_DIR}/"

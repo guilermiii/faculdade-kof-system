@@ -11,6 +11,11 @@ registrarRotas(kof.web.App app, String conn, String oauthProvider) {
     app.serveDir("/ui", "public")
 
     app.get("/") {
+        setHeader("Content-Type", "text/html; charset=utf-8")
+        return "<!DOCTYPE html><html lang=\"pt-BR\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><meta name=\"service\" content=\"kof-gado-api\" data-ui=\"/ui\"><meta http-equiv=\"refresh\" content=\"0; url=/ui/\"><title>AgroKOF — Gestão Pecuária</title><script>window.location.replace('/ui/');</script></head><body style=\"background:#0b1120;color:#f8fafc;font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0\">Redirecionando para o AgroKOF Dashboard (<a href=\"/ui/\" style=\"color:#10b981\">/ui</a>)...</body></html>"
+    }
+
+    app.get("/api") {
         return "{\"service\":\"kof-gado-api\",\"status\":\"OK\",\"ui\":\"/ui\"}"
     }
 

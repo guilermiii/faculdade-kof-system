@@ -43,19 +43,35 @@ test "RNF06 - Instanciacao de Componentes e Formularios KOF UI (Window, Fieldset
     assert(sel.selected() == 0, "Select deve iniciar no indice 0")
 }
 
-test "RNF01 & RNF06 - Bundle Web KOFJS (public/index.html e public/Default.mjs) compilado com todos os modulos", "unit" {
+test "RNF01 & RNF06 - Bundle Web KOFJS (public/index.html, Default.mjs e kof-runtime.mjs) compilado e otimizado", "unit" {
     var indexFile = File("public/index.html")
     var mjsFile = File("public/Default.mjs")
+    var runtimeFile = File("public/kof-runtime.mjs")
     assert(indexFile.exists(), "Arquivo public/index.html deve existir apos build --target js")
     assert(mjsFile.exists(), "Arquivo public/Default.mjs deve existir apos build --target js")
+    assert(runtimeFile.exists(), "Arquivo public/kof-runtime.mjs deve existir apos build --target js")
+
+    var htmlContent = indexFile.readText()
+    assert(htmlContent != null, "Conteudo de index.html nao deve ser nulo")
+    if (htmlContent != null) {
+        assert(htmlContent.contains("/ui/Default.mjs"), "index.html deve importar /ui/Default.mjs com caminho absoluto")
+        assert(htmlContent.contains("kpi-grid"), "index.html deve conter o Design System moderno com KPI Grid")
+    }
 
     var mjsContent = mjsFile.readText()
     assert(mjsContent != null, "Conteudo de Default.mjs nao deve ser nulo")
     if (mjsContent != null) {
-        assert(mjsContent.contains("Gestao de Pastos"), "Bundle JS deve conter o modulo de Pastos (RF02)")
-        assert(mjsContent.contains("Gestao de Gado"), "Bundle JS deve conter o modulo de Gado (RF01, RF07)")
-        assert(mjsContent.contains("Medicamentos e Controle de Estoque"), "Bundle JS deve conter o modulo de Remedios/Estoque (RF03, RF06)")
-        assert(mjsContent.contains("Historico de Tratamentos"), "Bundle JS deve conter o modulo de Tratamentos (RF05)")
-        assert(mjsContent.contains("Perfil do Usuario"), "Bundle JS deve conter o modulo de Perfil OAuth2 (RF04, RNF08, RNF09)")
+        assert(mjsContent.contains("AgroKOF"), "Bundle JS deve conter a identidade AgroKOF")
+        assert(mjsContent.contains("1. Pastos & Piquetes"), "Bundle JS deve conter a aba de Pastos (RF02)")
+        assert(mjsContent.contains("2. Rebanho & Filtro"), "Bundle JS deve conter a aba de Rebanho e Filtro (RF01, RF07)")
+        assert(mjsContent.contains("3. Farmacia & Estoque"), "Bundle JS deve conter a aba de Farmacia e Estoque (RF03, RF06)")
+        assert(mjsContent.contains("4. Tratamentos Sanitarios"), "Bundle JS deve conter a aba de Tratamentos (RF05)")
+        assert(mjsContent.contains("5. Conta OAuth2"), "Bundle JS deve conter a aba de Conta OAuth2 (RF04, RNF08, RNF09)")
+    }
+
+    var runtimeContent = runtimeFile.readText()
+    assert(runtimeContent != null, "Conteudo de kof-runtime.mjs nao deve ser nulo")
+    if (runtimeContent != null) {
+        assert(runtimeContent.contains("XMLHttpRequest"), "kof-runtime.mjs deve conter transporte XMLHttpRequest sincrono para o browser")
     }
 }

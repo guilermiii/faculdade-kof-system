@@ -1,14 +1,73 @@
 // ============================================================================
-// Frontend Completo Multiplataforma Web & Mobile em KOF (RNF01, RNF06, RNF07)
+// AgroKOF — Dashboard SaaS de Gestao Pecuaria & Controle Sanitario
+// Frontend Multiplataforma Web & Mobile em KOF (RNF01, RNF06, RNF07)
 // Targets:
 //   Web (KofJS):   kof build ui/app_ui.kf --target js --output public
 //   Mobile (APK):  kof build ui/app_ui.kf --target android --apk
 // ============================================================================
 
+record PastoItem(
+    String id,
+    String nome,
+    Bool dono,
+    Int valor_cabeca
+)
+
+record GadoItem(
+    String id,
+    String nome,
+    Bool vaca_leitera,
+    String pasto_uuid,
+    String saudeVaca,
+    String numero_registro,
+    String mae,
+    String sexo,
+    String historico_tratamento_uuid,
+    String data_nascimento
+)
+
+record RemedioItem(
+    String id,
+    String nome,
+    String data_compra,
+    String data_vencimento,
+    Double valor,
+    String aplicacao,
+    Int estoque
+)
+
+record TratamentoItem(
+    String id,
+    String nome_doenca,
+    String gado_uuid,
+    String data_inicio,
+    String data_fim,
+    String observacoes
+)
+
+record TratamentoRemedioItem(
+    String id,
+    String fk_tratamento_uuid,
+    String fk_remedio_uuid,
+    Double dosagen
+)
+
 class UiState {
-    static Int fontScale = 16
+    static Int fontScale = 15
     static Bool darkTheme = true
-    static String apiBase = "http://localhost:8080"
+    static String apiBase = ""
+    static Int abaAtiva = 0
+
+    static List<String> pastoIds = listOf()
+    static List<String> pastoNomes = listOf()
+
+    static List<String> gadoIds = listOf()
+    static List<String> gadoNomes = listOf()
+
+    static List<String> remedioIds = listOf()
+    static List<String> remedioNomes = listOf()
+
+    static List<String> tratamentoIds = listOf()
 }
 
 Int calcularEscala(Int atual, Int delta) {
@@ -22,178 +81,789 @@ Int calcularEscala(Int atual, Int delta) {
     return nova
 }
 
-aplicarEscala(Label titulo, Label subtitulo, Label statusLabel) {
-    titulo.fontSize = UiState.fontScale + 6
-    subtitulo.fontSize = UiState.fontScale
-    statusLabel.fontSize = UiState.fontScale
+String nomeDoPastoPorId(String id) {
+    if (id == "") {
+        return "Sem pasto"
+    }
+    var i = 0
+    while (i < UiState.pastoIds.size()) {
+        if (UiState.pastoIds.get(i) == id) {
+            return UiState.pastoNomes.get(i)
+        }
+        i = i + 1
+    }
+    return id
+}
+
+String nomeDoRemedioPorId(String id) {
+    if (id == "") {
+        return "-"
+    }
+    var i = 0
+    while (i < UiState.remedioIds.size()) {
+        if (UiState.remedioIds.get(i) == id) {
+            return UiState.remedioNomes.get(i)
+        }
+        i = i + 1
+    }
+    return id
+}
+
+String nomeDoGadoPorId(String id) {
+    if (id == "") {
+        return "Nenhuma (Matriz Externa)"
+    }
+    var i = 0
+    while (i < UiState.gadoIds.size()) {
+        if (UiState.gadoIds.get(i) == id) {
+            return UiState.gadoNomes.get(i)
+        }
+        i = i + 1
+    }
+    return id
+}
+
+String formatarPosse(Bool dono) {
+    if (dono) {
+        return "Proprio (Fazenda)"
+    }
+    return "Arrendado (Terceiros)"
+}
+
+String formatarLeiteira(Bool leiteira) {
+    if (leiteira) {
+        return "Leiteira"
+    }
+    return "Corte / Misto"
+}
+
+String formatarAplicacao(String aplic) {
+    if (aplic == "INJECAO") {
+        return "Injecao (IM/SC)"
+    }
+    if (aplic == "CURA_FERIDAS") {
+        return "Cura de Feridas (Topico)"
+    }
+    if (aplic == "SORO_FISIOLOGICO") {
+        return "Soro Fisiologico (IV)"
+    }
+    return aplic
+}
+
+Column campoInput(String rotulo, Input controle) {
+    var lbl = Label(rotulo)
+    lbl.setClass("field-label")
+    var grupo = Column(listOf(lbl, controle))
+    grupo.setClass("field-group")
+    return grupo
+}
+
+Column campoSelect(String rotulo, Select controle) {
+    var lbl = Label(rotulo)
+    lbl.setClass("field-label")
+    var grupo = Column(listOf(lbl, controle))
+    grupo.setClass("field-group")
+    return grupo
+}
+
+Column campoTextarea(String rotulo, Textarea controle) {
+    var lbl = Label(rotulo)
+    lbl.setClass("field-label")
+    var grupo = Column(listOf(lbl, controle))
+    grupo.setClass("field-group")
+    return grupo
+}
+
+alternarAba(
+    Int indice,
+    Row p1, Row p2, Row p3, Row p4, Row p5
+) {
+    UiState.abaAtiva = indice
+    if (indice == 0) { p1.setClass("tab-panel") } else { p1.setClass("tab-panel hidden") }
+    if (indice == 1) { p2.setClass("tab-panel") } else { p2.setClass("tab-panel hidden") }
+    if (indice == 2) { p3.setClass("tab-panel") } else { p3.setClass("tab-panel hidden") }
+    if (indice == 3) { p4.setClass("tab-panel") } else { p4.setClass("tab-panel hidden") }
+    if (indice == 4) { p5.setClass("tab-panel") } else { p5.setClass("tab-panel hidden") }
+}
+
+sincronizarPastosUi(
+    Table tabelaPastos,
+    Select selPastoEditar,
+    Select selGadoPasto,
+    Select selFiltroPasto,
+    Label kpiPastosValor,
+    Label kpiPastosSub
+) {
+    var res = http.get(UiState.apiBase + "/pastos")
+    if (!res.startsWith("[")) {
+        return
+    }
+    var lista = json.decode<List<PastoItem>>(res)
+    var ids: List<String> = listOf()
+    var nomes: List<String> = listOf()
+    var opcoesSelect: List<String> = listOf()
+    var linhas: List<List<String>> = listOf()
+    var proprios = 0
+
+    var i = 0
+    while (i < lista.size()) {
+        var p = lista.get(i)
+        ids.add(p.id)
+        nomes.add(p.nome)
+        opcoesSelect.add(p.nome + " (R$ " + p.valor_cabeca + "/cab)")
+        if (p.dono) {
+            proprios = proprios + 1
+        }
+        linhas.add(listOf(
+            p.nome,
+            formatarPosse(p.dono),
+            "R$ " + p.valor_cabeca + ",00 / cabeca",
+            p.id
+        ))
+        i = i + 1
+    }
+
+    UiState.pastoIds = ids
+    UiState.pastoNomes = nomes
+
+    if (linhas.size() == 0) {
+        linhas.add(listOf("Nenhum pasto cadastrado", "Use o formulario ao lado ou clique em Popular Demo", "-", "-"))
+        opcoesSelect.add("Cadastre um pasto primeiro")
+    }
+
+    tabelaPastos.setRows(linhas)
+    selPastoEditar.setOptions(opcoesSelect)
+    selGadoPasto.setOptions(opcoesSelect)
+    selFiltroPasto.setOptions(opcoesSelect)
+
+    kpiPastosValor.text = "" + lista.size()
+    var arrendados = lista.size() - proprios
+    kpiPastosSub.text = "" + proprios + " proprios · " + arrendados + " arrendados"
+}
+
+popularTabelaGadosUi(List<GadoItem> lista, Table tabelaGados) {
+    var linhas: List<List<String>> = listOf()
+    var i = 0
+    while (i < lista.size()) {
+        var g = lista.get(i)
+        linhas.add(listOf(
+            g.numero_registro,
+            g.nome,
+            nomeDoPastoPorId(g.pasto_uuid),
+            g.saudeVaca,
+            g.sexo,
+            formatarLeiteira(g.vaca_leitera),
+            g.data_nascimento,
+            nomeDoGadoPorId(g.mae),
+            g.id
+        ))
+        i = i + 1
+    }
+    if (linhas.size() == 0) {
+        linhas.add(listOf("-", "Nenhum animal encontrado para este filtro", "-", "-", "-", "-", "-", "-", "-"))
+    }
+    tabelaGados.setRows(linhas)
+}
+
+sincronizarGadosUi(
+    Table tabelaGados,
+    Select selGadoEditar,
+    Select selGadoMae,
+    Select selTratGado,
+    Label kpiGadosValor,
+    Label kpiGadosSub
+) {
+    var res = http.get(UiState.apiBase + "/gados")
+    if (!res.startsWith("[")) {
+        return
+    }
+    var lista = json.decode<List<GadoItem>>(res)
+    var ids: List<String> = listOf()
+    var nomes: List<String> = listOf()
+    var opcoesAnimal: List<String> = listOf()
+    var opcoesMae: List<String> = listOf("Nenhuma (Matriz Externa)")
+    var saudaveis = 0
+    var leiteiras = 0
+
+    var i = 0
+    while (i < lista.size()) {
+        var g = lista.get(i)
+        ids.add(g.id)
+        nomes.add(g.nome + " [" + g.numero_registro + "]")
+        opcoesAnimal.add(g.nome + " (" + g.numero_registro + " · " + g.saudeVaca + ")")
+        opcoesMae.add(g.nome + " (" + g.numero_registro + ")")
+        if (g.saudeVaca == "SAUDAVEL") {
+            saudaveis = saudaveis + 1
+        }
+        if (g.vaca_leitera) {
+            leiteiras = leiteiras + 1
+        }
+        i = i + 1
+    }
+
+    UiState.gadoIds = ids
+    UiState.gadoNomes = nomes
+
+    if (opcoesAnimal.size() == 0) {
+        opcoesAnimal.add("Cadastre um animal primeiro")
+    }
+
+    popularTabelaGadosUi(lista, tabelaGados)
+    selGadoEditar.setOptions(opcoesAnimal)
+    selGadoMae.setOptions(opcoesMae)
+    selTratGado.setOptions(opcoesAnimal)
+
+    kpiGadosValor.text = "" + lista.size()
+    kpiGadosSub.text = "" + saudaveis + " saudaveis · " + leiteiras + " leiteiras"
+}
+
+sincronizarRemediosUi(
+    Table tabelaRemedios,
+    Select selRemedioEstoque,
+    Select selTratRemedio,
+    Label kpiRemediosValor,
+    Label kpiRemediosSub
+) {
+    var res = http.get(UiState.apiBase + "/remedios/estoque")
+    if (!res.startsWith("[")) {
+        return
+    }
+    var lista = json.decode<List<RemedioItem>>(res)
+    var ids: List<String> = listOf()
+    var nomes: List<String> = listOf()
+    var opcoesRemedio: List<String> = listOf()
+    var linhas: List<List<String>> = listOf()
+    var totalUnidades = 0
+
+    var i = 0
+    while (i < lista.size()) {
+        var r = lista.get(i)
+        ids.add(r.id)
+        nomes.add(r.nome)
+        opcoesRemedio.add(r.nome + " (Estoque: " + r.estoque + " un.)")
+        totalUnidades = totalUnidades + r.estoque
+        var situacao = "Normal"
+        if (r.estoque <= 5) {
+            situacao = "Estoque Baixo"
+        }
+        if (r.estoque == 0) {
+            situacao = "Esgotado"
+        }
+        linhas.add(listOf(
+            r.nome,
+            formatarAplicacao(r.aplicacao),
+            "R$ " + r.valor,
+            r.data_compra + " ate " + r.data_vencimento,
+            "" + r.estoque + " un. (" + situacao + ")",
+            r.id
+        ))
+        i = i + 1
+    }
+
+    UiState.remedioIds = ids
+    UiState.remedioNomes = nomes
+
+    if (linhas.size() == 0) {
+        linhas.add(listOf("Nenhum medicamento em estoque", "-", "-", "-", "-", "-"))
+        opcoesRemedio.add("Cadastre um medicamento primeiro")
+    }
+
+    tabelaRemedios.setRows(linhas)
+    selRemedioEstoque.setOptions(opcoesRemedio)
+    selTratRemedio.setOptions(opcoesRemedio)
+
+    kpiRemediosValor.text = "" + lista.size()
+    kpiRemediosSub.text = "" + totalUnidades + " doses/unidades disponiveis"
+}
+
+carregarHistoricoGadoUi(
+    String gadoId,
+    Table tabelaTratamentos,
+    Select selTratamentoVer,
+    Label kpiTratValor,
+    Label kpiTratSub
+) {
+    if (gadoId == "") {
+        return
+    }
+    var res = http.get(UiState.apiBase + "/gados/" + gadoId + "/tratamentos")
+    if (!res.startsWith("[")) {
+        return
+    }
+    var lista = json.decode<List<TratamentoItem>>(res)
+    var ids: List<String> = listOf()
+    var opcoesTrat: List<String> = listOf()
+    var linhas: List<List<String>> = listOf()
+
+    var i = 0
+    while (i < lista.size()) {
+        var t = lista.get(i)
+        ids.add(t.id)
+        opcoesTrat.add(t.nome_doenca + " (" + t.data_inicio + ")")
+        linhas.add(listOf(
+            t.nome_doenca,
+            nomeDoGadoPorId(t.gado_uuid),
+            t.data_inicio + " a " + t.data_fim,
+            t.observacoes,
+            t.id
+        ))
+        i = i + 1
+    }
+
+    UiState.tratamentoIds = ids
+    if (linhas.size() == 0) {
+        linhas.add(listOf("Sem tratamentos para este animal", nomeDoGadoPorId(gadoId), "-", "-", "-"))
+        opcoesTrat.add("Sem tratamentos registrados")
+    }
+
+    tabelaTratamentos.setRows(linhas)
+    selTratamentoVer.setOptions(opcoesTrat)
+    kpiTratValor.text = "" + lista.size()
+    kpiTratSub.text = "Registros clinicos do animal selecionado"
 }
 
 main() {
-    var w = Window("Sistema de Gestao de Gado - KOF")
-    w.size(1200, 860)
+    var w = Window("AgroKOF — Sistema de Gestao Pecuaria & Controle Sanitario")
     w.theme = Theme.dark()
 
-    var titulo = Label("Sistema de Gestao de Gado — Frontend KOF (Web & Mobile)")
-    titulo.bold = true
-    titulo.fontSize = 22
+    // ========================================================================
+    // 1. HEADER BAR (Identidade + Acessibilidade RNF06/RNF07 + Sincronizacao)
+    // ========================================================================
+    var brandTitle = Label("AgroKOF — Gestao Pecuaria & Controle Sanitario")
+    brandTitle.bold = true
+    brandTitle.fontSize = 22
+    brandTitle.setClass("brand-title")
 
-    var subtitulo = Label("Arquitetura Unificada 100% KOF + Banco Nativo SQLite + OAuth2 (Google / GitHub)")
-    subtitulo.fontSize = 16
+    var brandSubtitle = Label("Plataforma Unificada 100% KOF · Banco SQLite Embarcado · Autenticacao OAuth2")
+    brandSubtitle.fontSize = 14
+    brandSubtitle.setClass("brand-subtitle")
 
-    var statusLabel = Label("Pronto. Utilize os formularios abaixo para gerenciar Pastos, Gado, Remedios, Tratamentos e Perfil.")
-    statusLabel.fontSize = 16
+    var brandCol = Column(listOf(brandTitle, brandSubtitle))
+    brandCol.setClass("brand-col")
 
-    // ------------------------------------------------------------------------
-    // RNF07 - Barra de Acessibilidade: Aumentar/Diminuir Escala de Fontes e Tema
-    // ------------------------------------------------------------------------
-    var btnAumentarFonte = Button("+A (Aumentar Escala)", () -> {
-        UiState.fontScale = calcularEscala(UiState.fontScale, 2)
-        aplicarEscala(titulo, subtitulo, statusLabel)
-        statusLabel.text = "Acessibilidade (RNF07): Escala de fonte ajustada para " + UiState.fontScale + "px"
-    })
+    var statusBanner = Label("Sistema pronto. Clique em 'Sincronizar Dados' ou 'Popular Fazenda Demo' para carregar o painel.")
+    statusBanner.setClass("status-banner")
+    statusBanner.setId("status-banner")
 
-    var btnDiminuirFonte = Button("-A (Diminuir Escala)", () -> {
-        UiState.fontScale = calcularEscala(UiState.fontScale, -2)
-        aplicarEscala(titulo, subtitulo, statusLabel)
-        statusLabel.text = "Acessibilidade (RNF07): Escala de fonte ajustada para " + UiState.fontScale + "px"
-    })
+    // ========================================================================
+    // 2. CARDS DE KPI EM TEMPO REAL
+    // ========================================================================
+    var kpiPastosTitulo = Label("PASTOS & PIQUETES (RF02)")
+    kpiPastosTitulo.setClass("kpi-label")
+    var kpiPastosValor = Label("0")
+    kpiPastosValor.setClass("kpi-value")
+    kpiPastosValor.setId("kpi-pastos-val")
+    var kpiPastosSub = Label("0 proprios · 0 arrendados")
+    kpiPastosSub.setClass("kpi-sub")
+    var cardKpiPastos = Column(listOf(kpiPastosTitulo, kpiPastosValor, kpiPastosSub))
+    cardKpiPastos.setClass("kpi-card")
 
-    var btnAlternarTema = Button("Alternar Contraste / Tema (Dark / Light)", () -> {
-        UiState.darkTheme = !UiState.darkTheme
-        if (UiState.darkTheme) {
-            w.theme = Theme.dark()
-            statusLabel.text = "Acessibilidade: Tema escuro de alto contraste ativado"
-        } else {
-            w.theme = Theme.light()
-            statusLabel.text = "Acessibilidade: Tema claro ativado"
-        }
-    })
+    var kpiGadosTitulo = Label("REBANHO CADASTRADO (RF01/RF07)")
+    kpiGadosTitulo.setClass("kpi-label")
+    var kpiGadosValor = Label("0")
+    kpiGadosValor.setClass("kpi-value")
+    kpiGadosValor.setId("kpi-gados-val")
+    var kpiGadosSub = Label("0 saudaveis · 0 leiteiras")
+    kpiGadosSub.setClass("kpi-sub")
+    var cardKpiGados = Column(listOf(kpiGadosTitulo, kpiGadosValor, kpiGadosSub))
+    cardKpiGados.setClass("kpi-card")
 
-    var barraAcessibilidade = Fieldset(
-        listOf(Row(listOf(btnAumentarFonte, btnDiminuirFonte, btnAlternarTema))),
-        "Acessibilidade e Escala Dinamica de Fontes (RNF06, RNF07)"
+    var kpiRemediosTitulo = Label("FARMACIA & ESTOQUE (RF03/RF06)")
+    kpiRemediosTitulo.setClass("kpi-label")
+    var kpiRemediosValor = Label("0")
+    kpiRemediosValor.setClass("kpi-value")
+    kpiRemediosValor.setId("kpi-remedios-val")
+    var kpiRemediosSub = Label("0 doses/unidades disponiveis")
+    kpiRemediosSub.setClass("kpi-sub")
+    var cardKpiRemedios = Column(listOf(kpiRemediosTitulo, kpiRemediosValor, kpiRemediosSub))
+    cardKpiRemedios.setClass("kpi-card")
+
+    var kpiTratTitulo = Label("TRATAMENTOS SANITARIOS (RF05)")
+    kpiTratTitulo.setClass("kpi-label")
+    var kpiTratValor = Label("0")
+    kpiTratValor.setClass("kpi-value")
+    kpiTratValor.setId("kpi-trat-val")
+    var kpiTratSub = Label("Prontuario veterinario integrado")
+    kpiTratSub.setClass("kpi-sub")
+    var cardKpiTrat = Column(listOf(kpiTratTitulo, kpiTratValor, kpiTratSub))
+    cardKpiTrat.setClass("kpi-card")
+
+    var kpiGrid = Row(listOf(cardKpiPastos, cardKpiGados, cardKpiRemedios, cardKpiTrat))
+    kpiGrid.setClass("kpi-grid")
+
+    // ========================================================================
+    // 3. ELEMENTOS COMPARTILHADOS ENTRE ABAS (Dropdowns e Tabelas)
+    // ========================================================================
+    var selPastoEditar = Select(listOf("Carregue ou cadastre um pasto"))
+    selPastoEditar.setId("sel-pasto-editar")
+    var selGadoPasto = Select(listOf("Selecione o pasto de destino"))
+    selGadoPasto.setId("sel-gado-pasto")
+    var selFiltroPasto = Select(listOf("Selecione o pasto para filtrar"))
+    selFiltroPasto.setId("sel-filtro-pasto")
+
+    var selGadoEditar = Select(listOf("Selecione um animal do rebanho"))
+    selGadoEditar.setId("sel-gado-editar")
+    var selGadoMae = Select(listOf("Nenhuma (Matriz Externa)"))
+    selGadoMae.setId("sel-gado-mae")
+    var selTratGado = Select(listOf("Selecione o animal em tratamento"))
+    selTratGado.setId("sel-trat-gado")
+
+    var selRemedioEstoque = Select(listOf("Selecione o medicamento"))
+    selRemedioEstoque.setId("sel-remedio-estoque")
+    var selTratRemedio = Select(listOf("Selecione o medicamento aplicado"))
+    selTratRemedio.setId("sel-trat-remedio")
+
+    var selTratamentoVer = Select(listOf("Selecione um tratamento do historico"))
+    selTratamentoVer.setId("sel-tratamento-ver")
+
+    var tabelaPastos = Table(
+        listOf("Nome do Pasto / Piquete", "Regime de Posse", "Custo por Cabeca", "UUID"),
+        listOf(listOf("Nenhum pasto carregado", "Clique em Sincronizar ou Popular Demo", "-", "-"))
     )
+    tabelaPastos.setId("tabela-pastos")
 
-    // ------------------------------------------------------------------------
-    // Modulo 1: Gestao de Pastos (RF02)
-    // ------------------------------------------------------------------------
-    var inpPastoId = Input("UUID do Pasto (para atualizar/consultar)")
-    var inpPastoNome = Input("Nome do Pasto (ex: Pasto da Serra)")
-    var opcoesDono = listOf("true", "false")
-    var selPastoDono = Select(opcoesDono)
+    var tabelaGados = Table(
+        listOf("Registro", "Nome do Animal", "Pasto Alocado", "Saude", "Sexo", "Aptidao", "Nascimento", "Mae", "UUID"),
+        listOf(listOf("-", "Nenhum animal carregado", "-", "-", "-", "-", "-", "-", "-"))
+    )
+    tabelaGados.setId("tabela-gados")
+
+    var tabelaRemedios = Table(
+        listOf("Medicamento", "Via de Aplicacao", "Valor Unitario", "Compra e Validade", "Saldo em Estoque", "UUID"),
+        listOf(listOf("Nenhum medicamento carregado", "-", "-", "-", "-", "-"))
+    )
+    tabelaRemedios.setId("tabela-remedios")
+
+    var tabelaTratamentos = Table(
+        listOf("Doenca / Diagnostico", "Animal", "Periodo de Tratamento", "Observacoes Veterinarias", "UUID"),
+        listOf(listOf("Selecione um animal e consulte ou registre um tratamento", "-", "-", "-", "-"))
+    )
+    tabelaTratamentos.setId("tabela-tratamentos")
+
+    var tabelaReceituario = Table(
+        listOf("Medicamento Aplicado", "Dosagem Administrada", "ID Vinculo"),
+        listOf(listOf("Selecione um tratamento para ver as dosagens", "-", "-"))
+    )
+    tabelaReceituario.setId("tabela-receituario")
+
+    // ========================================================================
+    // ABA 1: GESTAO DE PASTOS E PIQUETES (RF02)
+    // ========================================================================
+    var inpPastoNome = Input("")
+    inpPastoNome.setPlaceholder("Ex: Piquete Santa Helena")
+    inpPastoNome.setId("inp-pasto-nome")
+
+    var opcoesPosse = listOf("Proprio (Fazenda)", "Arrendado (Terceiros)")
+    var selPastoDono = Select(opcoesPosse)
+    selPastoDono.setId("sel-pasto-dono")
+
     var inpPastoValor = Input("150")
+    inpPastoValor.setPlaceholder("Ex: 150")
+    inpPastoValor.setId("inp-pasto-valor")
 
-    var btnCriarPasto = Button("Cadastrar Pasto (POST)", () -> {
-        var donoStr = opcoesDono.get(selPastoDono.selected())
+    var inpPastoIdManual = Input("")
+    inpPastoIdManual.setPlaceholder("Opcional: UUID especifico (ou use o seletor acima)")
+    inpPastoIdManual.setId("inp-pasto-id")
+
+    var btnCriarPasto = Button("Cadastrar Novo Pasto", () -> {
+        var nome = inpPastoNome.text()
+        if (nome == "") {
+            nome = "Pasto Principal"
+        }
+        var donoStr = "true"
+        if (selPastoDono.selected() == 1) {
+            donoStr = "false"
+        }
         var valorStr = inpPastoValor.text()
         if (valorStr == "") {
             valorStr = "0"
         }
-        var payload = "{\"nome\":\"" + inpPastoNome.text() + "\",\"dono\":" + donoStr + ",\"valor_cabeca\":" + valorStr + "}"
+        var payload = "{\"nome\":\"" + nome + "\",\"dono\":" + donoStr + ",\"valor_cabeca\":" + valorStr + "}"
         var res = http.post(UiState.apiBase + "/pastos", payload)
-        statusLabel.text = "Pasto cadastrado (RF02): " + res
+        sincronizarPastosUi(tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiPastosValor, kpiPastosSub)
+        statusBanner.text = "Pasto cadastrado com sucesso (RF02): " + nome + " -> " + res
     })
+    btnCriarPasto.setClass("btn-primary")
+    btnCriarPasto.setId("btn-criar-pasto")
 
-    var btnAtualizarPasto = Button("Atualizar Pasto (PUT)", () -> {
-        var donoStr = opcoesDono.get(selPastoDono.selected())
+    var btnAtualizarPasto = Button("Atualizar Pasto Selecionado", () -> {
+        var targetId = inpPastoIdManual.text()
+        if (targetId == "" && UiState.pastoIds.size() > 0) {
+            targetId = UiState.pastoIds.get(selPastoEditar.selected())
+        }
+        var nome = inpPastoNome.text()
+        if (nome == "") {
+            nome = "Pasto Atualizado"
+        }
+        var donoStr = "true"
+        if (selPastoDono.selected() == 1) {
+            donoStr = "false"
+        }
         var valorStr = inpPastoValor.text()
         if (valorStr == "") {
             valorStr = "0"
         }
-        var payload = "{\"nome\":\"" + inpPastoNome.text() + "\",\"dono\":" + donoStr + ",\"valor_cabeca\":" + valorStr + "}"
-        var res = http.put(UiState.apiBase + "/pastos/" + inpPastoId.text(), payload)
-        statusLabel.text = "Pasto atualizado (RF02): " + res
+        var payload = "{\"nome\":\"" + nome + "\",\"dono\":" + donoStr + ",\"valor_cabeca\":" + valorStr + "}"
+        var res = http.put(UiState.apiBase + "/pastos/" + targetId, payload)
+        sincronizarPastosUi(tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiPastosValor, kpiPastosSub)
+        statusBanner.text = "Pasto atualizado com sucesso (RF02): " + res
     })
+    btnAtualizarPasto.setClass("btn-secondary")
+    btnAtualizarPasto.setId("btn-atualizar-pasto")
 
-    var btnListarPastos = Button("Listar Pastos (GET)", () -> {
-        var res = http.get(UiState.apiBase + "/pastos")
-        statusLabel.text = "Pastos cadastrados (RF02): " + res
+    var btnListarPastos = Button("Recarregar Tabela de Pastos", () -> {
+        sincronizarPastosUi(tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiPastosValor, kpiPastosSub)
+        statusBanner.text = "Lista de pastos sincronizada com o banco SQLite (" + UiState.pastoIds.size() + " pastos ativos)."
     })
+    btnListarPastos.setClass("btn-ghost")
+    btnListarPastos.setId("btn-listar-pastos")
 
-    var secaoPastos = Fieldset(
+    var formPastos = Fieldset(
         listOf(
-            Row(listOf(inpPastoId, inpPastoNome, selPastoDono, inpPastoValor)),
+            campoInput("Nome do Pasto ou Piquete *", inpPastoNome),
+            Row(listOf(
+                campoSelect("Regime de Posse *", selPastoDono),
+                campoInput("Custo Mensal por Cabeca (R$) *", inpPastoValor)
+            )),
+            Hr(),
+            campoSelect("Pasto Selecionado para Edicao", selPastoEditar),
+            campoInput("UUID Manual (opcional)", inpPastoIdManual),
             Row(listOf(btnCriarPasto, btnAtualizarPasto, btnListarPastos))
         ),
-        "1. Gestao de Pastos e Piquetes (RF02)"
+        "Cadastro e Edicao de Pastos (RF02)"
     )
+    formPastos.setClass("panel-card form-card")
 
-    // ------------------------------------------------------------------------
-    // Modulo 2: Gestao de Gado e Filtragem por Pasto (RF01, RF07)
-    // ------------------------------------------------------------------------
-    var inpGadoId = Input("UUID do Gado (para editar/excluir)")
-    var inpGadoNome = Input("Nome do Animal (ex: Mimosa)")
-    var inpGadoRegistro = Input("Registro (ex: BR-101)")
-    var inpGadoPasto = Input("UUID do Pasto Alocado (RF07)")
-    var inpGadoMae = Input("UUID da Mae (opcional)")
-    var inpGadoNasc = Input("2024-01-15")
+    var cardTabelaPastos = Fieldset(
+        listOf(tabelaPastos),
+        "Pastos e Piquetes Cadastrados na Fazenda"
+    )
+    cardTabelaPastos.setClass("panel-card table-card")
 
-    var opcoesSaude = listOf("SAUDAVEL", "RECUPERACAO", "DOENTE", "MORTO")
+    var painelPastos = Row(listOf(formPastos, cardTabelaPastos))
+    painelPastos.setClass("tab-panel")
+    painelPastos.setId("panel-pastos")
+
+    // ========================================================================
+    // ABA 2: REBANHO / GADO E FILTRAGEM POR PASTO (RF01, RF07)
+    // ========================================================================
+    var inpGadoNome = Input("")
+    inpGadoNome.setPlaceholder("Ex: Mimosa")
+    inpGadoNome.setId("inp-gado-nome")
+
+    var inpGadoRegistro = Input("")
+    inpGadoRegistro.setPlaceholder("Ex: BR-101")
+    inpGadoRegistro.setId("inp-gado-registro")
+
+    var inpGadoNasc = Input("2024-03-15")
+    inpGadoNasc.setPlaceholder("AAAA-MM-DD")
+    inpGadoNasc.setId("inp-gado-nasc")
+
+    var opcoesSaude = listOf("SAUDAVEL", "RECUPERACAO", "DOENTE", "MORTA")
     var selGadoSaude = Select(opcoesSaude)
+    selGadoSaude.setId("sel-gado-saude")
 
     var opcoesSexo = listOf("FEMEA", "MACHO")
     var selGadoSexo = Select(opcoesSexo)
+    selGadoSexo.setId("sel-gado-sexo")
 
-    var opcoesLeiteira = listOf("true", "false")
-    var selGadoLeiteira = Select(opcoesLeiteira)
+    var opcoesAptidao = listOf("Leiteira (Producao de Leite)", "Corte / Recria")
+    var selGadoLeiteira = Select(opcoesAptidao)
+    selGadoLeiteira.setId("sel-gado-leiteira")
 
-    var btnCriarGado = Button("Cadastrar Gado (POST)", () -> {
+    var inpGadoIdManual = Input("")
+    inpGadoIdManual.setPlaceholder("Opcional: UUID do animal (ou use o seletor acima)")
+    inpGadoIdManual.setId("inp-gado-id")
+
+    var inpGadoPastoManual = Input("")
+    inpGadoPastoManual.setPlaceholder("Opcional: UUID do pasto (ou use o seletor de pasto)")
+    inpGadoPastoManual.setId("inp-gado-pasto-manual")
+
+    var btnCriarGado = Button("Cadastrar Animal", () -> {
+        var nome = inpGadoNome.text()
+        if (nome == "") {
+            nome = "Bovino Sem Nome"
+        }
+        var reg = inpGadoRegistro.text()
+        if (reg == "") {
+            reg = "BR-001"
+        }
+        var pastoId = inpGadoPastoManual.text()
+        if (pastoId == "" && UiState.pastoIds.size() > 0) {
+            pastoId = UiState.pastoIds.get(selGadoPasto.selected())
+        }
+        var maeId = ""
+        var idxMae = selGadoMae.selected()
+        if (idxMae > 0 && (idxMae - 1) < UiState.gadoIds.size()) {
+            maeId = UiState.gadoIds.get(idxMae - 1)
+        }
         var saude = opcoesSaude.get(selGadoSaude.selected())
         var sexo = opcoesSexo.get(selGadoSexo.selected())
-        var leiteira = opcoesLeiteira.get(selGadoLeiteira.selected())
-        var payload = "{\"nome\":\"" + inpGadoNome.text() + "\",\"vaca_leitera\":" + leiteira + ",\"pasto_uuid\":\"" + inpGadoPasto.text() + "\",\"saudeVaca\":\"" + saude + "\",\"numero_registro\":\"" + inpGadoRegistro.text() + "\",\"mae\":\"" + inpGadoMae.text() + "\",\"sexo\":\"" + sexo + "\",\"historico_tratamento_uuid\":\"\",\"data_nascimento\":\"" + inpGadoNasc.text() + "\"}"
+        var leiteira = "true"
+        if (selGadoLeiteira.selected() == 1) {
+            leiteira = "false"
+        }
+        var payload = "{\"nome\":\"" + nome + "\",\"vaca_leitera\":" + leiteira + ",\"pasto_uuid\":\"" + pastoId + "\",\"saudeVaca\":\"" + saude + "\",\"numero_registro\":\"" + reg + "\",\"mae\":\"" + maeId + "\",\"sexo\":\"" + sexo + "\",\"historico_tratamento_uuid\":\"\",\"data_nascimento\":\"" + inpGadoNasc.text() + "\"}"
         var res = http.post(UiState.apiBase + "/gados", payload)
-        statusLabel.text = "Gado cadastrado (RF01): " + res
+        sincronizarGadosUi(tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiGadosValor, kpiGadosSub)
+        statusBanner.text = "Animal cadastrado no rebanho (RF01): " + nome + " [" + reg + "] -> " + res
     })
+    btnCriarGado.setClass("btn-primary")
+    btnCriarGado.setId("btn-criar-gado")
 
-    var btnAtualizarGado = Button("Atualizar Gado (PUT)", () -> {
+    var btnAtualizarGado = Button("Atualizar Animal Selecionado", () -> {
+        var gadoId = inpGadoIdManual.text()
+        if (gadoId == "" && UiState.gadoIds.size() > 0) {
+            gadoId = UiState.gadoIds.get(selGadoEditar.selected())
+        }
+        var nome = inpGadoNome.text()
+        if (nome == "") {
+            nome = "Bovino Atualizado"
+        }
+        var reg = inpGadoRegistro.text()
+        if (reg == "") {
+            reg = "BR-001"
+        }
+        var pastoId = inpGadoPastoManual.text()
+        if (pastoId == "" && UiState.pastoIds.size() > 0) {
+            pastoId = UiState.pastoIds.get(selGadoPasto.selected())
+        }
+        var maeId = ""
+        var idxMae = selGadoMae.selected()
+        if (idxMae > 0 && (idxMae - 1) < UiState.gadoIds.size()) {
+            maeId = UiState.gadoIds.get(idxMae - 1)
+        }
         var saude = opcoesSaude.get(selGadoSaude.selected())
         var sexo = opcoesSexo.get(selGadoSexo.selected())
-        var leiteira = opcoesLeiteira.get(selGadoLeiteira.selected())
-        var payload = "{\"nome\":\"" + inpGadoNome.text() + "\",\"vaca_leitera\":" + leiteira + ",\"pasto_uuid\":\"" + inpGadoPasto.text() + "\",\"saudeVaca\":\"" + saude + "\",\"numero_registro\":\"" + inpGadoRegistro.text() + "\",\"mae\":\"" + inpGadoMae.text() + "\",\"sexo\":\"" + sexo + "\",\"historico_tratamento_uuid\":\"\",\"data_nascimento\":\"" + inpGadoNasc.text() + "\"}"
-        var res = http.put(UiState.apiBase + "/gados/" + inpGadoId.text(), payload)
-        statusLabel.text = "Gado atualizado (RF01): " + res
+        var leiteira = "true"
+        if (selGadoLeiteira.selected() == 1) {
+            leiteira = "false"
+        }
+        var payload = "{\"nome\":\"" + nome + "\",\"vaca_leitera\":" + leiteira + ",\"pasto_uuid\":\"" + pastoId + "\",\"saudeVaca\":\"" + saude + "\",\"numero_registro\":\"" + reg + "\",\"mae\":\"" + maeId + "\",\"sexo\":\"" + sexo + "\",\"historico_tratamento_uuid\":\"\",\"data_nascimento\":\"" + inpGadoNasc.text() + "\"}"
+        var res = http.put(UiState.apiBase + "/gados/" + gadoId, payload)
+        sincronizarGadosUi(tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiGadosValor, kpiGadosSub)
+        statusBanner.text = "Cadastro do animal atualizado (RF01): " + res
     })
+    btnAtualizarGado.setClass("btn-secondary")
+    btnAtualizarGado.setId("btn-atualizar-gado")
 
-    var btnExcluirGado = Button("Excluir Gado (DELETE)", () -> {
-        var res = http.delete(UiState.apiBase + "/gados/" + inpGadoId.text())
-        statusLabel.text = "Gado removido (RF01): " + res
+    var btnExcluirGado = Button("Remover Animal", () -> {
+        var gadoId = inpGadoIdManual.text()
+        if (gadoId == "" && UiState.gadoIds.size() > 0) {
+            gadoId = UiState.gadoIds.get(selGadoEditar.selected())
+        }
+        var res = http.delete(UiState.apiBase + "/gados/" + gadoId)
+        sincronizarGadosUi(tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiGadosValor, kpiGadosSub)
+        statusBanner.text = "Animal removido do rebanho (RF01): " + res
     })
+    btnExcluirGado.setClass("btn-danger")
+    btnExcluirGado.setId("btn-excluir-gado")
 
-    var btnListarGado = Button("Listar Todo o Rebanho (GET)", () -> {
-        var res = http.get(UiState.apiBase + "/gados")
-        statusLabel.text = "Rebanho completo (RF01): " + res
-    })
-
-    var btnFiltrarPorPasto = Button("Filtrar Gado por Pasto (RF07)", () -> {
-        var pastoId = inpGadoPasto.text()
+    var btnFiltrarPorPasto = Button("Filtrar por Pasto (RF07)", () -> {
+        var pastoId = inpGadoPastoManual.text()
+        if (pastoId == "" && UiState.pastoIds.size() > 0) {
+            pastoId = UiState.pastoIds.get(selFiltroPasto.selected())
+        }
         var res = http.get(UiState.apiBase + "/pastos/" + pastoId + "/gados")
-        statusLabel.text = "Gados no pasto [" + pastoId + "] (RF07): " + res
+        if (res.startsWith("[")) {
+            var filtrados = json.decode<List<GadoItem>>(res)
+            popularTabelaGadosUi(filtrados, tabelaGados)
+            statusBanner.text = "Filtro RF07 aplicado: " + filtrados.size() + " animais alocados em " + nomeDoPastoPorId(pastoId)
+        } else {
+            statusBanner.text = "Resultado do filtro por pasto (RF07): " + res
+        }
     })
+    btnFiltrarPorPasto.setClass("btn-secondary")
+    btnFiltrarPorPasto.setId("btn-filtrar-pasto")
 
-    var secaoGado = Fieldset(
+    var btnListarGado = Button("Mostrar Todo o Rebanho", () -> {
+        sincronizarGadosUi(tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiGadosValor, kpiGadosSub)
+        statusBanner.text = "Exibindo rebanho completo (" + UiState.gadoIds.size() + " animais)."
+    })
+    btnListarGado.setClass("btn-ghost")
+    btnListarGado.setId("btn-listar-gado")
+
+    var formGado = Fieldset(
         listOf(
-            Row(listOf(inpGadoId, inpGadoNome, inpGadoRegistro, inpGadoPasto)),
-            Row(listOf(inpGadoMae, inpGadoNasc, selGadoSaude, selGadoSexo, selGadoLeiteira)),
-            Row(listOf(btnCriarGado, btnAtualizarGado, btnExcluirGado, btnListarGado, btnFiltrarPorPasto))
+            Row(listOf(
+                campoInput("Nome do Animal *", inpGadoNome),
+                campoInput("Numero de Registro / Brinco *", inpGadoRegistro)
+            )),
+            Row(listOf(
+                campoSelect("Pasto de Alocacao (RF07) *", selGadoPasto),
+                campoInput("Data de Nascimento *", inpGadoNasc)
+            )),
+            Row(listOf(
+                campoSelect("Estado Sanitario *", selGadoSaude),
+                campoSelect("Sexo *", selGadoSexo),
+                campoSelect("Aptidao *", selGadoLeiteira)
+            )),
+            campoSelect("Matriz / Mae (Genealogia)", selGadoMae),
+            Hr(),
+            campoSelect("Selecionar Animal para Edicao ou Exclusao", selGadoEditar),
+            Row(listOf(
+                campoInput("UUID Animal (opcional)", inpGadoIdManual),
+                campoInput("UUID Pasto (opcional)", inpGadoPastoManual)
+            )),
+            Row(listOf(btnCriarGado, btnAtualizarGado, btnExcluirGado))
         ),
-        "2. Gestao de Gado e Filtragem por Pasto (RF01, RF07)"
+        "Ficha Zootecnica do Animal (RF01)"
     )
+    formGado.setClass("panel-card form-card")
 
-    // ------------------------------------------------------------------------
-    // Modulo 3: Medicamentos e Controle de Estoque (RF03, RF06)
-    // ------------------------------------------------------------------------
-    var inpRemId = Input("UUID do Remedio (para atualizar estoque)")
-    var inpRemNome = Input("Nome do Remedio (ex: Ivermectina)")
-    var inpRemCompra = Input("2026-01-10")
-    var inpRemVenc = Input("2027-01-10")
-    var inpRemValor = Input("45.0")
-    var inpRemEstoque = Input("20")
+    var barraFiltroPasto = Row(listOf(
+        campoSelect("Filtrar Animais por Pasto / Piquete (RF07)", selFiltroPasto),
+        btnFiltrarPorPasto,
+        btnListarGado
+    ))
+    barraFiltroPasto.setClass("filter-bar")
 
-    var opcoesAplicacao = listOf("TOMAR", "PASSAR", "INJECAO", "SORO_FISIOLOGICO", "CURA_FERIDAS")
+    var cardTabelaGados = Fieldset(
+        listOf(barraFiltroPasto, tabelaGados),
+        "Relacao de Animais do Rebanho & Alocacao por Pasto (RF01, RF07)"
+    )
+    cardTabelaGados.setClass("panel-card table-card")
+
+    var painelGado = Row(listOf(formGado, cardTabelaGados))
+    painelGado.setClass("tab-panel hidden")
+    painelGado.setId("panel-gado")
+
+    // ========================================================================
+    // ABA 3: FARMACIA VETERINARIA E CONTROLE DE ESTOQUE (RF03, RF06)
+    // ========================================================================
+    var inpRemNome = Input("")
+    inpRemNome.setPlaceholder("Ex: Ivermectina 1% Injetavel")
+    inpRemNome.setId("inp-rem-nome")
+
+    var opcoesAplicacao = listOf("INJECAO", "CURA_FERIDAS", "SORO_FISIOLOGICO")
     var selRemAplicacao = Select(opcoesAplicacao)
+    selRemAplicacao.setId("sel-rem-aplicacao")
 
-    var btnCriarRemedio = Button("Cadastrar Remedio (POST)", () -> {
+    var inpRemValor = Input("48.50")
+    inpRemValor.setPlaceholder("Ex: 48.50")
+    inpRemValor.setId("inp-rem-valor")
+
+    var inpRemEstoque = Input("25")
+    inpRemEstoque.setPlaceholder("Ex: 25")
+    inpRemEstoque.setId("inp-rem-estoque")
+
+    var inpRemCompra = Input("2026-01-10")
+    inpRemCompra.setPlaceholder("AAAA-MM-DD")
+    inpRemCompra.setId("inp-rem-compra")
+
+    var inpRemVenc = Input("2027-06-30")
+    inpRemVenc.setPlaceholder("AAAA-MM-DD")
+    inpRemVenc.setId("inp-rem-venc")
+
+    var inpRemIdManual = Input("")
+    inpRemIdManual.setPlaceholder("Opcional: UUID do remedio (ou use o seletor acima)")
+    inpRemIdManual.setId("inp-rem-id")
+
+    var btnCriarRemedio = Button("Cadastrar Medicamento", () -> {
+        var nome = inpRemNome.text()
+        if (nome == "") {
+            nome = "Medicamento Veterinario"
+        }
         var aplic = opcoesAplicacao.get(selRemAplicacao.selected())
         var valorStr = inpRemValor.text()
         if (valorStr == "") {
@@ -203,133 +873,412 @@ main() {
         if (estStr == "") {
             estStr = "0"
         }
-        var payload = "{\"nome\":\"" + inpRemNome.text() + "\",\"data_compra\":\"" + inpRemCompra.text() + "\",\"data_vencimento\":\"" + inpRemVenc.text() + "\",\"valor\":" + valorStr + ",\"aplicacao\":\"" + aplic + "\",\"estoque\":" + estStr + "}"
+        var payload = "{\"nome\":\"" + nome + "\",\"data_compra\":\"" + inpRemCompra.text() + "\",\"data_vencimento\":\"" + inpRemVenc.text() + "\",\"valor\":" + valorStr + ",\"aplicacao\":\"" + aplic + "\",\"estoque\":" + estStr + "}"
         var res = http.post(UiState.apiBase + "/remedios", payload)
-        statusLabel.text = "Medicamento cadastrado (RF03): " + res
+        sincronizarRemediosUi(tabelaRemedios, selRemedioEstoque, selTratRemedio, kpiRemediosValor, kpiRemediosSub)
+        statusBanner.text = "Medicamento registrado na farmacia (RF03): " + nome + " -> " + res
     })
+    btnCriarRemedio.setClass("btn-primary")
+    btnCriarRemedio.setId("btn-criar-remedio")
 
-    var btnAtualizarEstoque = Button("Atualizar Estoque (PUT)", () -> {
+    var btnAtualizarEstoque = Button("Atualizar Quantidade em Estoque", () -> {
+        var remId = inpRemIdManual.text()
+        if (remId == "" && UiState.remedioIds.size() > 0) {
+            remId = UiState.remedioIds.get(selRemedioEstoque.selected())
+        }
         var estStr = inpRemEstoque.text()
         if (estStr == "") {
             estStr = "0"
         }
-        var res = http.put(UiState.apiBase + "/remedios/" + inpRemId.text() + "/estoque", "{\"estoque\":" + estStr + "}")
-        statusLabel.text = "Estoque atualizado (RF06): " + res
+        var res = http.put(UiState.apiBase + "/remedios/" + remId + "/estoque", "{\"estoque\":" + estStr + "}")
+        sincronizarRemediosUi(tabelaRemedios, selRemedioEstoque, selTratRemedio, kpiRemediosValor, kpiRemediosSub)
+        statusBanner.text = "Saldo de estoque atualizado (RF06): " + res
     })
+    btnAtualizarEstoque.setClass("btn-secondary")
+    btnAtualizarEstoque.setId("btn-atualizar-estoque")
 
-    var btnEstoqueRemedios = Button("Consultar Estoque (GET)", () -> {
-        var res = http.get(UiState.apiBase + "/remedios/estoque")
-        statusLabel.text = "Estoque de Medicamentos (RF06): " + res
+    var btnEstoqueRemedios = Button("Atualizar Inventario", () -> {
+        sincronizarRemediosUi(tabelaRemedios, selRemedioEstoque, selTratRemedio, kpiRemediosValor, kpiRemediosSub)
+        statusBanner.text = "Inventario da farmacia atualizado (" + UiState.remedioIds.size() + " medicamentos)."
     })
+    btnEstoqueRemedios.setClass("btn-ghost")
+    btnEstoqueRemedios.setId("btn-listar-estoque")
 
-    var secaoRemedios = Fieldset(
+    var formRemedios = Fieldset(
         listOf(
-            Row(listOf(inpRemId, inpRemNome, inpRemCompra, inpRemVenc)),
-            Row(listOf(inpRemValor, inpRemEstoque, selRemAplicacao)),
+            campoInput("Nome Comercial / Principio Ativo *", inpRemNome),
+            Row(listOf(
+                campoSelect("Via de Aplicacao *", selRemAplicacao),
+                campoInput("Custo Unitario (R$) *", inpRemValor),
+                campoInput("Qtd. em Estoque *", inpRemEstoque)
+            )),
+            Row(listOf(
+                campoInput("Data da Compra *", inpRemCompra),
+                campoInput("Data de Vencimento *", inpRemVenc)
+            )),
+            Hr(),
+            campoSelect("Selecionar Medicamento para Ajuste de Estoque (RF06)", selRemedioEstoque),
+            campoInput("UUID Medicamento (opcional)", inpRemIdManual),
             Row(listOf(btnCriarRemedio, btnAtualizarEstoque, btnEstoqueRemedios))
         ),
-        "3. Medicamentos e Controle de Estoque (RF03, RF06)"
+        "Cadastro de Medicamentos & Ajuste de Estoque (RF03, RF06)"
     )
+    formRemedios.setClass("panel-card form-card")
 
-    // ------------------------------------------------------------------------
-    // Modulo 4: Historico de Tratamentos e Dosagens (RF05, RF06)
-    // ------------------------------------------------------------------------
-    var inpTratId = Input("UUID do Tratamento (para ver remedios)")
-    var inpTratDoenca = Input("Nome da Doenca (ex: Mastite)")
-    var inpTratGado = Input("UUID do Gado em Tratamento")
-    var inpTratRemedio = Input("UUID do Remedio Aplicado")
+    var cardTabelaRemedios = Fieldset(
+        listOf(tabelaRemedios),
+        "Inventario de Medicamentos e Controle de Validade (RF06)"
+    )
+    cardTabelaRemedios.setClass("panel-card table-card")
+
+    var painelRemedios = Row(listOf(formRemedios, cardTabelaRemedios))
+    painelRemedios.setClass("tab-panel hidden")
+    painelRemedios.setId("panel-remedios")
+
+    // ========================================================================
+    // ABA 4: PRONTUARIO DE TRATAMENTOS E BAIXA DE ESTOQUE (RF05, RF06)
+    // ========================================================================
+    var inpTratDoenca = Input("")
+    inpTratDoenca.setPlaceholder("Ex: Mastite Clinica / Controle Endo-Ectoparasitas")
+    inpTratDoenca.setId("inp-trat-doenca")
+
     var inpTratDosagem = Input("10.0")
-    var inpTratInicio = Input("2026-10-17")
-    var inpTratFim = Input("2026-10-24")
-    var taTratObs = Textarea("Observacoes veterinarias e posologia")
+    inpTratDosagem.setPlaceholder("Ex: 10.0")
+    inpTratDosagem.setId("inp-trat-dosagem")
 
-    var btnRegistrarTratamento = Button("Registrar Tratamento + Baixar Estoque (POST)", () -> {
+    var inpTratInicio = Input("2026-10-17")
+    inpTratInicio.setPlaceholder("AAAA-MM-DD")
+    inpTratInicio.setId("inp-trat-inicio")
+
+    var inpTratFim = Input("2026-10-24")
+    inpTratFim.setPlaceholder("AAAA-MM-DD")
+    inpTratFim.setId("inp-trat-fim")
+
+    var taTratObs = Textarea("")
+    taTratObs.setPlaceholder("Descreva a posologia, evolucao clinica, periodo de carencia de leite/abate e recomendacoes veterinarias...")
+    taTratObs.setId("ta-trat-obs")
+
+    var inpTratGadoManual = Input("")
+    inpTratGadoManual.setPlaceholder("Opcional: UUID do animal")
+    inpTratGadoManual.setId("inp-trat-gado-manual")
+
+    var inpTratRemedioManual = Input("")
+    inpTratRemedioManual.setPlaceholder("Opcional: UUID do medicamento")
+    inpTratRemedioManual.setId("inp-trat-remedio-manual")
+
+    var inpTratIdManual = Input("")
+    inpTratIdManual.setPlaceholder("Opcional: UUID do tratamento")
+    inpTratIdManual.setId("inp-trat-id-manual")
+
+    var btnRegistrarTratamento = Button("Registrar Tratamento + Baixar Estoque", () -> {
+        var doenca = inpTratDoenca.text()
+        if (doenca == "") {
+            doenca = "Protocolo Sanitario Preventivo"
+        }
+        var gadoId = inpTratGadoManual.text()
+        if (gadoId == "" && UiState.gadoIds.size() > 0) {
+            gadoId = UiState.gadoIds.get(selTratGado.selected())
+        }
+        var remId = inpTratRemedioManual.text()
+        if (remId == "" && UiState.remedioIds.size() > 0) {
+            remId = UiState.remedioIds.get(selTratRemedio.selected())
+        }
         var dosStr = inpTratDosagem.text()
         if (dosStr == "") {
             dosStr = "1.0"
         }
-        var payload = "{\"nome_doenca\":\"" + inpTratDoenca.text() + "\",\"gado_uuid\":\"" + inpTratGado.text() + "\",\"data_inicio\":\"" + inpTratInicio.text() + "\",\"data_fim\":\"" + inpTratFim.text() + "\",\"observacoes\":\"" + taTratObs.text() + "\",\"fk_remedio_uuid\":\"" + inpTratRemedio.text() + "\",\"dosagen\":" + dosStr + "}"
+        var obs = taTratObs.text()
+        if (obs == "") {
+            obs = "Aplicacao supervisionada com baixa automatica de 1 unidade no estoque."
+        }
+        var payload = "{\"nome_doenca\":\"" + doenca + "\",\"gado_uuid\":\"" + gadoId + "\",\"data_inicio\":\"" + inpTratInicio.text() + "\",\"data_fim\":\"" + inpTratFim.text() + "\",\"observacoes\":\"" + obs + "\",\"fk_remedio_uuid\":\"" + remId + "\",\"dosagen\":" + dosStr + "}"
         var res = http.post(UiState.apiBase + "/tratamentos", payload)
-        statusLabel.text = "Tratamento registrado (RF05/RF06): " + res
+        sincronizarRemediosUi(tabelaRemedios, selRemedioEstoque, selTratRemedio, kpiRemediosValor, kpiRemediosSub)
+        carregarHistoricoGadoUi(gadoId, tabelaTratamentos, selTratamentoVer, kpiTratValor, kpiTratSub)
+        statusBanner.text = "Tratamento registrado e estoque debitado (RF05/RF06): " + res
     })
+    btnRegistrarTratamento.setClass("btn-primary")
+    btnRegistrarTratamento.setId("btn-registrar-tratamento")
 
-    var btnHistoricoGado = Button("Historico do Animal (GET)", () -> {
-        var res = http.get(UiState.apiBase + "/gados/" + inpTratGado.text() + "/tratamentos")
-        statusLabel.text = "Historico de Tratamentos do Animal (RF05): " + res
+    var btnHistoricoGado = Button("Consultar Historico do Animal", () -> {
+        var gadoId = inpTratGadoManual.text()
+        if (gadoId == "" && UiState.gadoIds.size() > 0) {
+            gadoId = UiState.gadoIds.get(selTratGado.selected())
+        }
+        carregarHistoricoGadoUi(gadoId, tabelaTratamentos, selTratamentoVer, kpiTratValor, kpiTratSub)
+        statusBanner.text = "Historico clinico carregado para o animal " + nomeDoGadoPorId(gadoId)
     })
+    btnHistoricoGado.setClass("btn-secondary")
+    btnHistoricoGado.setId("btn-historico-gado")
 
-    var btnRemediosTratamento = Button("Remedios do Tratamento (GET)", () -> {
-        var res = http.get(UiState.apiBase + "/tratamentos/" + inpTratId.text() + "/remedios")
-        statusLabel.text = "Medicamentos e Dosagens do Tratamento (RF05): " + res
+    var btnRemediosTratamento = Button("Ver Receituario e Dosagens", () -> {
+        var tratId = inpTratIdManual.text()
+        if (tratId == "" && UiState.tratamentoIds.size() > 0) {
+            tratId = UiState.tratamentoIds.get(selTratamentoVer.selected())
+        }
+        var res = http.get(UiState.apiBase + "/tratamentos/" + tratId + "/remedios")
+        if (res.startsWith("[")) {
+            var itens = json.decode<List<TratamentoRemedioItem>>(res)
+            var linhasRec: List<List<String>> = listOf()
+            var k = 0
+            while (k < itens.size()) {
+                var it = itens.get(k)
+                linhasRec.add(listOf(
+                    nomeDoRemedioPorId(it.fk_remedio_uuid),
+                    "" + it.dosagen + " mL / dose",
+                    it.id
+                ))
+                k = k + 1
+            }
+            if (linhasRec.size() == 0) {
+                linhasRec.add(listOf("Nenhum medicamento vinculado", "-", "-"))
+            }
+            tabelaReceituario.setRows(linhasRec)
+            statusBanner.text = "Receituario carregado (" + itens.size() + " medicamentos vinculados ao tratamento)."
+        } else {
+            statusBanner.text = "Receituario do tratamento (RF05): " + res
+        }
     })
+    btnRemediosTratamento.setClass("btn-ghost")
+    btnRemediosTratamento.setId("btn-remedios-tratamento")
 
-    var secaoTratamentos = Fieldset(
+    var formTratamentos = Fieldset(
         listOf(
-            Row(listOf(inpTratId, inpTratDoenca, inpTratGado, inpTratRemedio)),
-            Row(listOf(inpTratDosagem, inpTratInicio, inpTratFim)),
-            taTratObs,
-            Row(listOf(btnRegistrarTratamento, btnHistoricoGado, btnRemediosTratamento))
+            Row(listOf(
+                campoSelect("Animal em Tratamento *", selTratGado),
+                campoSelect("Medicamento Aplicado (Baixa Estoque) *", selTratRemedio)
+            )),
+            Row(listOf(
+                campoInput("Diagnostico / Nome da Doenca *", inpTratDoenca),
+                campoInput("Dosagem Aplicada (mL / mg) *", inpTratDosagem)
+            )),
+            Row(listOf(
+                campoInput("Data de Inicio *", inpTratInicio),
+                campoInput("Previsao de Alta *", inpTratFim)
+            )),
+            campoTextarea("Evolucao Clinica e Observacoes Veterinarias", taTratObs),
+            Hr(),
+            Row(listOf(
+                campoInput("UUID Animal (opcional)", inpTratGadoManual),
+                campoInput("UUID Medicamento (opcional)", inpTratRemedioManual),
+                campoInput("UUID Tratamento (opcional)", inpTratIdManual)
+            )),
+            Row(listOf(btnRegistrarTratamento, btnHistoricoGado))
         ),
-        "4. Historico de Tratamentos e Dosagens Veterinarias (RF05, RF06)"
+        "Prescricao Veterinaria & Baixa Automatica de Estoque (RF05, RF06)"
     )
+    formTratamentos.setClass("panel-card form-card")
 
-    // ------------------------------------------------------------------------
-    // Modulo 5: Perfil do Usuario OAuth2 (RF04, RNF08, RNF09)
-    // ------------------------------------------------------------------------
-    var inpPerfilNome = Input("Nome do Usuario")
-    var inpPerfilEmail = Input("E-mail do Usuario")
+    var barraReceituario = Row(listOf(
+        campoSelect("Tratamento Selecionado para Receituario", selTratamentoVer),
+        btnRemediosTratamento
+    ))
+    barraReceituario.setClass("filter-bar")
 
-    var btnPerfilOAuth = Button("Consultar Meu Perfil OAuth2 (GET)", () -> {
-        var res = http.get(UiState.apiBase + "/perfil")
-        statusLabel.text = "Perfil OAuth2 (RF04/RNF08): " + res
-    })
-
-    var btnAtualizarPerfil = Button("Salvar Perfil OAuth2 (PUT)", () -> {
-        var payload = "{\"nome\":\"" + inpPerfilNome.text() + "\",\"email\":\"" + inpPerfilEmail.text() + "\"}"
-        var res = http.put(UiState.apiBase + "/perfil", payload)
-        statusLabel.text = "Perfil atualizado com privacidade estrita (RF04/RNF09): " + res
-    })
-
-    var secaoPerfil = Fieldset(
-        listOf(
-            Row(listOf(inpPerfilNome, inpPerfilEmail)),
-            Row(listOf(btnPerfilOAuth, btnAtualizarPerfil))
-        ),
-        "5. Perfil do Usuario Autenticado via OAuth2 - Google / GitHub (RF04, RNF08, RNF09)"
+    var cardTabelaTratamentos = Fieldset(
+        listOf(tabelaTratamentos, Hr(), barraReceituario, tabelaReceituario),
+        "Prontuario Sanitario do Animal & Dosagens Aplicadas (RF05)"
     )
+    cardTabelaTratamentos.setClass("panel-card table-card")
 
-    // ------------------------------------------------------------------------
-    // Tabela de Mapeamento de Requisitos na Interface
-    // ------------------------------------------------------------------------
-    var tabelaModulos = Table(
-        listOf("Modulo", "Requisitos", "Rotas Integradas"),
+    var painelTratamentos = Row(listOf(formTratamentos, cardTabelaTratamentos))
+    painelTratamentos.setClass("tab-panel hidden")
+    painelTratamentos.setId("panel-tratamentos")
+
+    // ========================================================================
+    // ABA 5: PERFIL DO USUARIO AUTENTICADO VIA OAUTH2 (RF04, RNF08, RNF09)
+    // ========================================================================
+    var inpPerfilNome = Input("")
+    inpPerfilNome.setPlaceholder("Ex: Guilherme Silva (Gestor Agropecuario)")
+    inpPerfilNome.setId("inp-perfil-nome")
+
+    var inpPerfilEmail = Input("")
+    inpPerfilEmail.setPlaceholder("Ex: gestor@fazendakof.com.br")
+    inpPerfilEmail.setId("inp-perfil-email")
+
+    var tabelaPerfil = Table(
+        listOf("Propriedade", "Valor na Sessao OAuth2"),
         listOf(
-            listOf("Pastos e Piquetes", "RF02", "GET/POST /pastos, PUT /pastos/:id"),
-            listOf("Rebanho e Filtro por Pasto", "RF01, RF07", "CRUD /gados, GET /pastos/:id/gados"),
-            listOf("Medicamentos e Estoque", "RF03, RF06", "POST /remedios, GET /remedios/estoque, PUT /remedios/:id/estoque"),
-            listOf("Tratamentos e Dosagens", "RF05, RF06", "POST /tratamentos, GET /gados/:id/tratamentos"),
-            listOf("Perfil OAuth2 Privado", "RF04, RNF08, RNF09", "GET/PUT /perfil")
+            listOf("Provedores Suportados (RNF08)", "Google OAuth2 / GitHub OAuth2"),
+            listOf("Politica de Privacidade (RNF09)", "Coleta estrita de ID, Nome, E-mail e Provedor"),
+            listOf("Status da Sessao Atual", "Clique em 'Consultar Sessao OAuth2' para verificar")
         )
     )
+    tabelaPerfil.setId("tabela-perfil")
 
-    var cardStyle = Style("background: #1e293b; padding: 16; border-radius: 8")
-    var painelPrincipal = View(cardStyle)
-    var layout = Column(listOf(
-        titulo,
-        subtitulo,
-        barraAcessibilidade,
-        Hr(),
-        statusLabel,
-        Hr(),
-        secaoPastos,
-        secaoGado,
-        secaoRemedios,
-        secaoTratamentos,
-        secaoPerfil,
-        tabelaModulos
+    var btnPerfilOAuth = Button("Consultar Sessao OAuth2", () -> {
+        var res = http.get(UiState.apiBase + "/perfil")
+        tabelaPerfil.setRows(listOf(
+            listOf("Provedores Suportados (RNF08)", "Google OAuth2 / GitHub OAuth2"),
+            listOf("Politica de Privacidade (RNF09)", "Coleta minima sem rastreamento"),
+            listOf("Resposta da API (/perfil)", res)
+        ))
+        statusBanner.text = "Verificacao de Perfil OAuth2 (RF04/RNF08): " + res
+    })
+    btnPerfilOAuth.setClass("btn-secondary")
+    btnPerfilOAuth.setId("btn-consultar-perfil")
+
+    var btnAtualizarPerfil = Button("Salvar Dados do Perfil", () -> {
+        var payload = "{\"nome\":\"" + inpPerfilNome.text() + "\",\"email\":\"" + inpPerfilEmail.text() + "\"}"
+        var res = http.put(UiState.apiBase + "/perfil", payload)
+        tabelaPerfil.setRows(listOf(
+            listOf("Nome Informado", inpPerfilNome.text()),
+            listOf("E-mail Informado", inpPerfilEmail.text()),
+            listOf("Retorno do Servidor (/perfil)", res)
+        ))
+        statusBanner.text = "Atualizacao de Perfil OAuth2 (RF04/RNF09): " + res
+    })
+    btnAtualizarPerfil.setClass("btn-primary")
+    btnAtualizarPerfil.setId("btn-salvar-perfil")
+
+    var formPerfil = Fieldset(
+        listOf(
+            campoInput("Nome Completo do Produtor / Gestor", inpPerfilNome),
+            campoInput("E-mail Institucional (Vinculado ao OAuth2)", inpPerfilEmail),
+            Row(listOf(btnPerfilOAuth, btnAtualizarPerfil))
+        ),
+        "Dados da Conta OAuth2 — Google / GitHub (RF04, RNF08, RNF09)"
+    )
+    formPerfil.setClass("panel-card form-card")
+
+    var cardTabelaPerfil = Fieldset(
+        listOf(tabelaPerfil),
+        "Auditoria de Seguranca e Privacidade (RNF08, RNF09)"
+    )
+    cardTabelaPerfil.setClass("panel-card table-card")
+
+    var painelPerfil = Row(listOf(formPerfil, cardTabelaPerfil))
+    painelPerfil.setClass("tab-panel hidden")
+    painelPerfil.setId("panel-perfil")
+
+    // ========================================================================
+    // 4. BARRA DE NAVEGACAO POR ABAS E CONTROLES DE TOPO
+    // ========================================================================
+    var btnAbaPastos = Button("1. Pastos & Piquetes", () -> {
+        alternarAba(0, painelPastos, painelGado, painelRemedios, painelTratamentos, painelPerfil)
+    })
+    var btnAbaGado = Button("2. Rebanho & Filtro", () -> {
+        alternarAba(1, painelPastos, painelGado, painelRemedios, painelTratamentos, painelPerfil)
+    })
+    var btnAbaRemedios = Button("3. Farmacia & Estoque", () -> {
+        alternarAba(2, painelPastos, painelGado, painelRemedios, painelTratamentos, painelPerfil)
+    })
+    var btnAbaTratamentos = Button("4. Tratamentos Sanitarios", () -> {
+        alternarAba(3, painelPastos, painelGado, painelRemedios, painelTratamentos, painelPerfil)
+    })
+    var btnAbaPerfil = Button("5. Conta OAuth2", () -> {
+        alternarAba(4, painelPastos, painelGado, painelRemedios, painelTratamentos, painelPerfil)
+    })
+
+    btnAbaPastos.setClass("tab-btn active")
+    btnAbaGado.setClass("tab-btn")
+    btnAbaRemedios.setClass("tab-btn")
+    btnAbaTratamentos.setClass("tab-btn")
+    btnAbaPerfil.setClass("tab-btn")
+
+    btnAbaPastos.setId("tab-pastos")
+    btnAbaGado.setId("tab-gado")
+    btnAbaRemedios.setId("tab-remedios")
+    btnAbaTratamentos.setId("tab-tratamentos")
+    btnAbaPerfil.setId("tab-perfil")
+
+    var navTabs = Row(listOf(btnAbaPastos, btnAbaGado, btnAbaRemedios, btnAbaTratamentos, btnAbaPerfil))
+    navTabs.setClass("tabs-bar")
+
+    // Controles do Header: Sincronizar, Popular Demo, Acessibilidade (A-, A+, Tema)
+    var btnSync = Button("Sincronizar Dados", () -> {
+        sincronizarPastosUi(tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiPastosValor, kpiPastosSub)
+        sincronizarGadosUi(tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiGadosValor, kpiGadosSub)
+        sincronizarRemediosUi(tabelaRemedios, selRemedioEstoque, selTratRemedio, kpiRemediosValor, kpiRemediosSub)
+        if (UiState.gadoIds.size() > 0) {
+            carregarHistoricoGadoUi(UiState.gadoIds.get(0), tabelaTratamentos, selTratamentoVer, kpiTratValor, kpiTratSub)
+        }
+        statusBanner.text = "Painel sincronizado: " + UiState.pastoIds.size() + " pastos, " + UiState.gadoIds.size() + " animais e " + UiState.remedioIds.size() + " medicamentos."
+    })
+    btnSync.setClass("btn-secondary")
+    btnSync.setId("btn-sync")
+
+    var btnSeedDemo = Button("Popular Fazenda Demo", () -> {
+        http.post(UiState.apiBase + "/pastos", "{\"nome\":\"Piquete Santa Helena\",\"dono\":true,\"valor_cabeca\":140}")
+        http.post(UiState.apiBase + "/pastos", "{\"nome\":\"Pasto da Represa\",\"dono\":false,\"valor_cabeca\":185}")
+        sincronizarPastosUi(tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiPastosValor, kpiPastosSub)
+
+        var p1 = ""
+        if (UiState.pastoIds.size() > 0) {
+            p1 = UiState.pastoIds.get(0)
+        }
+        http.post(UiState.apiBase + "/gados", "{\"nome\":\"Mimosa\",\"vaca_leitera\":true,\"pasto_uuid\":\"" + p1 + "\",\"saudeVaca\":\"SAUDAVEL\",\"numero_registro\":\"BR-101\",\"mae\":\"\",\"sexo\":\"FEMEA\",\"historico_tratamento_uuid\":\"\",\"data_nascimento\":\"2022-04-12\"}")
+        http.post(UiState.apiBase + "/gados", "{\"nome\":\"Estrela\",\"vaca_leitera\":true,\"pasto_uuid\":\"" + p1 + "\",\"saudeVaca\":\"RECUPERACAO\",\"numero_registro\":\"BR-102\",\"mae\":\"\",\"sexo\":\"FEMEA\",\"historico_tratamento_uuid\":\"\",\"data_nascimento\":\"2023-08-20\"}")
+        sincronizarGadosUi(tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiGadosValor, kpiGadosSub)
+
+        http.post(UiState.apiBase + "/remedios", "{\"nome\":\"Ivermectina 1% Ourofino\",\"data_compra\":\"2026-01-15\",\"data_vencimento\":\"2027-12-31\",\"valor\":54.9,\"aplicacao\":\"INJECAO\",\"estoque\":30}")
+        http.post(UiState.apiBase + "/remedios", "{\"nome\":\"Spray Cicatrizante Prata\",\"data_compra\":\"2026-02-10\",\"data_vencimento\":\"2028-02-10\",\"valor\":32.0,\"aplicacao\":\"CURA_FERIDAS\",\"estoque\":15}")
+        sincronizarRemediosUi(tabelaRemedios, selRemedioEstoque, selTratRemedio, kpiRemediosValor, kpiRemediosSub)
+
+        if (UiState.gadoIds.size() > 0 && UiState.remedioIds.size() > 0) {
+            var gId = UiState.gadoIds.get(0)
+            var rId = UiState.remedioIds.get(0)
+            http.post(UiState.apiBase + "/tratamentos", "{\"nome_doenca\":\"Controle Preventivo de Parasitas\",\"gado_uuid\":\"" + gId + "\",\"data_inicio\":\"2026-10-17\",\"data_fim\":\"2026-10-20\",\"observacoes\":\"Dose unica subcutanea aplicada no manejo matinal.\",\"fk_remedio_uuid\":\"" + rId + "\",\"dosagen\":10.0}")
+            sincronizarRemediosUi(tabelaRemedios, selRemedioEstoque, selTratRemedio, kpiRemediosValor, kpiRemediosSub)
+            carregarHistoricoGadoUi(gId, tabelaTratamentos, selTratamentoVer, kpiTratValor, kpiTratSub)
+        }
+        statusBanner.text = "Fazenda Demo carregada com sucesso! Todos os pastos, animais, medicamentos e tratamentos foram populados."
+    })
+    btnSeedDemo.setClass("btn-primary")
+    btnSeedDemo.setId("btn-seed-demo")
+
+    var btnDiminuirFonte = Button("A-", () -> {
+        UiState.fontScale = calcularEscala(UiState.fontScale, -2)
+        brandTitle.fontSize = UiState.fontScale + 7
+        brandSubtitle.fontSize = UiState.fontScale - 1
+        statusBanner.fontSize = UiState.fontScale
+        statusBanner.text = "Acessibilidade (RNF07): Escala tipografica ajustada para " + UiState.fontScale + "px"
+    })
+    btnDiminuirFonte.setClass("btn-icon")
+    btnDiminuirFonte.setId("btn-font-dec")
+
+    var btnAumentarFonte = Button("A+", () -> {
+        UiState.fontScale = calcularEscala(UiState.fontScale, 2)
+        brandTitle.fontSize = UiState.fontScale + 7
+        brandSubtitle.fontSize = UiState.fontScale - 1
+        statusBanner.fontSize = UiState.fontScale
+        statusBanner.text = "Acessibilidade (RNF07): Escala tipografica ajustada para " + UiState.fontScale + "px"
+    })
+    btnAumentarFonte.setClass("btn-icon")
+    btnAumentarFonte.setId("btn-font-inc")
+
+    var btnAlternarTema = Button("Tema Claro / Escuro", () -> {
+        UiState.darkTheme = !UiState.darkTheme
+        if (UiState.darkTheme) {
+            w.theme = Theme.dark()
+            statusBanner.text = "Acessibilidade (RNF06): Tema Escuro (Dark Slate) ativado."
+        } else {
+            w.theme = Theme.light()
+            statusBanner.text = "Acessibilidade (RNF06): Tema Claro de Alto Contraste ativado."
+        }
+    })
+    btnAlternarTema.setClass("btn-icon")
+    btnAlternarTema.setId("btn-theme-toggle")
+
+    var headerActions = Row(listOf(btnSeedDemo, btnSync, btnDiminuirFonte, btnAumentarFonte, btnAlternarTema))
+    headerActions.setClass("header-actions")
+
+    var topbar = Row(listOf(brandCol, headerActions))
+    topbar.setClass("app-topbar")
+
+    var shell = Column(listOf(
+        topbar,
+        kpiGrid,
+        statusBanner,
+        navTabs,
+        painelPastos,
+        painelGado,
+        painelRemedios,
+        painelTratamentos,
+        painelPerfil
     ))
+    shell.setClass("app-shell")
 
-    painelPrincipal.bind(layout)
-    w.bind(painelPrincipal)
+    w.bind(shell)
     w.show()
 }

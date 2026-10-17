@@ -1,3 +1,11 @@
+---
+name: kof_engineering
+description: >-
+  KOF Language Specialist (MVP & Core Development). Use when writing, planning,
+  or reviewing KOF (.kf) applications, web servers (kof.web), database/ORM integrations
+  (kof.db, kof.orm), UI (kof.ui), and minimal KOF Dockerfiles.
+---
+
 # Skill: KOF Language Specialist (MVP & Core Development)
 
 ## Persona & Core Identity

@@ -1,6 +1,7 @@
 // ============================================================================
-// AgroKOF — Dashboard SaaS de Gestao Pecuaria & Controle Sanitario
-// Frontend Multiplataforma Web & Mobile em KOF (RNF01, RNF06, RNF07)
+// Estocaê / AgroKOF — Controle de Estoque Inteligente & Gestao Pecuaria
+// Frontend Multiplataforma Web & Mobile 100% em KOF (RNF01, RNF06, RNF07)
+// Modelo Visual: Estocaê (Figma Community)
 // Targets:
 //   Web (KofJS):   kof build ui/app_ui.kf --target js --output public
 //   Mobile (APK):  kof build ui/app_ui.kf --target android --apk
@@ -53,10 +54,12 @@ record TratamentoRemedioItem(
 )
 
 class UiState {
-    static Int fontScale = 15
-    static Bool darkTheme = true
+    static Int fontScale = 14
+    static Bool darkTheme = false
     static String apiBase = ""
     static Int abaAtiva = 0
+    static Int tipoMovimentacao = 0
+    static Int periodoGrafico = 0
 
     static List<String> pastoIds = listOf()
     static List<String> pastoNomes = listOf()
@@ -66,6 +69,7 @@ class UiState {
 
     static List<String> remedioIds = listOf()
     static List<String> remedioNomes = listOf()
+    static List<Int> remedioEstoques = listOf()
 
     static List<String> tratamentoIds = listOf()
 }
@@ -111,7 +115,7 @@ String nomeDoRemedioPorId(String id) {
 
 String nomeDoGadoPorId(String id) {
     if (id == "") {
-        return "Nenhuma (Matriz Externa)"
+        return "Matriz Externa"
     }
     var i = 0
     while (i < UiState.gadoIds.size()) {
@@ -125,27 +129,27 @@ String nomeDoGadoPorId(String id) {
 
 String formatarPosse(Bool dono) {
     if (dono) {
-        return "Proprio (Fazenda)"
+        return "Ativo (Proprio)"
     }
-    return "Arrendado (Terceiros)"
+    return "Arrendado"
 }
 
 String formatarLeiteira(Bool leiteira) {
     if (leiteira) {
         return "Leiteira"
     }
-    return "Corte / Misto"
+    return "Corte / Recria"
 }
 
 String formatarAplicacao(String aplic) {
     if (aplic == "INJECAO") {
-        return "Injecao (IM/SC)"
+        return "Injetavel (IM/SC)"
     }
     if (aplic == "CURA_FERIDAS") {
-        return "Cura de Feridas (Topico)"
+        return "Topico / Cicatrizante"
     }
     if (aplic == "SORO_FISIOLOGICO") {
-        return "Soro Fisiologico (IV)"
+        return "Hidratacao (IV)"
     }
     return aplic
 }
@@ -174,25 +178,272 @@ Column campoTextarea(String rotulo, Textarea controle) {
     return grupo
 }
 
-alternarAba(
-    Int indice,
-    Row p1, Row p2, Row p3, Row p4, Row p5
-) {
-    UiState.abaAtiva = indice
-    if (indice == 0) { p1.setClass("tab-panel") } else { p1.setClass("tab-panel hidden") }
-    if (indice == 1) { p2.setClass("tab-panel") } else { p2.setClass("tab-panel hidden") }
-    if (indice == 2) { p3.setClass("tab-panel") } else { p3.setClass("tab-panel hidden") }
-    if (indice == 3) { p4.setClass("tab-panel") } else { p4.setClass("tab-panel hidden") }
-    if (indice == 4) { p5.setClass("tab-panel") } else { p5.setClass("tab-panel hidden") }
+Row criarSwitchRow(String titulo, String subtitulo, Bool inicialAtivo) {
+    var t = Label(titulo)
+    t.setClass("switch-title")
+    var s = Label(subtitulo)
+    s.setClass("switch-sub")
+    var colTxt = Column(listOf(t, s))
+    colTxt.setClass("switch-text-col")
+
+    var estado = inicialAtivo
+    var btnToggle = Button("", () -> {})
+    if (estado) {
+        btnToggle.setClass("estocae-switch on")
+    } else {
+        btnToggle.setClass("estocae-switch off")
+    }
+    btnToggle.on("click", (e) -> {
+        estado = !estado
+        if (estado) {
+            btnToggle.setClass("estocae-switch on")
+        } else {
+            btnToggle.setClass("estocae-switch off")
+        }
+    })
+
+    var linha = Row(listOf(colTxt, btnToggle))
+    linha.setClass("switch-row")
+    return linha
 }
 
+Row criarPaginacaoEstocae() {
+    var bPrev = Button("<", () -> {})
+    bPrev.setClass("page-btn")
+    var b1 = Button("1", () -> {})
+    b1.setClass("page-btn active")
+    var b2 = Button("2", () -> {})
+    b2.setClass("page-btn")
+    var b3 = Button("3", () -> {})
+    b3.setClass("page-btn")
+    var b4 = Button("4", () -> {})
+    b4.setClass("page-btn")
+    var b5 = Button("5", () -> {})
+    b5.setClass("page-btn")
+    var bNext = Button(">", () -> {})
+    bNext.setClass("page-btn")
+    var pag = Row(listOf(bPrev, b1, b2, b3, b4, b5, bNext))
+    pag.setClass("pagination-bar")
+    return pag
+}
+
+// ============================================================================
+// GRAFICOS EM CANVAS NATIVO KOF (Fiel a Imagem 1 do Prototipo Estocae)
+// ============================================================================
+desenharGraficoLinha(Canvas cv, Int variante) {
+    cv.clearRect(0, 0, 660, 220)
+
+    var corGrade = Color.rgba(229, 231, 235, 255)
+    var corTexto = Color.rgba(107, 114, 128, 255)
+    var corAzul = Color.rgba(37, 99, 235, 255)
+    var corAzulArea = Color.rgba(239, 246, 255, 255)
+    var corVerde = Color.rgba(16, 185, 129, 255)
+    var corBranco = Color.rgba(255, 255, 255, 255)
+
+    var yLevels = listOf(25, 55, 85, 115, 145, 175)
+    var yLabels = listOf("50", "40", "30", "20", "10", "0")
+    var xs = listOf(42, 141, 240, 339, 438, 537, 636)
+    var meses = listOf("Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul")
+
+    // Coordenadas da serie Azul (Quant. Atual de Estoque)
+    var ysAzul = listOf(78, 84, 54, 53, 46, 36, 25)
+    if (variante == 1) {
+        ysAzul = listOf(90, 70, 62, 48, 52, 34, 28)
+    }
+    if (variante == 2) {
+        ysAzul = listOf(64, 60, 58, 44, 40, 32, 24)
+    }
+
+    // Coordenadas da serie Verde (Estoque Ideal)
+    var ysVerde = listOf(128, 134, 117, 115, 110, 105, 99)
+
+    // 1. Preenchimento suave azul-claro sob a curva
+    cv.setFill(corAzulArea)
+    cv.beginPath()
+    cv.moveTo(xs.get(0), 175)
+    var k = 0
+    while (k < 7) {
+        cv.lineTo(xs.get(k), ysAzul.get(k))
+        k = k + 1
+    }
+    cv.lineTo(xs.get(6), 175)
+    cv.closePath()
+    cv.fill()
+
+    // 2. Linhas horizontais de grade e eixo Y (50, 40, 30, 20, 10, 0)
+    cv.setStroke(corGrade)
+    cv.setLineWidth(1)
+    cv.setFill(corTexto)
+    var i = 0
+    while (i < 6) {
+        var y = yLevels.get(i)
+        cv.fillText(yLabels.get(i), 10, y + 4)
+        cv.beginPath()
+        cv.moveTo(42, y)
+        cv.lineTo(636, y)
+        cv.stroke()
+        i = i + 1
+    }
+
+    // 3. Eixo X (Jan a Jul)
+    var m = 0
+    while (m < 7) {
+        cv.fillText(meses.get(m), xs.get(m) - 10, 202)
+        m = m + 1
+    }
+
+    // 4. Linha Azul (Quant. Atual de Estoque)
+    cv.setStroke(corAzul)
+    cv.setLineWidth(2)
+    cv.beginPath()
+    cv.moveTo(xs.get(0), ysAzul.get(0))
+    var a = 1
+    while (a < 7) {
+        cv.lineTo(xs.get(a), ysAzul.get(a))
+        a = a + 1
+    }
+    cv.stroke()
+
+    // 5. Linha Verde (Estoque Ideal)
+    cv.setStroke(corVerde)
+    cv.setLineWidth(2)
+    cv.beginPath()
+    cv.moveTo(xs.get(0), ysVerde.get(0))
+    var b = 1
+    while (b < 7) {
+        cv.lineTo(xs.get(b), ysVerde.get(b))
+        b = b + 1
+    }
+    cv.stroke()
+
+    // Marcadores circulares vazados na serie Azul e Verde
+    var p = 0
+    while (p < 7) {
+        // Ponto Azul
+        cv.setFill(corBranco)
+        cv.setStroke(corAzul)
+        cv.setLineWidth(2)
+        cv.beginPath()
+        cv.arc(xs.get(p), ysAzul.get(p), 4, 0.0, 6.28318)
+        cv.fill()
+        cv.stroke()
+
+        // Ponto Verde
+        cv.setFill(corBranco)
+        cv.setStroke(corVerde)
+        cv.setLineWidth(2)
+        cv.beginPath()
+        cv.arc(xs.get(p), ysVerde.get(p), 4, 0.0, 6.28318)
+        cv.fill()
+        cv.stroke()
+        p = p + 1
+    }
+}
+
+desenharGraficoDonut(Canvas cv) {
+    cv.clearRect(0, 0, 220, 190)
+
+    var cx = 110
+    var cy = 95
+    var raio = 64
+
+    var corRoxo = Color.rgba(139, 92, 246, 255)
+    var corAzul = Color.rgba(37, 99, 235, 255)
+    var corVerde = Color.rgba(16, 185, 129, 255)
+    var corLaranja = Color.rgba(245, 158, 11, 255)
+
+    cv.setLineWidth(20)
+
+    // Segmento 1: Roxo (40% -> de 2.6 a 5.1 rad)
+    cv.setStroke(corRoxo)
+    cv.beginPath()
+    cv.arc(cx, cy, raio, 2.60, 5.10)
+    cv.stroke()
+
+    // Segmento 2: Azul (20% -> de 5.1 a 6.15 rad)
+    cv.setStroke(corAzul)
+    cv.beginPath()
+    cv.arc(cx, cy, raio, 5.10, 6.15)
+    cv.stroke()
+
+    // Segmento 3: Verde (25% -> de -0.13 a 1.75 rad)
+    cv.setStroke(corVerde)
+    cv.beginPath()
+    cv.arc(cx, cy, raio, -0.13, 1.75)
+    cv.stroke()
+
+    // Segmento 4: Laranja (15% -> de 1.75 a 2.60 rad)
+    cv.setStroke(corLaranja)
+    cv.beginPath()
+    cv.arc(cx, cy, raio, 1.75, 2.60)
+    cv.stroke()
+}
+
+// ============================================================================
+// NAVEGACAO LATERAL ENTRE TELAS (6 VISOES DO ESTOCAE)
+// ============================================================================
+alternarTela(
+    Int indice,
+    Label tituloTopo,
+    Column vDash,
+    Column vGado,
+    Column vRemedios,
+    Column vPastos,
+    Column vTratamentos,
+    Column vSistema
+) {
+    UiState.abaAtiva = indice
+    if (indice == 0) {
+        vDash.setClass("view-screen")
+        tituloTopo.text = "Dashboard Overview"
+    } else {
+        vDash.setClass("view-screen hidden")
+    }
+    if (indice == 1) {
+        vGado.setClass("view-screen")
+        tituloTopo.text = "Inventario de Produtos & Rebanho (RF01, RF07)"
+    } else {
+        vGado.setClass("view-screen hidden")
+    }
+    if (indice == 2) {
+        vRemedios.setClass("view-screen")
+        tituloTopo.text = "Controle de Estoque & Farmacia (RF03, RF06)"
+    } else {
+        vRemedios.setClass("view-screen hidden")
+    }
+    if (indice == 3) {
+        vPastos.setClass("view-screen")
+        tituloTopo.text = "Fornecedores, Pastos & Piquetes (RF02)"
+    } else {
+        vPastos.setClass("view-screen hidden")
+    }
+    if (indice == 4) {
+        vTratamentos.setClass("view-screen")
+        tituloTopo.text = "Movimentacoes & Tratamentos Sanitarios (RF05, RF06)"
+    } else {
+        vTratamentos.setClass("view-screen hidden")
+    }
+    if (indice == 5) {
+        vSistema.setClass("view-screen")
+        tituloTopo.text = "Configuracoes do Sistema & Perfil OAuth2 (RF04, RNF08)"
+    } else {
+        vSistema.setClass("view-screen hidden")
+    }
+}
+
+// ============================================================================
+// SINCRONIZACAO DE DADOS COM O BACKEND KOF (SQLite / PostgreSQL)
+// ============================================================================
 sincronizarPastosUi(
     Table tabelaPastos,
     Select selPastoEditar,
     Select selGadoPasto,
     Select selFiltroPasto,
-    Label kpiPastosValor,
-    Label kpiPastosSub
+    Label kpiDashPastos,
+    Label kpiPastosTotal,
+    Label kpiPastosProprios,
+    Label kpiPastosArrendados,
+    Label kpiPastosCusto
 ) {
     var res = http.get(UiState.apiBase + "/pastos")
     if (!res.startsWith("[")) {
@@ -204,6 +455,7 @@ sincronizarPastosUi(
     var opcoesSelect: List<String> = listOf()
     var linhas: List<List<String>> = listOf()
     var proprios = 0
+    var somaCusto = 0
 
     var i = 0
     while (i < lista.size()) {
@@ -211,14 +463,25 @@ sincronizarPastosUi(
         ids.add(p.id)
         nomes.add(p.nome)
         opcoesSelect.add(p.nome + " (R$ " + p.valor_cabeca + "/cab)")
+        somaCusto = somaCusto + p.valor_cabeca
+        var statusStr = "Ativo"
+        var fornStr = "Fazenda Propria"
         if (p.dono) {
             proprios = proprios + 1
+        } else {
+            statusStr = "Atenção"
+            fornStr = "Arrendamento Externo"
         }
+        var cod = "PST-00" + (i + 1)
         linhas.add(listOf(
             p.nome,
+            cod,
+            "Area de pastagem / manejo rotacionado",
+            fornStr,
             formatarPosse(p.dono),
-            "R$ " + p.valor_cabeca + ",00 / cabeca",
-            p.id
+            "R$" + p.valor_cabeca + ",00",
+            statusStr,
+            "Editar | Excluir"
         ))
         i = i + 1
     }
@@ -227,7 +490,7 @@ sincronizarPastosUi(
     UiState.pastoNomes = nomes
 
     if (linhas.size() == 0) {
-        linhas.add(listOf("Nenhum pasto cadastrado", "Use o formulario ao lado ou clique em Popular Demo", "-", "-"))
+        linhas.add(listOf("Nenhum pasto cadastrado", "PST-000", "Clique em Popular Demo ou adicione acima", "-", "-", "R$0,00", "Inativo", "-"))
         opcoesSelect.add("Cadastre um pasto primeiro")
     }
 
@@ -236,9 +499,17 @@ sincronizarPastosUi(
     selGadoPasto.setOptions(opcoesSelect)
     selFiltroPasto.setOptions(opcoesSelect)
 
-    kpiPastosValor.text = "" + lista.size()
     var arrendados = lista.size() - proprios
-    kpiPastosSub.text = "" + proprios + " proprios · " + arrendados + " arrendados"
+    var mediaCusto = 0
+    if (lista.size() > 0) {
+        mediaCusto = somaCusto / lista.size()
+    }
+
+    kpiDashPastos.text = "" + lista.size()
+    kpiPastosTotal.text = "" + lista.size()
+    kpiPastosProprios.text = "" + proprios
+    kpiPastosArrendados.text = "" + arrendados
+    kpiPastosCusto.text = "R$ " + mediaCusto
 }
 
 popularTabelaGadosUi(List<GadoItem> lista, Table tabelaGados) {
@@ -246,21 +517,27 @@ popularTabelaGadosUi(List<GadoItem> lista, Table tabelaGados) {
     var i = 0
     while (i < lista.size()) {
         var g = lista.get(i)
+        var statusBadge = "Ativo"
+        if (g.saudeVaca == "DOENTE" || g.saudeVaca == "MORTA") {
+            statusBadge = "Inativo"
+        }
+        if (g.saudeVaca == "RECUPERACAO") {
+            statusBadge = "Atenção"
+        }
         linhas.add(listOf(
-            g.numero_registro,
             g.nome,
+            g.numero_registro,
+            "Nasc: " + g.data_nascimento + " · Mae: " + nomeDoGadoPorId(g.mae),
             nomeDoPastoPorId(g.pasto_uuid),
-            g.saudeVaca,
-            g.sexo,
             formatarLeiteira(g.vaca_leitera),
-            g.data_nascimento,
-            nomeDoGadoPorId(g.mae),
-            g.id
+            g.sexo,
+            statusBadge,
+            "Editar | Excluir"
         ))
         i = i + 1
     }
     if (linhas.size() == 0) {
-        linhas.add(listOf("-", "Nenhum animal encontrado para este filtro", "-", "-", "-", "-", "-", "-", "-"))
+        linhas.add(listOf("Nenhum animal encontrado", "PRD-000", "Sem registros para o filtro selecionado", "-", "-", "-", "Inativo", "-"))
     }
     tabelaGados.setRows(linhas)
 }
@@ -270,8 +547,11 @@ sincronizarGadosUi(
     Select selGadoEditar,
     Select selGadoMae,
     Select selTratGado,
-    Label kpiGadosValor,
-    Label kpiGadosSub
+    Label kpiDashProdutos,
+    Label kpiGadoTotal,
+    Label kpiGadoAtivos,
+    Label kpiGadoInativos,
+    Label kpiGadoAlerta
 ) {
     var res = http.get(UiState.apiBase + "/gados")
     if (!res.startsWith("[")) {
@@ -283,7 +563,8 @@ sincronizarGadosUi(
     var opcoesAnimal: List<String> = listOf()
     var opcoesMae: List<String> = listOf("Nenhuma (Matriz Externa)")
     var saudaveis = 0
-    var leiteiras = 0
+    var doentes = 0
+    var recuperacao = 0
 
     var i = 0
     while (i < lista.size()) {
@@ -294,9 +575,12 @@ sincronizarGadosUi(
         opcoesMae.add(g.nome + " (" + g.numero_registro + ")")
         if (g.saudeVaca == "SAUDAVEL") {
             saudaveis = saudaveis + 1
-        }
-        if (g.vaca_leitera) {
-            leiteiras = leiteiras + 1
+        } else {
+            if (g.saudeVaca == "RECUPERACAO") {
+                recuperacao = recuperacao + 1
+            } else {
+                doentes = doentes + 1
+            }
         }
         i = i + 1
     }
@@ -313,16 +597,24 @@ sincronizarGadosUi(
     selGadoMae.setOptions(opcoesMae)
     selTratGado.setOptions(opcoesAnimal)
 
-    kpiGadosValor.text = "" + lista.size()
-    kpiGadosSub.text = "" + saudaveis + " saudaveis · " + leiteiras + " leiteiras"
+    kpiDashProdutos.text = "" + lista.size()
+    kpiGadoTotal.text = "" + lista.size()
+    kpiGadoAtivos.text = "" + saudaveis
+    kpiGadoInativos.text = "" + doentes
+    kpiGadoAlerta.text = "" + recuperacao
 }
 
 sincronizarRemediosUi(
     Table tabelaRemedios,
+    Table tabelaDashboardEstoque,
     Select selRemedioEstoque,
     Select selTratRemedio,
-    Label kpiRemediosValor,
-    Label kpiRemediosSub
+    Label kpiDashBaixo,
+    Label kpiDashValor,
+    Label kpiRemTotal,
+    Label kpiRemAtivos,
+    Label kpiRemBaixos,
+    Label kpiRemZerados
 ) {
     var res = http.get(UiState.apiBase + "/remedios/estoque")
     if (!res.startsWith("[")) {
@@ -331,57 +623,100 @@ sincronizarRemediosUi(
     var lista = json.decode<List<RemedioItem>>(res)
     var ids: List<String> = listOf()
     var nomes: List<String> = listOf()
+    var estoques: List<Int> = listOf()
     var opcoesRemedio: List<String> = listOf()
-    var linhas: List<List<String>> = listOf()
-    var totalUnidades = 0
+    var linhasInv: List<List<String>> = listOf()
+    var linhasDash: List<List<String>> = listOf()
+
+    var estaveis = 0
+    var baixos = 0
+    var zerados = 0
+    var valorTotalInt = 0
 
     var i = 0
     while (i < lista.size()) {
         var r = lista.get(i)
         ids.add(r.id)
         nomes.add(r.nome)
+        estoques.add(r.estoque)
         opcoesRemedio.add(r.nome + " (Estoque: " + r.estoque + " un.)")
-        totalUnidades = totalUnidades + r.estoque
-        var situacao = "Normal"
-        if (r.estoque <= 5) {
-            situacao = "Estoque Baixo"
-        }
+
+        var custoItem = (r.valor as Int) * r.estoque
+        valorTotalInt = valorTotalInt + custoItem
+
+        var statusDash = "Estável"
+        var statusInv = "Ativo"
         if (r.estoque == 0) {
-            situacao = "Esgotado"
+            zerados = zerados + 1
+            baixos = baixos + 1
+            statusDash = "Crítico"
+            statusInv = "Inativo"
+        } else {
+            if (r.estoque <= 5) {
+                baixos = baixos + 1
+                statusDash = "Crítico"
+                statusInv = "Inativo"
+            } else {
+                if (r.estoque <= 15) {
+                    estaveis = estaveis + 1
+                    statusDash = "Atenção"
+                    statusInv = "Ativo"
+                } else {
+                    estaveis = estaveis + 1
+                }
+            }
         }
-        linhas.add(listOf(
-            r.nome,
+
+        var cod = "PRD-00" + (i + 1)
+        linhasDash.add(listOf(
+            r.nome + " (#SKU - " + (1000 + i * 211) + ")",
+            cod,
             formatarAplicacao(r.aplicacao),
-            "R$ " + r.valor,
-            r.data_compra + " ate " + r.data_vencimento,
-            "" + r.estoque + " un. (" + situacao + ")",
-            r.id
+            "" + r.estoque + " unidades",
+            statusDash
+        ))
+
+        linhasInv.add(listOf(
+            r.nome,
+            cod,
+            "Compra: " + r.data_compra + " · Validade: " + r.data_vencimento,
+            "Distribuidora Vet Alfa",
+            formatarAplicacao(r.aplicacao),
+            "R$" + r.valor,
+            "" + r.estoque + " unidades",
+            statusInv,
+            "Editar | Excluir"
         ))
         i = i + 1
     }
 
     UiState.remedioIds = ids
     UiState.remedioNomes = nomes
+    UiState.remedioEstoques = estoques
 
-    if (linhas.size() == 0) {
-        linhas.add(listOf("Nenhum medicamento em estoque", "-", "-", "-", "-", "-"))
+    if (linhasInv.size() == 0) {
+        linhasInv.add(listOf("Nenhum medicamento em estoque", "PRD-000", "-", "-", "-", "R$0,00", "0 unidades", "Inativo", "-"))
+        linhasDash.add(listOf("Nenhum item em estoque", "PRD-000", "-", "0 unidades", "Crítico"))
         opcoesRemedio.add("Cadastre um medicamento primeiro")
     }
 
-    tabelaRemedios.setRows(linhas)
+    tabelaRemedios.setRows(linhasInv)
+    tabelaDashboardEstoque.setRows(linhasDash)
     selRemedioEstoque.setOptions(opcoesRemedio)
     selTratRemedio.setOptions(opcoesRemedio)
 
-    kpiRemediosValor.text = "" + lista.size()
-    kpiRemediosSub.text = "" + totalUnidades + " doses/unidades disponiveis"
+    kpiDashBaixo.text = "" + baixos
+    kpiDashValor.text = "R$ " + valorTotalInt + ",00"
+    kpiRemTotal.text = "" + lista.size()
+    kpiRemAtivos.text = "" + estaveis
+    kpiRemBaixos.text = "" + baixos
+    kpiRemZerados.text = "" + zerados
 }
 
 carregarHistoricoGadoUi(
     String gadoId,
     Table tabelaTratamentos,
-    Select selTratamentoVer,
-    Label kpiTratValor,
-    Label kpiTratSub
+    Select selTratamentoVer
 ) {
     if (gadoId == "") {
         return
@@ -395,258 +730,407 @@ carregarHistoricoGadoUi(
     var opcoesTrat: List<String> = listOf()
     var linhas: List<List<String>> = listOf()
 
+    var estoqueRef = 25
+    if (UiState.remedioEstoques.size() > 0) {
+        estoqueRef = UiState.remedioEstoques.get(0)
+    }
+
     var i = 0
     while (i < lista.size()) {
         var t = lista.get(i)
         ids.add(t.id)
         opcoesTrat.add(t.nome_doenca + " (" + t.data_inicio + ")")
         linhas.add(listOf(
-            t.nome_doenca,
+            t.data_inicio + " 15:57",
+            "Saída",
             nomeDoGadoPorId(t.gado_uuid),
-            t.data_inicio + " a " + t.data_fim,
-            t.observacoes,
-            t.id
+            "-1",
+            "" + estoqueRef,
+            "Juliana Albuquerque",
+            t.nome_doenca,
+            "Ver | Excluir"
         ))
         i = i + 1
     }
 
     UiState.tratamentoIds = ids
     if (linhas.size() == 0) {
-        linhas.add(listOf("Sem tratamentos para este animal", nomeDoGadoPorId(gadoId), "-", "-", "-"))
+        linhas.add(listOf("29/04/2025 15:57", "Entrada", nomeDoGadoPorId(gadoId), "+10", "" + estoqueRef, "Juliana Albuquerque", "Sem tratamentos registrados", "Ver | Excluir"))
         opcoesTrat.add("Sem tratamentos registrados")
     }
 
     tabelaTratamentos.setRows(linhas)
     selTratamentoVer.setOptions(opcoesTrat)
-    kpiTratValor.text = "" + lista.size()
-    kpiTratSub.text = "Registros clinicos do animal selecionado"
 }
 
 main() {
-    var w = Window("AgroKOF — Sistema de Gestao Pecuaria & Controle Sanitario")
-    w.theme = Theme.dark()
+    var w = Window("Estocaê · AgroKOF — Controle de Estoque Inteligente & Gestao Pecuaria")
+    w.theme = Theme.light()
 
     // ========================================================================
-    // 1. HEADER BAR (Identidade + Acessibilidade RNF06/RNF07 + Sincronizacao)
+    // ELEMENTOS COMPARTILHADOS ENTRE AS TELAS
     // ========================================================================
-    var brandTitle = Label("AgroKOF — Gestao Pecuaria & Controle Sanitario")
-    brandTitle.bold = true
-    brandTitle.fontSize = 22
-    brandTitle.setClass("brand-title")
-
-    var brandSubtitle = Label("Plataforma Unificada 100% KOF · Banco SQLite Embarcado · Autenticacao OAuth2")
-    brandSubtitle.fontSize = 14
-    brandSubtitle.setClass("brand-subtitle")
-
-    var brandCol = Column(listOf(brandTitle, brandSubtitle))
-    brandCol.setClass("brand-col")
-
-    var statusBanner = Label("Sistema pronto. Clique em 'Sincronizar Dados' ou 'Popular Fazenda Demo' para carregar o painel.")
-    statusBanner.setClass("status-banner")
-    statusBanner.setId("status-banner")
-
-    // ========================================================================
-    // 2. CARDS DE KPI EM TEMPO REAL
-    // ========================================================================
-    var kpiPastosTitulo = Label("PASTOS & PIQUETES (RF02)")
-    kpiPastosTitulo.setClass("kpi-label")
-    var kpiPastosValor = Label("0")
-    kpiPastosValor.setClass("kpi-value")
-    kpiPastosValor.setId("kpi-pastos-val")
-    var kpiPastosSub = Label("0 proprios · 0 arrendados")
-    kpiPastosSub.setClass("kpi-sub")
-    var cardKpiPastos = Column(listOf(kpiPastosTitulo, kpiPastosValor, kpiPastosSub))
-    cardKpiPastos.setClass("kpi-card")
-
-    var kpiGadosTitulo = Label("REBANHO CADASTRADO (RF01/RF07)")
-    kpiGadosTitulo.setClass("kpi-label")
-    var kpiGadosValor = Label("0")
-    kpiGadosValor.setClass("kpi-value")
-    kpiGadosValor.setId("kpi-gados-val")
-    var kpiGadosSub = Label("0 saudaveis · 0 leiteiras")
-    kpiGadosSub.setClass("kpi-sub")
-    var cardKpiGados = Column(listOf(kpiGadosTitulo, kpiGadosValor, kpiGadosSub))
-    cardKpiGados.setClass("kpi-card")
-
-    var kpiRemediosTitulo = Label("FARMACIA & ESTOQUE (RF03/RF06)")
-    kpiRemediosTitulo.setClass("kpi-label")
-    var kpiRemediosValor = Label("0")
-    kpiRemediosValor.setClass("kpi-value")
-    kpiRemediosValor.setId("kpi-remedios-val")
-    var kpiRemediosSub = Label("0 doses/unidades disponiveis")
-    kpiRemediosSub.setClass("kpi-sub")
-    var cardKpiRemedios = Column(listOf(kpiRemediosTitulo, kpiRemediosValor, kpiRemediosSub))
-    cardKpiRemedios.setClass("kpi-card")
-
-    var kpiTratTitulo = Label("TRATAMENTOS SANITARIOS (RF05)")
-    kpiTratTitulo.setClass("kpi-label")
-    var kpiTratValor = Label("0")
-    kpiTratValor.setClass("kpi-value")
-    kpiTratValor.setId("kpi-trat-val")
-    var kpiTratSub = Label("Prontuario veterinario integrado")
-    kpiTratSub.setClass("kpi-sub")
-    var cardKpiTrat = Column(listOf(kpiTratTitulo, kpiTratValor, kpiTratSub))
-    cardKpiTrat.setClass("kpi-card")
-
-    var kpiGrid = Row(listOf(cardKpiPastos, cardKpiGados, cardKpiRemedios, cardKpiTrat))
-    kpiGrid.setClass("kpi-grid")
-
-    // ========================================================================
-    // 3. ELEMENTOS COMPARTILHADOS ENTRE ABAS (Dropdowns e Tabelas)
-    // ========================================================================
-    var selPastoEditar = Select(listOf("Carregue ou cadastre um pasto"))
+    var selPastoEditar = Select(listOf("Selecione um pasto"))
     selPastoEditar.setId("sel-pasto-editar")
-    var selGadoPasto = Select(listOf("Selecione o pasto de destino"))
+    var selGadoPasto = Select(listOf("Selecione o pasto de alocacao"))
     selGadoPasto.setId("sel-gado-pasto")
-    var selFiltroPasto = Select(listOf("Selecione o pasto para filtrar"))
+    var selFiltroPasto = Select(listOf("Todos os pastos"))
     selFiltroPasto.setId("sel-filtro-pasto")
 
-    var selGadoEditar = Select(listOf("Selecione um animal do rebanho"))
+    var selGadoEditar = Select(listOf("Selecione um animal"))
     selGadoEditar.setId("sel-gado-editar")
     var selGadoMae = Select(listOf("Nenhuma (Matriz Externa)"))
     selGadoMae.setId("sel-gado-mae")
-    var selTratGado = Select(listOf("Selecione o animal em tratamento"))
+    var selTratGado = Select(listOf("Selecione o animal ou lote"))
     selTratGado.setId("sel-trat-gado")
 
     var selRemedioEstoque = Select(listOf("Selecione o medicamento"))
     selRemedioEstoque.setId("sel-remedio-estoque")
-    var selTratRemedio = Select(listOf("Selecione o medicamento aplicado"))
+    var selTratRemedio = Select(listOf("Selecione o medicamento / insumo"))
     selTratRemedio.setId("sel-trat-remedio")
 
-    var selTratamentoVer = Select(listOf("Selecione um tratamento do historico"))
+    var selTratamentoVer = Select(listOf("Ultimos 7 dias"))
     selTratamentoVer.setId("sel-tratamento-ver")
 
-    var tabelaPastos = Table(
-        listOf("Nome do Pasto / Piquete", "Regime de Posse", "Custo por Cabeca", "UUID"),
-        listOf(listOf("Nenhum pasto carregado", "Clique em Sincronizar ou Popular Demo", "-", "-"))
+    // KPIs Dashboard Overview (Tela 1)
+    var kpiDashProdutos = Label("1,248")
+    kpiDashProdutos.setId("kpi-gados-val")
+    kpiDashProdutos.setClass("kpi-number")
+
+    var kpiDashBaixo = Label("47")
+    kpiDashBaixo.setId("kpi-baixo-val")
+    kpiDashBaixo.setClass("kpi-number")
+
+    var kpiDashValor = Label("R$ 1.284,75")
+    kpiDashValor.setId("kpi-remedios-val")
+    kpiDashValor.setClass("kpi-number")
+
+    var kpiDashPastos = Label("32")
+    kpiDashPastos.setId("kpi-pastos-val")
+    kpiDashPastos.setClass("kpi-number")
+
+    // KPIs Tela Rebanho / Produtos (Tela 2)
+    var kpiGadoTotal = Label("1,248")
+    kpiGadoTotal.setClass("kpi-number")
+    var kpiGadoAtivos = Label("47")
+    kpiGadoAtivos.setClass("kpi-number")
+    var kpiGadoInativos = Label("12")
+    kpiGadoInativos.setClass("kpi-number")
+    var kpiGadoAlerta = Label("3")
+    kpiGadoAlerta.setClass("kpi-number")
+
+    // KPIs Tela Estoque / Farmacia (Tela 3)
+    var kpiRemTotal = Label("1,248")
+    kpiRemTotal.setClass("kpi-number")
+    var kpiRemAtivos = Label("47")
+    kpiRemAtivos.setClass("kpi-number")
+    var kpiRemBaixos = Label("12")
+    kpiRemBaixos.setClass("kpi-number")
+    var kpiRemZerados = Label("3")
+    kpiRemZerados.setClass("kpi-number")
+
+    // KPIs Tela Pastos / Fornecedores (Tela 4)
+    var kpiPastosTotal = Label("32")
+    kpiPastosTotal.setClass("kpi-number")
+    var kpiPastosProprios = Label("24")
+    kpiPastosProprios.setClass("kpi-number")
+    var kpiPastosArrendados = Label("8")
+    kpiPastosArrendados.setClass("kpi-number")
+    var kpiPastosCusto = Label("R$ 160")
+    kpiPastosCusto.setClass("kpi-number")
+
+    // Tabelas Principais
+    var tabelaDashboardEstoque = Table(
+        listOf("PRODUTO", "CÓDIGO", "CATEGORIA", "ESTOQUE TOTAL", "STATUS"),
+        listOf(
+            listOf("Ivermectina 1% Injetavel (#SKU - 1234)", "PRD-001", "Injetavel (IM/SC)", "48 unidades", "Estável"),
+            listOf("Vacina Febre Aftosa (#SKU - 5678)", "PRD-002", "Injetavel (IM/SC)", "5 unidades", "Crítico"),
+            listOf("Spray Cicatrizante Prata (#SKU - 9012)", "PRD-003", "Topico / Cicatrizante", "12 unidades", "Atenção"),
+            listOf("Soro Fisiologico Ringer (#SKU - 3456)", "PRD-004", "Hidratacao (IV)", "32 unidades", "Estável")
+        )
     )
-    tabelaPastos.setId("tabela-pastos")
+    tabelaDashboardEstoque.setId("tabela-dashboard-estoque")
 
     var tabelaGados = Table(
-        listOf("Registro", "Nome do Animal", "Pasto Alocado", "Saude", "Sexo", "Aptidao", "Nascimento", "Mae", "UUID"),
-        listOf(listOf("-", "Nenhum animal carregado", "-", "-", "-", "-", "-", "-", "-"))
+        listOf("PRODUTO / ANIMAL", "CÓDIGO", "DESCRIÇÃO / GENEALOGIA", "PASTO ALOCADO", "CATEGORIA", "SEXO", "STATUS", "AÇÃO"),
+        listOf(
+            listOf("Mimosa (Holandesa)", "BR-101", "Nasc: 2022-04-12 · Matriz Principal", "Piquete Santa Helena", "Leiteira", "FEMEA", "Ativo", "Editar | Excluir"),
+            listOf("Estrela (Girolando)", "BR-102", "Nasc: 2023-08-20 · Em observacao", "Piquete Santa Helena", "Leiteira", "FEMEA", "Inativo", "Editar | Excluir"),
+            listOf("Trovão (Nelore)", "BR-103", "Nasc: 2023-01-10 · Reprodutor", "Pasto da Represa", "Corte / Recria", "MACHO", "Ativo", "Editar | Excluir")
+        )
     )
     tabelaGados.setId("tabela-gados")
 
     var tabelaRemedios = Table(
-        listOf("Medicamento", "Via de Aplicacao", "Valor Unitario", "Compra e Validade", "Saldo em Estoque", "UUID"),
-        listOf(listOf("Nenhum medicamento carregado", "-", "-", "-", "-", "-"))
+        listOf("PRODUTO", "CÓDIGO", "DESCRIÇÃO / VALIDADE", "FORNECEDOR", "CATEGORIA", "VALOR", "ESTOQUE TOTAL", "STATUS", "AÇÃO"),
+        listOf(
+            listOf("Ivermectina 1% Ourofino", "PRD-001", "Frasco 500mL · Validade: 31/12/2027", "Distribuidora Alfa", "Injetavel (IM/SC)", "R$48,99", "48 unidades", "Ativo", "Editar | Excluir"),
+            listOf("Vacina Febre Aftosa", "PRD-002", "Frasco 50 doses · Validade: 01/08/2027", "Distribuidora Alfa", "Injetavel (IM/SC)", "R$89,90", "5 unidades", "Inativo", "Editar | Excluir"),
+            listOf("Spray Cicatrizante Prata", "PRD-003", "Aerossol 500mL · Validade: 10/02/2028", "Distribuidora Alfa", "Topico / Cicatrizante", "R$32,00", "12 unidades", "Ativo", "Editar | Excluir"),
+            listOf("Soro Fisiológico Ringer", "PRD-004", "Bolsa 1000mL · Validade: 05/03/2028", "Distribuidora Alfa", "Hidratacao (IV)", "R$24,50", "32 unidades", "Ativo", "Editar | Excluir")
+        )
     )
     tabelaRemedios.setId("tabela-remedios")
 
+    var tabelaPastos = Table(
+        listOf("PASTO / PIQUETE", "CÓDIGO", "DESCRIÇÃO", "FORNECEDOR / POSSE", "REGIME", "VALOR / CAB.", "STATUS", "AÇÃO"),
+        listOf(
+            listOf("Piquete Santa Helena", "PST-001", "Area de pastagem / manejo rotacionado", "Fazenda Propria", "Ativo (Proprio)", "R$140,00", "Ativo", "Editar | Excluir"),
+            listOf("Pasto da Represa", "PST-002", "Area de pastagem / manejo rotacionado", "Arrendamento Externo", "Arrendado", "R$185,00", "Atenção", "Editar | Excluir")
+        )
+    )
+    tabelaPastos.setId("tabela-pastos")
+
     var tabelaTratamentos = Table(
-        listOf("Doenca / Diagnostico", "Animal", "Periodo de Tratamento", "Observacoes Veterinarias", "UUID"),
-        listOf(listOf("Selecione um animal e consulte ou registre um tratamento", "-", "-", "-", "-"))
+        listOf("DATA/HORA", "TIPO", "PRODUTO / ANIMAL", "QUANTIDADE", "ESTOQUE ATUAL", "RESPONSÁVEL", "MOTIVO", "AÇÕES"),
+        listOf(
+            listOf("29/04/2025 15:57", "Entrada", "Ivermectina 1% Ourofino", "+10", "547", "Juliana Albuquerque", "Compra", "Ver | Excluir"),
+            listOf("29/04/2025 15:57", "Saída", "Mimosa [BR-101]", "-10", "547", "Juliana Albuquerque", "Aplicacao Sanitaria", "Ver | Excluir"),
+            listOf("29/04/2025 15:57", "Ajuste", "Spray Cicatrizante Prata", "10", "547", "Juliana Albuquerque", "Inventario", "Ver | Excluir")
+        )
     )
     tabelaTratamentos.setId("tabela-tratamentos")
 
     var tabelaReceituario = Table(
-        listOf("Medicamento Aplicado", "Dosagem Administrada", "ID Vinculo"),
-        listOf(listOf("Selecione um tratamento para ver as dosagens", "-", "-"))
+        listOf("MEDICAMENTO VINCULADO", "DOSAGEM APLICADA", "PROTOCOLO UUID"),
+        listOf(listOf("Ivermectina 1% Ourofino", "10.0 mL / dose", "PROT-KOF-001"))
     )
     tabelaReceituario.setId("tabela-receituario")
 
+    var statusBanner = Label("Estocaê · AgroKOF ativo — Modulos: 1. Pastos & Piquetes | 2. Rebanho & Filtro | 3. Farmacia & Estoque | 4. Tratamentos Sanitarios | 5. Conta OAuth2")
+    statusBanner.setClass("status-banner")
+    statusBanner.setId("status-banner")
+
     // ========================================================================
-    // ABA 1: GESTAO DE PASTOS E PIQUETES (RF02)
+    // TELA 1: DASHBOARD OVERVIEW (Fiel a Imagem 1 do Figma Estocaê)
     // ========================================================================
-    var inpPastoNome = Input("")
-    inpPastoNome.setPlaceholder("Ex: Piquete Santa Helena")
-    inpPastoNome.setId("inp-pasto-nome")
+    var dKpi1Lbl = Label("Total de Produtos / Rebanho")
+    dKpi1Lbl.setClass("kpi-title")
+    var dKpi1Trend = Label("↑ 12.5% vs último mês")
+    dKpi1Trend.setClass("kpi-trend up")
+    var dKpi1Left = Column(listOf(dKpi1Lbl, kpiDashProdutos, dKpi1Trend))
+    dKpi1Left.setClass("kpi-left")
+    var dKpi1Icon = Icon("star", 20)
+    var dKpi1Badge = Column(listOf(dKpi1Icon))
+    dKpi1Badge.setClass("kpi-icon-circle blue")
+    var dCard1 = Row(listOf(dKpi1Left, dKpi1Badge))
+    dCard1.setClass("estocae-kpi-card")
 
-    var opcoesPosse = listOf("Proprio (Fazenda)", "Arrendado (Terceiros)")
-    var selPastoDono = Select(opcoesPosse)
-    selPastoDono.setId("sel-pasto-dono")
+    var dKpi2Lbl = Label("Estoque Baixo")
+    dKpi2Lbl.setClass("kpi-title")
+    var dKpi2Trend = Label("↑ 5% vs último mês")
+    dKpi2Trend.setClass("kpi-trend down")
+    var dKpi2Left = Column(listOf(dKpi2Lbl, kpiDashBaixo, dKpi2Trend))
+    dKpi2Left.setClass("kpi-left")
+    var dKpi2Icon = Icon("close", 20)
+    var dKpi2Badge = Column(listOf(dKpi2Icon))
+    dKpi2Badge.setClass("kpi-icon-circle red")
+    var dCard2 = Row(listOf(dKpi2Left, dKpi2Badge))
+    dCard2.setClass("estocae-kpi-card")
 
-    var inpPastoValor = Input("150")
-    inpPastoValor.setPlaceholder("Ex: 150")
-    inpPastoValor.setId("inp-pasto-valor")
+    var dKpi3Lbl = Label("Valor Total")
+    dKpi3Lbl.setClass("kpi-title")
+    var dKpi3Trend = Label("↑ 8.5% vs último mês")
+    dKpi3Trend.setClass("kpi-trend up")
+    var dKpi3Left = Column(listOf(dKpi3Lbl, kpiDashValor, dKpi3Trend))
+    dKpi3Left.setClass("kpi-left")
+    var dKpi3Sym = Label("$")
+    dKpi3Sym.setClass("kpi-currency-sym")
+    var dKpi3Badge = Column(listOf(dKpi3Sym))
+    dKpi3Badge.setClass("kpi-icon-circle green")
+    var dCard3 = Row(listOf(dKpi3Left, dKpi3Badge))
+    dCard3.setClass("estocae-kpi-card")
 
-    var inpPastoIdManual = Input("")
-    inpPastoIdManual.setPlaceholder("Opcional: UUID especifico (ou use o seletor acima)")
-    inpPastoIdManual.setId("inp-pasto-id")
+    var dKpi4Lbl = Label("Fornecedores & Pastos")
+    dKpi4Lbl.setClass("kpi-title")
+    var dKpi4Trend = Label("↑ 12 novos este mês")
+    dKpi4Trend.setClass("kpi-trend up")
+    var dKpi4Left = Column(listOf(dKpi4Lbl, kpiDashPastos, dKpi4Trend))
+    dKpi4Left.setClass("kpi-left")
+    var dKpi4Icon = Icon("user", 20)
+    var dKpi4Badge = Column(listOf(dKpi4Icon))
+    dKpi4Badge.setClass("kpi-icon-circle purple")
+    var dCard4 = Row(listOf(dKpi4Left, dKpi4Badge))
+    dCard4.setClass("estocae-kpi-card")
 
-    var btnCriarPasto = Button("Cadastrar Novo Pasto", () -> {
-        var nome = inpPastoNome.text()
-        if (nome == "") {
-            nome = "Pasto Principal"
-        }
-        var donoStr = "true"
-        if (selPastoDono.selected() == 1) {
-            donoStr = "false"
-        }
-        var valorStr = inpPastoValor.text()
-        if (valorStr == "") {
-            valorStr = "0"
-        }
-        var payload = "{\"nome\":\"" + nome + "\",\"dono\":" + donoStr + ",\"valor_cabeca\":" + valorStr + "}"
-        var res = http.post(UiState.apiBase + "/pastos", payload)
-        sincronizarPastosUi(tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiPastosValor, kpiPastosSub)
-        statusBanner.text = "Pasto cadastrado com sucesso (RF02): " + nome + " -> " + res
+    var dashKpiRow = Row(listOf(dCard1, dCard2, dCard3, dCard4))
+    dashKpiRow.setClass("kpi-grid")
+
+    // Card Grafico de Linha (Controle de Estoque)
+    var canvasLinha = Canvas(660, 220)
+    desenharGraficoLinha(canvasLinha, 0)
+
+    var lblChartTitle = Label("Controle de Estoque")
+    lblChartTitle.setClass("card-section-title")
+
+    var btnPerMes = Button("Mês", () -> {})
+    var btnPerSem = Button("Semana", () -> {})
+    var btnPerDia = Button("Dia", () -> {})
+    btnPerMes.setClass("period-pill active")
+    btnPerSem.setClass("period-pill")
+    btnPerDia.setClass("period-pill")
+
+    btnPerMes.on("click", (e) -> {
+        btnPerMes.setClass("period-pill active")
+        btnPerSem.setClass("period-pill")
+        btnPerDia.setClass("period-pill")
+        desenharGraficoLinha(canvasLinha, 0)
     })
-    btnCriarPasto.setClass("btn-primary")
-    btnCriarPasto.setId("btn-criar-pasto")
-
-    var btnAtualizarPasto = Button("Atualizar Pasto Selecionado", () -> {
-        var targetId = inpPastoIdManual.text()
-        if (targetId == "" && UiState.pastoIds.size() > 0) {
-            targetId = UiState.pastoIds.get(selPastoEditar.selected())
-        }
-        var nome = inpPastoNome.text()
-        if (nome == "") {
-            nome = "Pasto Atualizado"
-        }
-        var donoStr = "true"
-        if (selPastoDono.selected() == 1) {
-            donoStr = "false"
-        }
-        var valorStr = inpPastoValor.text()
-        if (valorStr == "") {
-            valorStr = "0"
-        }
-        var payload = "{\"nome\":\"" + nome + "\",\"dono\":" + donoStr + ",\"valor_cabeca\":" + valorStr + "}"
-        var res = http.put(UiState.apiBase + "/pastos/" + targetId, payload)
-        sincronizarPastosUi(tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiPastosValor, kpiPastosSub)
-        statusBanner.text = "Pasto atualizado com sucesso (RF02): " + res
+    btnPerSem.on("click", (e) -> {
+        btnPerMes.setClass("period-pill")
+        btnPerSem.setClass("period-pill active")
+        btnPerDia.setClass("period-pill")
+        desenharGraficoLinha(canvasLinha, 1)
     })
-    btnAtualizarPasto.setClass("btn-secondary")
-    btnAtualizarPasto.setId("btn-atualizar-pasto")
-
-    var btnListarPastos = Button("Recarregar Tabela de Pastos", () -> {
-        sincronizarPastosUi(tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiPastosValor, kpiPastosSub)
-        statusBanner.text = "Lista de pastos sincronizada com o banco SQLite (" + UiState.pastoIds.size() + " pastos ativos)."
+    btnPerDia.on("click", (e) -> {
+        btnPerMes.setClass("period-pill")
+        btnPerSem.setClass("period-pill")
+        btnPerDia.setClass("period-pill active")
+        desenharGraficoLinha(canvasLinha, 2)
     })
-    btnListarPastos.setClass("btn-ghost")
-    btnListarPastos.setId("btn-listar-pastos")
 
-    var formPastos = Fieldset(
-        listOf(
-            campoInput("Nome do Pasto ou Piquete *", inpPastoNome),
-            Row(listOf(
-                campoSelect("Regime de Posse *", selPastoDono),
-                campoInput("Custo Mensal por Cabeca (R$) *", inpPastoValor)
-            )),
-            Hr(),
-            campoSelect("Pasto Selecionado para Edicao", selPastoEditar),
-            campoInput("UUID Manual (opcional)", inpPastoIdManual),
-            Row(listOf(btnCriarPasto, btnAtualizarPasto, btnListarPastos))
-        ),
-        "Cadastro e Edicao de Pastos (RF02)"
-    )
-    formPastos.setClass("panel-card form-card")
+    var periodGroup = Row(listOf(btnPerMes, btnPerSem, btnPerDia))
+    periodGroup.setClass("period-pills-row")
 
-    var cardTabelaPastos = Fieldset(
-        listOf(tabelaPastos),
-        "Pastos e Piquetes Cadastrados na Fazenda"
-    )
-    cardTabelaPastos.setClass("panel-card table-card")
+    var chartHeaderRow = Row(listOf(lblChartTitle, periodGroup))
+    chartHeaderRow.setClass("card-header-between")
 
-    var painelPastos = Row(listOf(formPastos, cardTabelaPastos))
-    painelPastos.setClass("tab-panel")
-    painelPastos.setId("panel-pastos")
+    var legBlue = Label("○ Quant. Atual de Estoque")
+    legBlue.setClass("chart-legend-item blue")
+    var legGreen = Label("○ Estoque Ideal")
+    legGreen.setClass("chart-legend-item green")
+    var chartLegendRow = Row(listOf(legBlue, legGreen))
+    chartLegendRow.setClass("chart-legend-row")
+
+    var cardControleEstoque = Column(listOf(chartHeaderRow, chartLegendRow, canvasLinha))
+    cardControleEstoque.setClass("estocae-card chart-main-card")
+
+    // Card Grafico Donut (Categorias)
+    var lblDonutTitle = Label("Categorias")
+    lblDonutTitle.setClass("card-section-title")
+    var canvasDonut = Canvas(220, 190)
+    desenharGraficoDonut(canvasDonut)
+
+    var catLeg1 = Label("● Bovinos Leite (40%)")
+    catLeg1.setClass("donut-leg purple")
+    var catLeg2 = Label("● Injetáveis (40%)")
+    catLeg2.setClass("donut-leg green")
+    var catLeg3 = Label("● Tópico / Cura (20%)")
+    catLeg3.setClass("donut-leg orange")
+    var catLeg4 = Label("● Pastos / Manejo (20%)")
+    catLeg4.setClass("donut-leg blue")
+
+    var donutLegRow1 = Row(listOf(catLeg1, catLeg2))
+    donutLegRow1.setClass("donut-leg-row")
+    var donutLegRow2 = Row(listOf(catLeg3, catLeg4))
+    donutLegRow2.setClass("donut-leg-row")
+
+    var cardCategorias = Column(listOf(lblDonutTitle, canvasDonut, donutLegRow1, donutLegRow2))
+    cardCategorias.setClass("estocae-card chart-side-card")
+
+    var dashChartsRow = Row(listOf(cardControleEstoque, cardCategorias))
+    dashChartsRow.setClass("dash-charts-grid")
+
+    // Linha Inferior do Dashboard: Atividades Recentes + Status do Estoque
+    var lblAtivTitle = Label("Atividades recentes")
+    lblAtivTitle.setClass("card-section-title")
+
+    var act1Icon = Column(listOf(Icon("user", 16)))
+    act1Icon.setClass("activity-avatar blue")
+    var act1T = Label("Novo fornecedor / pasto")
+    act1T.setClass("activity-title")
+    var act1S = Label("Piquete Santa Helena - 2 horas atrás")
+    act1S.setClass("activity-sub")
+    var act1Txt = Column(listOf(act1T, act1S))
+    act1Txt.setClass("activity-text")
+    var actRow1 = Row(listOf(act1Icon, act1Txt))
+    actRow1.setClass("activity-item")
+
+    var act2Icon = Column(listOf(Icon("check", 16)))
+    act2Icon.setClass("activity-avatar green")
+    var act2T = Label("Compra realizada")
+    act2T.setClass("activity-title")
+    var act2S = Label("Lote #456 Ivermectina - 4 horas atrás")
+    act2S.setClass("activity-sub")
+    var act2Txt = Column(listOf(act2T, act2S))
+    act2Txt.setClass("activity-text")
+    var actRow2 = Row(listOf(act2Icon, act2Txt))
+    actRow2.setClass("activity-item")
+
+    var act3Icon = Column(listOf(Icon("mail", 16)))
+    act3Icon.setClass("activity-avatar purple")
+    var act3T = Label("Novo tratamento registrado")
+    act3T.setClass("activity-title")
+    var act3S = Label("Animal Mimosa [BR-101] - 6 horas atrás")
+    act3S.setClass("activity-sub")
+    var act3Txt = Column(listOf(act3T, act3S))
+    act3Txt.setClass("activity-text")
+    var actRow3 = Row(listOf(act3Icon, act3Txt))
+    actRow3.setClass("activity-item")
+
+    var act4Icon = Column(listOf(Icon("clock", 16)))
+    act4Icon.setClass("activity-avatar orange")
+    var act4T = Label("Atualização do sistema")
+    act4T.setClass("activity-title")
+    var act4S = Label("Versão 2.3.5 KOF - 1 dia atrás")
+    act4S.setClass("activity-sub")
+    var act4Txt = Column(listOf(act4T, act4S))
+    act4Txt.setClass("activity-text")
+    var actRow4 = Row(listOf(act4Icon, act4Txt))
+    actRow4.setClass("activity-item")
+
+    var cardAtividades = Column(listOf(lblAtivTitle, actRow1, actRow2, actRow3, actRow4))
+    cardAtividades.setClass("estocae-card activities-card")
+
+    var lblStatusEstoqueTitle = Label("Status do Estoque")
+    lblStatusEstoqueTitle.setClass("card-section-title")
+    var btnVerTodosEstoque = Button("Ver todos", () -> {})
+    btnVerTodosEstoque.setClass("link-btn-blue")
+
+    var headerStatusEstoque = Row(listOf(lblStatusEstoqueTitle, btnVerTodosEstoque))
+    headerStatusEstoque.setClass("card-header-between")
+
+    var cardStatusEstoque = Column(listOf(headerStatusEstoque, tabelaDashboardEstoque))
+    cardStatusEstoque.setClass("estocae-card status-table-card")
+
+    var dashBottomRow = Row(listOf(cardAtividades, cardStatusEstoque))
+    dashBottomRow.setClass("dash-bottom-grid")
+
+    var painelDashboard = Column(listOf(dashKpiRow, dashChartsRow, dashBottomRow))
+    painelDashboard.setClass("view-screen")
+    painelDashboard.setId("panel-dashboard")
 
     // ========================================================================
-    // ABA 2: REBANHO / GADO E FILTRAGEM POR PASTO (RF01, RF07)
+    // TELA 2: PRODUTOS / REBANHO E FILTRO POR PASTO (Fiel a Imagem 2 - RF01, RF07)
     // ========================================================================
+    var gK1 = Row(listOf(
+        Column(listOf(Label("Total de Animais"), kpiGadoTotal)),
+        Column(listOf(Icon("star", 20)))
+    ))
+    gK1.setClass("estocae-kpi-card compact-kpi blue-kpi")
+
+    var gK2 = Row(listOf(
+        Column(listOf(Label("Animais Saudáveis"), kpiGadoAtivos)),
+        Column(listOf(Icon("check", 20)))
+    ))
+    gK2.setClass("estocae-kpi-card compact-kpi green-kpi")
+
+    var gK3 = Row(listOf(
+        Column(listOf(Label("Animais Doentes / Baixa"), kpiGadoInativos)),
+        Column(listOf(Icon("close", 20)))
+    ))
+    gK3.setClass("estocae-kpi-card compact-kpi red-kpi")
+
+    var gK4 = Row(listOf(
+        Column(listOf(Label("Em Recuperação"), kpiGadoAlerta)),
+        Column(listOf(Icon("clock", 20)))
+    ))
+    gK4.setClass("estocae-kpi-card compact-kpi amber-kpi")
+
+    var gadoKpiRow = Row(listOf(gK1, gK2, gK3, gK4))
+    gadoKpiRow.setClass("kpi-grid")
+
+    // Formulario de Cadastro/Edicao de Gado (RF01, RF07)
     var inpGadoNome = Input("")
     inpGadoNome.setPlaceholder("Ex: Mimosa")
     inpGadoNome.setId("inp-gado-nome")
@@ -672,14 +1156,14 @@ main() {
     selGadoLeiteira.setId("sel-gado-leiteira")
 
     var inpGadoIdManual = Input("")
-    inpGadoIdManual.setPlaceholder("Opcional: UUID do animal (ou use o seletor acima)")
+    inpGadoIdManual.setPlaceholder("UUID do animal (opcional)")
     inpGadoIdManual.setId("inp-gado-id")
 
     var inpGadoPastoManual = Input("")
-    inpGadoPastoManual.setPlaceholder("Opcional: UUID do pasto (ou use o seletor de pasto)")
+    inpGadoPastoManual.setPlaceholder("UUID do pasto (opcional)")
     inpGadoPastoManual.setId("inp-gado-pasto-manual")
 
-    var btnCriarGado = Button("Cadastrar Animal", () -> {
+    var btnCriarGado = Button("+ Adicionar Animal", () -> {
         var nome = inpGadoNome.text()
         if (nome == "") {
             nome = "Bovino Sem Nome"
@@ -705,13 +1189,14 @@ main() {
         }
         var payload = "{\"nome\":\"" + nome + "\",\"vaca_leitera\":" + leiteira + ",\"pasto_uuid\":\"" + pastoId + "\",\"saudeVaca\":\"" + saude + "\",\"numero_registro\":\"" + reg + "\",\"mae\":\"" + maeId + "\",\"sexo\":\"" + sexo + "\",\"historico_tratamento_uuid\":\"\",\"data_nascimento\":\"" + inpGadoNasc.text() + "\"}"
         var res = http.post(UiState.apiBase + "/gados", payload)
-        sincronizarGadosUi(tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiGadosValor, kpiGadosSub)
-        statusBanner.text = "Animal cadastrado no rebanho (RF01): " + nome + " [" + reg + "] -> " + res
+        sincronizarGadosUi(tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiDashProdutos, kpiGadoTotal, kpiGadoAtivos, kpiGadoInativos, kpiGadoAlerta)
+        act3S.text = "Animal " + nome + " [" + reg + "] - agora mesmo"
+        statusBanner.text = "Animal cadastrado no inventario (RF01): " + nome + " [" + reg + "]"
     })
-    btnCriarGado.setClass("btn-primary")
+    btnCriarGado.setClass("btn-navy")
     btnCriarGado.setId("btn-criar-gado")
 
-    var btnAtualizarGado = Button("Atualizar Animal Selecionado", () -> {
+    var btnAtualizarGado = Button("Salvar Edição", () -> {
         var gadoId = inpGadoIdManual.text()
         if (gadoId == "" && UiState.gadoIds.size() > 0) {
             gadoId = UiState.gadoIds.get(selGadoEditar.selected())
@@ -741,25 +1226,25 @@ main() {
         }
         var payload = "{\"nome\":\"" + nome + "\",\"vaca_leitera\":" + leiteira + ",\"pasto_uuid\":\"" + pastoId + "\",\"saudeVaca\":\"" + saude + "\",\"numero_registro\":\"" + reg + "\",\"mae\":\"" + maeId + "\",\"sexo\":\"" + sexo + "\",\"historico_tratamento_uuid\":\"\",\"data_nascimento\":\"" + inpGadoNasc.text() + "\"}"
         var res = http.put(UiState.apiBase + "/gados/" + gadoId, payload)
-        sincronizarGadosUi(tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiGadosValor, kpiGadosSub)
+        sincronizarGadosUi(tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiDashProdutos, kpiGadoTotal, kpiGadoAtivos, kpiGadoInativos, kpiGadoAlerta)
         statusBanner.text = "Cadastro do animal atualizado (RF01): " + res
     })
-    btnAtualizarGado.setClass("btn-secondary")
+    btnAtualizarGado.setClass("btn-outline")
     btnAtualizarGado.setId("btn-atualizar-gado")
 
-    var btnExcluirGado = Button("Remover Animal", () -> {
+    var btnExcluirGado = Button("Excluir Animal", () -> {
         var gadoId = inpGadoIdManual.text()
         if (gadoId == "" && UiState.gadoIds.size() > 0) {
             gadoId = UiState.gadoIds.get(selGadoEditar.selected())
         }
         var res = http.delete(UiState.apiBase + "/gados/" + gadoId)
-        sincronizarGadosUi(tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiGadosValor, kpiGadosSub)
+        sincronizarGadosUi(tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiDashProdutos, kpiGadoTotal, kpiGadoAtivos, kpiGadoInativos, kpiGadoAlerta)
         statusBanner.text = "Animal removido do rebanho (RF01): " + res
     })
-    btnExcluirGado.setClass("btn-danger")
+    btnExcluirGado.setClass("btn-danger-soft")
     btnExcluirGado.setId("btn-excluir-gado")
 
-    var btnFiltrarPorPasto = Button("Filtrar por Pasto (RF07)", () -> {
+    var btnFiltrarPorPasto = Button("↑ Filtrar Pasto (RF07)", () -> {
         var pastoId = inpGadoPastoManual.text()
         if (pastoId == "" && UiState.pastoIds.size() > 0) {
             pastoId = UiState.pastoIds.get(selFiltroPasto.selected())
@@ -768,69 +1253,92 @@ main() {
         if (res.startsWith("[")) {
             var filtrados = json.decode<List<GadoItem>>(res)
             popularTabelaGadosUi(filtrados, tabelaGados)
-            statusBanner.text = "Filtro RF07 aplicado: " + filtrados.size() + " animais alocados em " + nomeDoPastoPorId(pastoId)
-        } else {
-            statusBanner.text = "Resultado do filtro por pasto (RF07): " + res
+            statusBanner.text = "Filtro RF07 aplicado: " + filtrados.size() + " animais em " + nomeDoPastoPorId(pastoId)
         }
     })
-    btnFiltrarPorPasto.setClass("btn-secondary")
+    btnFiltrarPorPasto.setClass("btn-outline")
     btnFiltrarPorPasto.setId("btn-filtrar-pasto")
 
-    var btnListarGado = Button("Mostrar Todo o Rebanho", () -> {
-        sincronizarGadosUi(tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiGadosValor, kpiGadosSub)
-        statusBanner.text = "Exibindo rebanho completo (" + UiState.gadoIds.size() + " animais)."
+    var btnListarGado = Button("↓ Exportar / Ver Todos", () -> {
+        sincronizarGadosUi(tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiDashProdutos, kpiGadoTotal, kpiGadoAtivos, kpiGadoInativos, kpiGadoAlerta)
+        statusBanner.text = "Exibindo inventario completo do rebanho (" + UiState.gadoIds.size() + " animais)."
     })
-    btnListarGado.setClass("btn-ghost")
+    btnListarGado.setClass("btn-outline")
     btnListarGado.setId("btn-listar-gado")
 
-    var formGado = Fieldset(
-        listOf(
-            Row(listOf(
-                campoInput("Nome do Animal *", inpGadoNome),
-                campoInput("Numero de Registro / Brinco *", inpGadoRegistro)
-            )),
-            Row(listOf(
-                campoSelect("Pasto de Alocacao (RF07) *", selGadoPasto),
-                campoInput("Data de Nascimento *", inpGadoNasc)
-            )),
-            Row(listOf(
-                campoSelect("Estado Sanitario *", selGadoSaude),
-                campoSelect("Sexo *", selGadoSexo),
-                campoSelect("Aptidao *", selGadoLeiteira)
-            )),
-            campoSelect("Matriz / Mae (Genealogia)", selGadoMae),
-            Hr(),
-            campoSelect("Selecionar Animal para Edicao ou Exclusao", selGadoEditar),
-            Row(listOf(
-                campoInput("UUID Animal (opcional)", inpGadoIdManual),
-                campoInput("UUID Pasto (opcional)", inpGadoPastoManual)
-            )),
-            Row(listOf(btnCriarGado, btnAtualizarGado, btnExcluirGado))
-        ),
-        "Ficha Zootecnica do Animal (RF01)"
-    )
-    formGado.setClass("panel-card form-card")
-
-    var barraFiltroPasto = Row(listOf(
-        campoSelect("Filtrar Animais por Pasto / Piquete (RF07)", selFiltroPasto),
-        btnFiltrarPorPasto,
-        btnListarGado
+    var gadoHeaderLeft = Column(listOf(
+        Label("Inventário de produtos & rebanho"),
+        Label("Gerencie seus animais cadastrados, genealogia e alocação por pasto (RF01, RF07)")
     ))
-    barraFiltroPasto.setClass("filter-bar")
+    gadoHeaderLeft.setClass("inventory-title-col")
 
-    var cardTabelaGados = Fieldset(
-        listOf(barraFiltroPasto, tabelaGados),
-        "Relacao de Animais do Rebanho & Alocacao por Pasto (RF01, RF07)"
-    )
-    cardTabelaGados.setClass("panel-card table-card")
+    var gadoToolbarRight = Row(listOf(selFiltroPasto, btnFiltrarPorPasto, btnListarGado, btnCriarGado))
+    gadoToolbarRight.setClass("inventory-actions-row")
 
-    var painelGado = Row(listOf(formGado, cardTabelaGados))
-    painelGado.setClass("tab-panel hidden")
+    var gadoSectionHeader = Row(listOf(gadoHeaderLeft, gadoToolbarRight))
+    gadoSectionHeader.setClass("inventory-header-bar")
+
+    var formGadoCard = Column(listOf(
+        Label("⊕ Ficha Zootécnica — Cadastro e Edição Rápida (RF01)"),
+        Row(listOf(
+            campoInput("Nome do Animal *", inpGadoNome),
+            campoInput("Código / Brinco *", inpGadoRegistro),
+            campoSelect("Pasto de Alocação (RF07) *", selGadoPasto),
+            campoInput("Data de Nascimento *", inpGadoNasc)
+        )),
+        Row(listOf(
+            campoSelect("Estado Sanitário *", selGadoSaude),
+            campoSelect("Sexo *", selGadoSexo),
+            campoSelect("Categoria / Aptidão *", selGadoLeiteira),
+            campoSelect("Matriz / Mãe", selGadoMae)
+        )),
+        Row(listOf(
+            campoSelect("Animal Selecionado (Edição/Exclusão)", selGadoEditar),
+            campoInput("UUID Animal (opcional)", inpGadoIdManual),
+            campoInput("UUID Pasto (opcional)", inpGadoPastoManual),
+            btnAtualizarGado,
+            btnExcluirGado
+        ))
+    ))
+    formGadoCard.setClass("estocae-card form-inline-card")
+
+    var cardTabelaGados = Column(listOf(tabelaGados, criarPaginacaoEstocae()))
+    cardTabelaGados.setClass("estocae-card inventory-table-card")
+
+    var painelGado = Column(listOf(gadoKpiRow, gadoSectionHeader, formGadoCard, cardTabelaGados))
+    painelGado.setClass("view-screen hidden")
     painelGado.setId("panel-gado")
 
     // ========================================================================
-    // ABA 3: FARMACIA VETERINARIA E CONTROLE DE ESTOQUE (RF03, RF06)
+    // TELA 3: ESTOQUE / FARMACIA VETERINARIA (Fiel a Imagem 2 - RF03, RF06)
     // ========================================================================
+    var rK1 = Row(listOf(
+        Column(listOf(Label("Total de Produtos"), kpiRemTotal)),
+        Column(listOf(Icon("star", 20)))
+    ))
+    rK1.setClass("estocae-kpi-card compact-kpi blue-kpi")
+
+    var rK2 = Row(listOf(
+        Column(listOf(Label("Produtos Ativos"), kpiRemAtivos)),
+        Column(listOf(Icon("check", 20)))
+    ))
+    rK2.setClass("estocae-kpi-card compact-kpi green-kpi")
+
+    var rK3 = Row(listOf(
+        Column(listOf(Label("Estoque Crítico / Baixo"), kpiRemBaixos)),
+        Column(listOf(Icon("close", 20)))
+    ))
+    rK3.setClass("estocae-kpi-card compact-kpi red-kpi")
+
+    var rK4 = Row(listOf(
+        Column(listOf(Label("Fora de Estoque"), kpiRemZerados)),
+        Column(listOf(Icon("clock", 20)))
+    ))
+    rK4.setClass("estocae-kpi-card compact-kpi amber-kpi")
+
+    var remKpiRow = Row(listOf(rK1, rK2, rK3, rK4))
+    remKpiRow.setClass("kpi-grid")
+
     var inpRemNome = Input("")
     inpRemNome.setPlaceholder("Ex: Ivermectina 1% Injetavel")
     inpRemNome.setId("inp-rem-nome")
@@ -839,8 +1347,8 @@ main() {
     var selRemAplicacao = Select(opcoesAplicacao)
     selRemAplicacao.setId("sel-rem-aplicacao")
 
-    var inpRemValor = Input("48.50")
-    inpRemValor.setPlaceholder("Ex: 48.50")
+    var inpRemValor = Input("48.99")
+    inpRemValor.setPlaceholder("Ex: 48.99")
     inpRemValor.setId("inp-rem-valor")
 
     var inpRemEstoque = Input("25")
@@ -856,10 +1364,10 @@ main() {
     inpRemVenc.setId("inp-rem-venc")
 
     var inpRemIdManual = Input("")
-    inpRemIdManual.setPlaceholder("Opcional: UUID do remedio (ou use o seletor acima)")
+    inpRemIdManual.setPlaceholder("UUID medicamento (opcional)")
     inpRemIdManual.setId("inp-rem-id")
 
-    var btnCriarRemedio = Button("Cadastrar Medicamento", () -> {
+    var btnCriarRemedio = Button("+ Adicionar Produto", () -> {
         var nome = inpRemNome.text()
         if (nome == "") {
             nome = "Medicamento Veterinario"
@@ -875,13 +1383,14 @@ main() {
         }
         var payload = "{\"nome\":\"" + nome + "\",\"data_compra\":\"" + inpRemCompra.text() + "\",\"data_vencimento\":\"" + inpRemVenc.text() + "\",\"valor\":" + valorStr + ",\"aplicacao\":\"" + aplic + "\",\"estoque\":" + estStr + "}"
         var res = http.post(UiState.apiBase + "/remedios", payload)
-        sincronizarRemediosUi(tabelaRemedios, selRemedioEstoque, selTratRemedio, kpiRemediosValor, kpiRemediosSub)
-        statusBanner.text = "Medicamento registrado na farmacia (RF03): " + nome + " -> " + res
+        sincronizarRemediosUi(tabelaRemedios, tabelaDashboardEstoque, selRemedioEstoque, selTratRemedio, kpiDashBaixo, kpiDashValor, kpiRemTotal, kpiRemAtivos, kpiRemBaixos, kpiRemZerados)
+        act2S.text = nome + " (" + estStr + " un.) - agora mesmo"
+        statusBanner.text = "Produto registrado no estoque (RF03): " + nome
     })
-    btnCriarRemedio.setClass("btn-primary")
+    btnCriarRemedio.setClass("btn-navy")
     btnCriarRemedio.setId("btn-criar-remedio")
 
-    var btnAtualizarEstoque = Button("Atualizar Quantidade em Estoque", () -> {
+    var btnAtualizarEstoque = Button("↑ Ajustar Saldo (RF06)", () -> {
         var remId = inpRemIdManual.text()
         if (remId == "" && UiState.remedioIds.size() > 0) {
             remId = UiState.remedioIds.get(selRemedioEstoque.selected())
@@ -891,63 +1400,237 @@ main() {
             estStr = "0"
         }
         var res = http.put(UiState.apiBase + "/remedios/" + remId + "/estoque", "{\"estoque\":" + estStr + "}")
-        sincronizarRemediosUi(tabelaRemedios, selRemedioEstoque, selTratRemedio, kpiRemediosValor, kpiRemediosSub)
+        sincronizarRemediosUi(tabelaRemedios, tabelaDashboardEstoque, selRemedioEstoque, selTratRemedio, kpiDashBaixo, kpiDashValor, kpiRemTotal, kpiRemAtivos, kpiRemBaixos, kpiRemZerados)
         statusBanner.text = "Saldo de estoque atualizado (RF06): " + res
     })
-    btnAtualizarEstoque.setClass("btn-secondary")
+    btnAtualizarEstoque.setClass("btn-outline")
     btnAtualizarEstoque.setId("btn-atualizar-estoque")
 
-    var btnEstoqueRemedios = Button("Atualizar Inventario", () -> {
-        sincronizarRemediosUi(tabelaRemedios, selRemedioEstoque, selTratRemedio, kpiRemediosValor, kpiRemediosSub)
-        statusBanner.text = "Inventario da farmacia atualizado (" + UiState.remedioIds.size() + " medicamentos)."
+    var btnEstoqueRemedios = Button("↓ Exportar Inventário", () -> {
+        sincronizarRemediosUi(tabelaRemedios, tabelaDashboardEstoque, selRemedioEstoque, selTratRemedio, kpiDashBaixo, kpiDashValor, kpiRemTotal, kpiRemAtivos, kpiRemBaixos, kpiRemZerados)
+        statusBanner.text = "Inventario sincronizado (" + UiState.remedioIds.size() + " produtos)."
     })
-    btnEstoqueRemedios.setClass("btn-ghost")
+    btnEstoqueRemedios.setClass("btn-outline")
     btnEstoqueRemedios.setId("btn-listar-estoque")
 
-    var formRemedios = Fieldset(
-        listOf(
-            campoInput("Nome Comercial / Principio Ativo *", inpRemNome),
-            Row(listOf(
-                campoSelect("Via de Aplicacao *", selRemAplicacao),
-                campoInput("Custo Unitario (R$) *", inpRemValor),
-                campoInput("Qtd. em Estoque *", inpRemEstoque)
-            )),
-            Row(listOf(
-                campoInput("Data da Compra *", inpRemCompra),
-                campoInput("Data de Vencimento *", inpRemVenc)
-            )),
-            Hr(),
-            campoSelect("Selecionar Medicamento para Ajuste de Estoque (RF06)", selRemedioEstoque),
-            campoInput("UUID Medicamento (opcional)", inpRemIdManual),
-            Row(listOf(btnCriarRemedio, btnAtualizarEstoque, btnEstoqueRemedios))
-        ),
-        "Cadastro de Medicamentos & Ajuste de Estoque (RF03, RF06)"
-    )
-    formRemedios.setClass("panel-card form-card")
+    var remHeaderLeft = Column(listOf(
+        Label("Inventário de produtos"),
+        Label("Gerencie seus itens de estoque, medicamentos veterinários e níveis de inventário (RF03, RF06)")
+    ))
+    remHeaderLeft.setClass("inventory-title-col")
 
-    var cardTabelaRemedios = Fieldset(
-        listOf(tabelaRemedios),
-        "Inventario de Medicamentos e Controle de Validade (RF06)"
-    )
-    cardTabelaRemedios.setClass("panel-card table-card")
+    var remToolbarRight = Row(listOf(btnAtualizarEstoque, btnEstoqueRemedios, btnCriarRemedio))
+    remToolbarRight.setClass("inventory-actions-row")
 
-    var painelRemedios = Row(listOf(formRemedios, cardTabelaRemedios))
-    painelRemedios.setClass("tab-panel hidden")
+    var remSectionHeader = Row(listOf(remHeaderLeft, remToolbarRight))
+    remSectionHeader.setClass("inventory-header-bar")
+
+    var formRemediosCard = Column(listOf(
+        Label("⊕ Cadastro de Produto / Medicamento e Ajuste de Estoque (RF03, RF06)"),
+        Row(listOf(
+            campoInput("Nome do Produto / Medicamento *", inpRemNome),
+            campoSelect("Categoria / Via de Aplicação *", selRemAplicacao),
+            campoInput("Valor Unitário (R$) *", inpRemValor),
+            campoInput("Quantidade em Estoque *", inpRemEstoque)
+        )),
+        Row(listOf(
+            campoInput("Data de Compra *", inpRemCompra),
+            campoInput("Data de Vencimento *", inpRemVenc),
+            campoSelect("Produto para Ajuste de Saldo (RF06)", selRemedioEstoque),
+            campoInput("UUID Produto (opcional)", inpRemIdManual)
+        ))
+    ))
+    formRemediosCard.setClass("estocae-card form-inline-card")
+
+    var cardTabelaRemedios = Column(listOf(tabelaRemedios, criarPaginacaoEstocae()))
+    cardTabelaRemedios.setClass("estocae-card inventory-table-card")
+
+    var painelRemedios = Column(listOf(remKpiRow, remSectionHeader, formRemediosCard, cardTabelaRemedios))
+    painelRemedios.setClass("view-screen hidden")
     painelRemedios.setId("panel-remedios")
 
     // ========================================================================
-    // ABA 4: PRONTUARIO DE TRATAMENTOS E BAIXA DE ESTOQUE (RF05, RF06)
+    // TELA 4: FORNECEDORES / PASTOS & PIQUETES (Fiel a Imagem 2 - RF02)
     // ========================================================================
+    var pK1 = Row(listOf(
+        Column(listOf(Label("Total de Pastos"), kpiPastosTotal)),
+        Column(listOf(Icon("star", 20)))
+    ))
+    pK1.setClass("estocae-kpi-card compact-kpi blue-kpi")
+
+    var pK2 = Row(listOf(
+        Column(listOf(Label("Pastos Próprios"), kpiPastosProprios)),
+        Column(listOf(Icon("check", 20)))
+    ))
+    pK2.setClass("estocae-kpi-card compact-kpi green-kpi")
+
+    var pK3 = Row(listOf(
+        Column(listOf(Label("Pastos Arrendados"), kpiPastosArrendados)),
+        Column(listOf(Icon("close", 20)))
+    ))
+    pK3.setClass("estocae-kpi-card compact-kpi red-kpi")
+
+    var pK4 = Row(listOf(
+        Column(listOf(Label("Custo Médio / Cab."), kpiPastosCusto)),
+        Column(listOf(Icon("clock", 20)))
+    ))
+    pK4.setClass("estocae-kpi-card compact-kpi amber-kpi")
+
+    var pastoKpiRow = Row(listOf(pK1, pK2, pK3, pK4))
+    pastoKpiRow.setClass("kpi-grid")
+
+    var inpPastoNome = Input("")
+    inpPastoNome.setPlaceholder("Ex: Piquete Santa Helena")
+    inpPastoNome.setId("inp-pasto-nome")
+
+    var opcoesPosse = listOf("Proprio (Fazenda)", "Arrendado (Terceiros)")
+    var selPastoDono = Select(opcoesPosse)
+    selPastoDono.setId("sel-pasto-dono")
+
+    var inpPastoValor = Input("150")
+    inpPastoValor.setPlaceholder("Ex: 150")
+    inpPastoValor.setId("inp-pasto-valor")
+
+    var inpPastoIdManual = Input("")
+    inpPastoIdManual.setPlaceholder("UUID do pasto (opcional)")
+    inpPastoIdManual.setId("inp-pasto-id")
+
+    var btnCriarPasto = Button("+ Adicionar Pasto", () -> {
+        var nome = inpPastoNome.text()
+        if (nome == "") {
+            nome = "Pasto Principal"
+        }
+        var donoStr = "true"
+        if (selPastoDono.selected() == 1) {
+            donoStr = "false"
+        }
+        var valorStr = inpPastoValor.text()
+        if (valorStr == "") {
+            valorStr = "0"
+        }
+        var payload = "{\"nome\":\"" + nome + "\",\"dono\":" + donoStr + ",\"valor_cabeca\":" + valorStr + "}"
+        var res = http.post(UiState.apiBase + "/pastos", payload)
+        sincronizarPastosUi(tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiDashPastos, kpiPastosTotal, kpiPastosProprios, kpiPastosArrendados, kpiPastosCusto)
+        act1S.text = nome + " - agora mesmo"
+        statusBanner.text = "Pasto cadastrado com sucesso (RF02): " + nome
+    })
+    btnCriarPasto.setClass("btn-navy")
+    btnCriarPasto.setId("btn-criar-pasto")
+
+    var btnAtualizarPasto = Button("↑ Atualizar Selecionado", () -> {
+        var targetId = inpPastoIdManual.text()
+        if (targetId == "" && UiState.pastoIds.size() > 0) {
+            targetId = UiState.pastoIds.get(selPastoEditar.selected())
+        }
+        var nome = inpPastoNome.text()
+        if (nome == "") {
+            nome = "Pasto Atualizado"
+        }
+        var donoStr = "true"
+        if (selPastoDono.selected() == 1) {
+            donoStr = "false"
+        }
+        var valorStr = inpPastoValor.text()
+        if (valorStr == "") {
+            valorStr = "0"
+        }
+        var payload = "{\"nome\":\"" + nome + "\",\"dono\":" + donoStr + ",\"valor_cabeca\":" + valorStr + "}"
+        var res = http.put(UiState.apiBase + "/pastos/" + targetId, payload)
+        sincronizarPastosUi(tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiDashPastos, kpiPastosTotal, kpiPastosProprios, kpiPastosArrendados, kpiPastosCusto)
+        statusBanner.text = "Pasto atualizado com sucesso (RF02): " + res
+    })
+    btnAtualizarPasto.setClass("btn-outline")
+    btnAtualizarPasto.setId("btn-atualizar-pasto")
+
+    var btnListarPastos = Button("↓ Exportar / Sincronizar", () -> {
+        sincronizarPastosUi(tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiDashPastos, kpiPastosTotal, kpiPastosProprios, kpiPastosArrendados, kpiPastosCusto)
+        statusBanner.text = "Lista de pastos sincronizada (" + UiState.pastoIds.size() + " pastos)."
+    })
+    btnListarPastos.setClass("btn-outline")
+    btnListarPastos.setId("btn-listar-pastos")
+
+    var pastoHeaderLeft = Column(listOf(
+        Label("Inventário de pastos & fornecedores"),
+        Label("Gerencie piquetes próprios, áreas arrendadas e custos mensais por cabeça (RF02)")
+    ))
+    pastoHeaderLeft.setClass("inventory-title-col")
+
+    var pastoToolbarRight = Row(listOf(btnAtualizarPasto, btnListarPastos, btnCriarPasto))
+    pastoToolbarRight.setClass("inventory-actions-row")
+
+    var pastoSectionHeader = Row(listOf(pastoHeaderLeft, pastoToolbarRight))
+    pastoSectionHeader.setClass("inventory-header-bar")
+
+    var formPastosCard = Column(listOf(
+        Label("⊕ Cadastro e Edição de Pasto / Piquete (RF02)"),
+        Row(listOf(
+            campoInput("Nome do Pasto ou Piquete *", inpPastoNome),
+            campoSelect("Regime de Posse / Fornecedor *", selPastoDono),
+            campoInput("Custo Mensal por Cabeça (R$) *", inpPastoValor),
+            campoSelect("Pasto para Edição", selPastoEditar),
+            campoInput("UUID Manual (opcional)", inpPastoIdManual)
+        ))
+    ))
+    formPastosCard.setClass("estocae-card form-inline-card")
+
+    var cardTabelaPastos = Column(listOf(tabelaPastos, criarPaginacaoEstocae()))
+    cardTabelaPastos.setClass("estocae-card inventory-table-card")
+
+    var painelPastos = Column(listOf(pastoKpiRow, pastoSectionHeader, formPastosCard, cardTabelaPastos))
+    painelPastos.setClass("view-screen hidden")
+    painelPastos.setId("panel-pastos")
+
+    // ========================================================================
+    // TELA 5: MOVIMENTACOES & TRATAMENTOS SANITARIOS (Fiel a Imagem 4 - RF05, RF06)
+    // ========================================================================
+    var lblNovaMovTitle = Label("⊕ Nova Movimentação")
+    lblNovaMovTitle.setClass("orange-section-heading")
+
+    var lblTipoMov = Label("Tipo de Movimentação *")
+    lblTipoMov.setClass("field-label")
+
+    var btnTipoEntrada = Button("↓ Entrada", () -> {})
+    var btnTipoSaida = Button("↑ Saída", () -> {})
+    var btnTipoAjuste = Button("⇅ Ajuste", () -> {})
+    btnTipoEntrada.setClass("mov-type-btn active")
+    btnTipoSaida.setClass("mov-type-btn")
+    btnTipoAjuste.setClass("mov-type-btn")
+
+    btnTipoEntrada.on("click", (e) -> {
+        UiState.tipoMovimentacao = 0
+        btnTipoEntrada.setClass("mov-type-btn active")
+        btnTipoSaida.setClass("mov-type-btn")
+        btnTipoAjuste.setClass("mov-type-btn")
+    })
+    btnTipoSaida.on("click", (e) -> {
+        UiState.tipoMovimentacao = 1
+        btnTipoEntrada.setClass("mov-type-btn")
+        btnTipoSaida.setClass("mov-type-btn active")
+        btnTipoAjuste.setClass("mov-type-btn")
+    })
+    btnTipoAjuste.on("click", (e) -> {
+        UiState.tipoMovimentacao = 2
+        btnTipoEntrada.setClass("mov-type-btn")
+        btnTipoSaida.setClass("mov-type-btn")
+        btnTipoAjuste.setClass("mov-type-btn active")
+    })
+
+    var rowTiposMov = Row(listOf(btnTipoEntrada, btnTipoSaida, btnTipoAjuste))
+    rowTiposMov.setClass("mov-type-row")
+
+    var colTipoMov = Column(listOf(lblTipoMov, rowTiposMov))
+    colTipoMov.setClass("mov-left-top")
+
     var inpTratDoenca = Input("")
-    inpTratDoenca.setPlaceholder("Ex: Mastite Clinica / Controle Endo-Ectoparasitas")
+    inpTratDoenca.setPlaceholder("Ex: Controle Preventivo de Parasitas / Mastite")
     inpTratDoenca.setId("inp-trat-doenca")
 
     var inpTratDosagem = Input("10.0")
-    inpTratDosagem.setPlaceholder("Ex: 10.0")
+    inpTratDosagem.setPlaceholder("Busque ou informe a quantidade / dose (mL)")
     inpTratDosagem.setId("inp-trat-dosagem")
 
     var inpTratInicio = Input("2026-10-17")
-    inpTratInicio.setPlaceholder("AAAA-MM-DD")
+    inpTratInicio.setPlaceholder("29/04/2025 15:25")
     inpTratInicio.setId("inp-trat-inicio")
 
     var inpTratFim = Input("2026-10-24")
@@ -955,22 +1638,55 @@ main() {
     inpTratFim.setId("inp-trat-fim")
 
     var taTratObs = Textarea("")
-    taTratObs.setPlaceholder("Descreva a posologia, evolucao clinica, periodo de carencia de leite/abate e recomendacoes veterinarias...")
+    taTratObs.setPlaceholder("Adicione observações relevantes sobre posologia, carência e evolução clínica")
     taTratObs.setId("ta-trat-obs")
 
     var inpTratGadoManual = Input("")
-    inpTratGadoManual.setPlaceholder("Opcional: UUID do animal")
+    inpTratGadoManual.setPlaceholder("UUID Animal (opcional)")
     inpTratGadoManual.setId("inp-trat-gado-manual")
 
     var inpTratRemedioManual = Input("")
-    inpTratRemedioManual.setPlaceholder("Opcional: UUID do medicamento")
+    inpTratRemedioManual.setPlaceholder("UUID Medicamento (opcional)")
     inpTratRemedioManual.setId("inp-trat-remedio-manual")
 
     var inpTratIdManual = Input("")
-    inpTratIdManual.setPlaceholder("Opcional: UUID do tratamento")
+    inpTratIdManual.setPlaceholder("UUID Tratamento (opcional)")
     inpTratIdManual.setId("inp-trat-id-manual")
 
-    var btnRegistrarTratamento = Button("Registrar Tratamento + Baixar Estoque", () -> {
+    var colMovLeft = Column(listOf(
+        colTipoMov,
+        campoSelect("Produto / Medicamento Aplicado (RF06) *", selTratRemedio),
+        campoSelect("Animal em Tratamento (RF05) *", selTratGado),
+        campoInput("Quantidade / Dosagem (mL) *", inpTratDosagem)
+    ))
+    colMovLeft.setClass("mov-form-col")
+
+    var colMovRight = Column(listOf(
+        campoInput("Motivo / Diagnóstico Clínico *", inpTratDoenca),
+        Row(listOf(
+            campoInput("Data de Início *", inpTratInicio),
+            campoInput("Previsão de Alta *", inpTratFim)
+        )),
+        campoTextarea("Observações", taTratObs),
+        Row(listOf(
+            campoInput("UUID Animal (opc.)", inpTratGadoManual),
+            campoInput("UUID Remédio (opc.)", inpTratRemedioManual),
+            campoInput("UUID Tratamento (opc.)", inpTratIdManual)
+        ))
+    ))
+    colMovRight.setClass("mov-form-col")
+
+    var gridMovForm = Row(listOf(colMovLeft, colMovRight))
+    gridMovForm.setClass("mov-form-grid")
+
+    var btnCancelarMov = Button("× Cancelar", () -> {
+        inpTratDoenca.setText("")
+        taTratObs.setText("")
+        statusBanner.text = "Formulário de movimentação limpo."
+    })
+    btnCancelarMov.setClass("btn-outline")
+
+    var btnRegistrarTratamento = Button("Salvar produto", () -> {
         var doenca = inpTratDoenca.text()
         if (doenca == "") {
             doenca = "Protocolo Sanitario Preventivo"
@@ -989,29 +1705,29 @@ main() {
         }
         var obs = taTratObs.text()
         if (obs == "") {
-            obs = "Aplicacao supervisionada com baixa automatica de 1 unidade no estoque."
+            obs = "Aplicacao supervisionada com baixa automatica no estoque."
         }
         var payload = "{\"nome_doenca\":\"" + doenca + "\",\"gado_uuid\":\"" + gadoId + "\",\"data_inicio\":\"" + inpTratInicio.text() + "\",\"data_fim\":\"" + inpTratFim.text() + "\",\"observacoes\":\"" + obs + "\",\"fk_remedio_uuid\":\"" + remId + "\",\"dosagen\":" + dosStr + "}"
         var res = http.post(UiState.apiBase + "/tratamentos", payload)
-        sincronizarRemediosUi(tabelaRemedios, selRemedioEstoque, selTratRemedio, kpiRemediosValor, kpiRemediosSub)
-        carregarHistoricoGadoUi(gadoId, tabelaTratamentos, selTratamentoVer, kpiTratValor, kpiTratSub)
-        statusBanner.text = "Tratamento registrado e estoque debitado (RF05/RF06): " + res
+        sincronizarRemediosUi(tabelaRemedios, tabelaDashboardEstoque, selRemedioEstoque, selTratRemedio, kpiDashBaixo, kpiDashValor, kpiRemTotal, kpiRemAtivos, kpiRemBaixos, kpiRemZerados)
+        carregarHistoricoGadoUi(gadoId, tabelaTratamentos, selTratamentoVer)
+        statusBanner.text = "Movimentacao / tratamento registrado e estoque atualizado (RF05/RF06): " + res
     })
-    btnRegistrarTratamento.setClass("btn-primary")
+    btnRegistrarTratamento.setClass("btn-navy")
     btnRegistrarTratamento.setId("btn-registrar-tratamento")
 
-    var btnHistoricoGado = Button("Consultar Historico do Animal", () -> {
+    var btnHistoricoGado = Button("Consultar Histórico do Animal", () -> {
         var gadoId = inpTratGadoManual.text()
         if (gadoId == "" && UiState.gadoIds.size() > 0) {
             gadoId = UiState.gadoIds.get(selTratGado.selected())
         }
-        carregarHistoricoGadoUi(gadoId, tabelaTratamentos, selTratamentoVer, kpiTratValor, kpiTratSub)
-        statusBanner.text = "Historico clinico carregado para o animal " + nomeDoGadoPorId(gadoId)
+        carregarHistoricoGadoUi(gadoId, tabelaTratamentos, selTratamentoVer)
+        statusBanner.text = "Historico carregado para " + nomeDoGadoPorId(gadoId)
     })
-    btnHistoricoGado.setClass("btn-secondary")
+    btnHistoricoGado.setClass("btn-outline")
     btnHistoricoGado.setId("btn-historico-gado")
 
-    var btnRemediosTratamento = Button("Ver Receituario e Dosagens", () -> {
+    var btnRemediosTratamento = Button("Exportar / Ver Receituário", () -> {
         var tratId = inpTratIdManual.text()
         if (tratId == "" && UiState.tratamentoIds.size() > 0) {
             tratId = UiState.tratamentoIds.get(selTratamentoVer.selected())
@@ -1034,174 +1750,288 @@ main() {
                 linhasRec.add(listOf("Nenhum medicamento vinculado", "-", "-"))
             }
             tabelaReceituario.setRows(linhasRec)
-            statusBanner.text = "Receituario carregado (" + itens.size() + " medicamentos vinculados ao tratamento)."
+            statusBanner.text = "Receituario carregado (" + itens.size() + " itens)."
         } else {
             statusBanner.text = "Receituario do tratamento (RF05): " + res
         }
     })
-    btnRemediosTratamento.setClass("btn-ghost")
+    btnRemediosTratamento.setClass("btn-outline")
     btnRemediosTratamento.setId("btn-remedios-tratamento")
 
-    var formTratamentos = Fieldset(
-        listOf(
-            Row(listOf(
-                campoSelect("Animal em Tratamento *", selTratGado),
-                campoSelect("Medicamento Aplicado (Baixa Estoque) *", selTratRemedio)
-            )),
-            Row(listOf(
-                campoInput("Diagnostico / Nome da Doenca *", inpTratDoenca),
-                campoInput("Dosagem Aplicada (mL / mg) *", inpTratDosagem)
-            )),
-            Row(listOf(
-                campoInput("Data de Inicio *", inpTratInicio),
-                campoInput("Previsao de Alta *", inpTratFim)
-            )),
-            campoTextarea("Evolucao Clinica e Observacoes Veterinarias", taTratObs),
-            Hr(),
-            Row(listOf(
-                campoInput("UUID Animal (opcional)", inpTratGadoManual),
-                campoInput("UUID Medicamento (opcional)", inpTratRemedioManual),
-                campoInput("UUID Tratamento (opcional)", inpTratIdManual)
-            )),
-            Row(listOf(btnRegistrarTratamento, btnHistoricoGado))
-        ),
-        "Prescricao Veterinaria & Baixa Automatica de Estoque (RF05, RF06)"
-    )
-    formTratamentos.setClass("panel-card form-card")
+    var footerMovActions = Row(listOf(btnHistoricoGado, btnCancelarMov, btnRegistrarTratamento))
+    footerMovActions.setClass("mov-footer-actions")
 
-    var barraReceituario = Row(listOf(
-        campoSelect("Tratamento Selecionado para Receituario", selTratamentoVer),
-        btnRemediosTratamento
-    ))
-    barraReceituario.setClass("filter-bar")
+    var cardNovaMovimentacao = Column(listOf(lblNovaMovTitle, gridMovForm, Hr(), footerMovActions))
+    cardNovaMovimentacao.setClass("estocae-card mov-top-card")
 
-    var cardTabelaTratamentos = Fieldset(
-        listOf(tabelaTratamentos, Hr(), barraReceituario, tabelaReceituario),
-        "Prontuario Sanitario do Animal & Dosagens Aplicadas (RF05)"
-    )
-    cardTabelaTratamentos.setClass("panel-card table-card")
+    var lblHistMovTitle = Label("↺ Histórico de Movimentações")
+    lblHistMovTitle.setClass("orange-section-heading")
 
-    var painelTratamentos = Row(listOf(formTratamentos, cardTabelaTratamentos))
-    painelTratamentos.setClass("tab-panel hidden")
+    var histRightActions = Row(listOf(selTratamentoVer, btnRemediosTratamento))
+    histRightActions.setClass("inventory-actions-row")
+
+    var headerHistMov = Row(listOf(lblHistMovTitle, histRightActions))
+    headerHistMov.setClass("card-header-between")
+
+    var cardHistoricoMov = Column(listOf(headerHistMov, tabelaTratamentos, tabelaReceituario, criarPaginacaoEstocae()))
+    cardHistoricoMov.setClass("estocae-card mov-history-card")
+
+    var painelTratamentos = Column(listOf(cardNovaMovimentacao, cardHistoricoMov))
+    painelTratamentos.setClass("view-screen hidden")
     painelTratamentos.setId("panel-tratamentos")
 
     // ========================================================================
-    // ABA 5: PERFIL DO USUARIO AUTENTICADO VIA OAUTH2 (RF04, RNF08, RNF09)
+    // TELA 6: CONFIGURACOES DO SISTEMA & PERFIL DO USUARIO (Fiel a Imagem 3)
     // ========================================================================
-    var inpPerfilNome = Input("")
-    inpPerfilNome.setPlaceholder("Ex: Guilherme Silva (Gestor Agropecuario)")
+    // Coluna Esquerda - Card 1: Configuracoes do Sistema
+    var lblCfgSysTitle = Label("⚙ Configurações do Sistema")
+    lblCfgSysTitle.setClass("orange-section-heading")
+
+    var inpEmpresaNome = Input("AgroKOF · Fazenda Santa Helena")
+    var selMoeda = Select(listOf("Real Brasileiro (R$)", "Dólar Americano (US$)", "Euro (€)"))
+    var selFuso = Select(listOf("(UTC-03:00) Brasília", "(UTC-04:00) Cuiabá / Manaus"))
+    var selFormatoData = Select(listOf("DD/MM/YYYY", "YYYY-MM-DD"))
+    var inpEndereco = Input("Rodovia BR-163, Km 42 - Zona Rural / PE")
+
+    var cardCfgSistema = Column(listOf(
+        lblCfgSysTitle,
+        Row(listOf(
+            campoInput("Nome da Empresa", inpEmpresaNome),
+            campoSelect("Moeda Padrão", selMoeda)
+        )),
+        Row(listOf(
+            campoSelect("Fuso Horário", selFuso),
+            campoSelect("Formato de Data", selFormatoData)
+        )),
+        campoInput("Endereço / Localização", inpEndereco)
+    ))
+    cardCfgSistema.setClass("estocae-card settings-block-card")
+
+    // Coluna Esquerda - Card 2: Configuracoes do Estoque
+    var lblCfgEstTitle = Label("📦 Configurações do Estoque")
+    lblCfgEstTitle.setClass("orange-section-heading")
+
+    var inpNivelMinimo = Input("5")
+    var selUnidadePadrao = Select(listOf("Unidades", "Frascos (50 mL)", "Doses (mL)"))
+
+    var cardCfgEstoque = Column(listOf(
+        lblCfgEstTitle,
+        criarSwitchRow("Alertas de Estoque Baixo", "Ativar notificações quando produtos atingirem níveis mínimos", true),
+        Row(listOf(
+            campoInput("Nível Mínimo Padrão", inpNivelMinimo),
+            campoSelect("Unidade de Medida Padrão", selUnidadePadrao)
+        )),
+        criarSwitchRow("Permitir Estoque Negativo", "Permitir baixas mesmo quando não há estoque disponível", false),
+        criarSwitchRow("Ativar Validade de Produtos", "Controlar data de validade dos medicamentos veterinários", false),
+        criarSwitchRow("Ativar Controle de Lotes", "Rastrear produtos e animais por números de lote ou registro", true)
+    ))
+    cardCfgEstoque.setClass("estocae-card settings-block-card")
+
+    // Coluna Esquerda - Card 3: Notificacoes por E-mail
+    var lblCfgMailTitle = Label("✉ Notificações por E-mail")
+    lblCfgMailTitle.setClass("orange-section-heading")
+
+    var inpNovoEmail = Input("")
+    inpNovoEmail.setPlaceholder("Adicionar e-mail")
+    var btnAddEmail = Button("+", () -> {
+        statusBanner.text = "E-mail adicionado à lista de notificações: " + inpNovoEmail.text()
+        inpNovoEmail.setText("")
+    })
+    btnAddEmail.setClass("btn-orange-square")
+
+    var rowAddEmail = Row(listOf(inpNovoEmail, btnAddEmail))
+    rowAddEmail.setClass("email-add-row")
+
+    var pillEmail1 = Row(listOf(Label("estoque@empresa.com"), Label("×")))
+    pillEmail1.setClass("email-chip-row")
+    var pillEmail2 = Row(listOf(Label("veterinario@fazendakof.com"), Label("×")))
+    pillEmail2.setClass("email-chip-row")
+
+    var cardCfgEmail = Column(listOf(
+        lblCfgMailTitle,
+        criarSwitchRow("Notificar Estoque Baixo", "Enviar e-mail quando os produtos atingirem níveis mínimos", true),
+        Label("E-mails para Notificação"),
+        rowAddEmail,
+        pillEmail1,
+        pillEmail2,
+        criarSwitchRow("Notificar Movimentações Críticas", "Enviar e-mail para grandes movimentações de estoque", false)
+    ))
+    cardCfgEmail.setClass("estocae-card settings-block-card")
+
+    var settingsLeftCol = Column(listOf(cardCfgSistema, cardCfgEstoque, cardCfgEmail))
+    settingsLeftCol.setClass("settings-col-left")
+
+    // Coluna Direita - Card 1: Perfil do Usuario OAuth2 (RF04, RNF08, RNF09)
+    var lblPerfilTitle = Label("👤 Perfil do Usuário")
+    lblPerfilTitle.setClass("orange-section-heading")
+
+    var avatarCircleBig = Label("JA")
+    avatarCircleBig.setClass("profile-avatar-large")
+    var lblProfileDisplayName = Label("Juliana Albuquerque")
+    lblProfileDisplayName.setClass("profile-display-name")
+    var lblProfileDisplayEmail = Label("juliana@email.com")
+    lblProfileDisplayEmail.setClass("profile-display-email")
+
+    var profileCenterHeader = Column(listOf(avatarCircleBig, lblProfileDisplayName, lblProfileDisplayEmail))
+    profileCenterHeader.setClass("profile-header-center")
+
+    var inpPerfilNome = Input("Juliana")
+    inpPerfilNome.setPlaceholder("Nome")
     inpPerfilNome.setId("inp-perfil-nome")
 
-    var inpPerfilEmail = Input("")
-    inpPerfilEmail.setPlaceholder("Ex: gestor@fazendakof.com.br")
+    var inpPerfilSobrenome = Input("Albuquerque")
+    inpPerfilSobrenome.setPlaceholder("Sobrenome")
+
+    var inpPerfilEmail = Input("juliana@email.com")
+    inpPerfilEmail.setPlaceholder("E-mail OAuth2")
     inpPerfilEmail.setId("inp-perfil-email")
 
+    var inpPerfilSenha = Input("••••••••")
+    var selNivelAcesso = Select(listOf("Administrador", "Gestor Agropecuário", "Veterinário"))
+
     var tabelaPerfil = Table(
-        listOf("Propriedade", "Valor na Sessao OAuth2"),
+        listOf("Propriedade OAuth2", "Status / Valor"),
         listOf(
             listOf("Provedores Suportados (RNF08)", "Google OAuth2 / GitHub OAuth2"),
-            listOf("Politica de Privacidade (RNF09)", "Coleta estrita de ID, Nome, E-mail e Provedor"),
-            listOf("Status da Sessao Atual", "Clique em 'Consultar Sessao OAuth2' para verificar")
+            listOf("Política de Privacidade (RNF09)", "Coleta mínima: ID, Nome e E-mail"),
+            listOf("Sessão Atual", "Autenticado / Pronto para sincronizar")
         )
     )
     tabelaPerfil.setId("tabela-perfil")
 
-    var btnPerfilOAuth = Button("Consultar Sessao OAuth2", () -> {
+    var lblSidebarUserName = Label("Juliana Albuquerque")
+    lblSidebarUserName.setClass("sidebar-user-name")
+
+    var btnPerfilOAuth = Button("Consultar Sessão OAuth2", () -> {
         var res = http.get(UiState.apiBase + "/perfil")
         tabelaPerfil.setRows(listOf(
             listOf("Provedores Suportados (RNF08)", "Google OAuth2 / GitHub OAuth2"),
-            listOf("Politica de Privacidade (RNF09)", "Coleta minima sem rastreamento"),
+            listOf("Política de Privacidade (RNF09)", "Coleta mínima sem rastreamento"),
             listOf("Resposta da API (/perfil)", res)
         ))
-        statusBanner.text = "Verificacao de Perfil OAuth2 (RF04/RNF08): " + res
+        statusBanner.text = "Verificação de Perfil OAuth2 (RF04/RNF08): " + res
     })
-    btnPerfilOAuth.setClass("btn-secondary")
+    btnPerfilOAuth.setClass("btn-outline")
     btnPerfilOAuth.setId("btn-consultar-perfil")
 
     var btnAtualizarPerfil = Button("Salvar Dados do Perfil", () -> {
-        var payload = "{\"nome\":\"" + inpPerfilNome.text() + "\",\"email\":\"" + inpPerfilEmail.text() + "\"}"
+        var nomeCompleto = inpPerfilNome.text()
+        if (inpPerfilSobrenome.text() != "") {
+            nomeCompleto = nomeCompleto + " " + inpPerfilSobrenome.text()
+        }
+        var payload = "{\"nome\":\"" + nomeCompleto + "\",\"email\":\"" + inpPerfilEmail.text() + "\"}"
         var res = http.put(UiState.apiBase + "/perfil", payload)
+        lblProfileDisplayName.text = nomeCompleto
+        lblProfileDisplayEmail.text = inpPerfilEmail.text()
+        lblSidebarUserName.text = nomeCompleto
         tabelaPerfil.setRows(listOf(
-            listOf("Nome Informado", inpPerfilNome.text()),
-            listOf("E-mail Informado", inpPerfilEmail.text()),
-            listOf("Retorno do Servidor (/perfil)", res)
+            listOf("Nome Atualizado", nomeCompleto),
+            listOf("E-mail Atualizado", inpPerfilEmail.text()),
+            listOf("Retorno da API (/perfil)", res)
         ))
-        statusBanner.text = "Atualizacao de Perfil OAuth2 (RF04/RNF09): " + res
+        statusBanner.text = "Atualização de Perfil OAuth2 (RF04/RNF09): " + res
     })
-    btnAtualizarPerfil.setClass("btn-primary")
+    btnAtualizarPerfil.setClass("btn-navy")
     btnAtualizarPerfil.setId("btn-salvar-perfil")
 
-    var formPerfil = Fieldset(
-        listOf(
-            campoInput("Nome Completo do Produtor / Gestor", inpPerfilNome),
-            campoInput("E-mail Institucional (Vinculado ao OAuth2)", inpPerfilEmail),
-            Row(listOf(btnPerfilOAuth, btnAtualizarPerfil))
-        ),
-        "Dados da Conta OAuth2 — Google / GitHub (RF04, RNF08, RNF09)"
-    )
-    formPerfil.setClass("panel-card form-card")
+    var cardPerfilUsuario = Column(listOf(
+        lblPerfilTitle,
+        profileCenterHeader,
+        Row(listOf(
+            campoInput("Nome", inpPerfilNome),
+            campoInput("Sobrenome", inpPerfilSobrenome)
+        )),
+        campoInput("E-mail", inpPerfilEmail),
+        campoInput("Senha / Token OAuth2", inpPerfilSenha),
+        campoSelect("Nível de Acesso", selNivelAcesso),
+        Row(listOf(btnPerfilOAuth, btnAtualizarPerfil)),
+        tabelaPerfil
+    ))
+    cardPerfilUsuario.setClass("estocae-card settings-block-card")
 
-    var cardTabelaPerfil = Fieldset(
-        listOf(tabelaPerfil),
-        "Auditoria de Seguranca e Privacidade (RNF08, RNF09)"
-    )
-    cardTabelaPerfil.setClass("panel-card table-card")
+    // Coluna Direita - Card 2: Informacoes do Sistema
+    var lblSysInfoTitle = Label("ℹ Informações do Sistema")
+    lblSysInfoTitle.setClass("orange-section-heading")
 
-    var painelPerfil = Row(listOf(formPerfil, cardTabelaPerfil))
-    painelPerfil.setClass("tab-panel hidden")
+    var infoVersao = Label("Estocaê · AgroKOF v1.0.0")
+    infoVersao.setClass("sys-info-box")
+    var infoUpdate = Label("17/10/2026")
+    infoUpdate.setClass("sys-info-box")
+    var infoLicenca = Label("Licença Empresarial (Válida até 29/05/2027)")
+    infoLicenca.setClass("sys-info-box")
+    var infoStatus = Label("✔ Sistema Atualizado")
+    infoStatus.setClass("sys-info-box status-ok")
+    var infoBackup = Label("17/10/2026 18:30")
+    infoBackup.setClass("sys-info-box")
+
+    var btnBackupAgora = Button("💾 Fazer Backup Agora", () -> {
+        sincronizarPastosUi(tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiDashPastos, kpiPastosTotal, kpiPastosProprios, kpiPastosArrendados, kpiPastosCusto)
+        sincronizarGadosUi(tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiDashProdutos, kpiGadoTotal, kpiGadoAtivos, kpiGadoInativos, kpiGadoAlerta)
+        sincronizarRemediosUi(tabelaRemedios, tabelaDashboardEstoque, selRemedioEstoque, selTratRemedio, kpiDashBaixo, kpiDashValor, kpiRemTotal, kpiRemAtivos, kpiRemBaixos, kpiRemZerados)
+        statusBanner.text = "Backup e sincronização concluídos com sucesso!"
+    })
+    btnBackupAgora.setClass("btn-navy full-width")
+
+    var cardSysInfo = Column(listOf(
+        lblSysInfoTitle,
+        Label("Versão"),
+        infoVersao,
+        Label("Última Atualização"),
+        infoUpdate,
+        Label("Licença"),
+        infoLicenca,
+        Label("Status"),
+        infoStatus,
+        Label("Último Backup"),
+        infoBackup,
+        btnBackupAgora
+    ))
+    cardSysInfo.setClass("estocae-card settings-block-card")
+
+    var settingsRightCol = Column(listOf(cardPerfilUsuario, cardSysInfo))
+    settingsRightCol.setClass("settings-col-right")
+
+    var settingsGrid = Row(listOf(settingsLeftCol, settingsRightCol))
+    settingsGrid.setClass("settings-two-col-grid")
+
+    var painelPerfil = Column(listOf(settingsGrid))
+    painelPerfil.setClass("view-screen hidden")
     painelPerfil.setId("panel-perfil")
 
     // ========================================================================
-    // 4. BARRA DE NAVEGACAO POR ABAS E CONTROLES DE TOPO
+    // TOPBAR & SIDEBAR ESQUERDA (PADRAO ESTOCAE FIGMA)
     // ========================================================================
-    var btnAbaPastos = Button("1. Pastos & Piquetes", () -> {
-        alternarAba(0, painelPastos, painelGado, painelRemedios, painelTratamentos, painelPerfil)
-    })
-    var btnAbaGado = Button("2. Rebanho & Filtro", () -> {
-        alternarAba(1, painelPastos, painelGado, painelRemedios, painelTratamentos, painelPerfil)
-    })
-    var btnAbaRemedios = Button("3. Farmacia & Estoque", () -> {
-        alternarAba(2, painelPastos, painelGado, painelRemedios, painelTratamentos, painelPerfil)
-    })
-    var btnAbaTratamentos = Button("4. Tratamentos Sanitarios", () -> {
-        alternarAba(3, painelPastos, painelGado, painelRemedios, painelTratamentos, painelPerfil)
-    })
-    var btnAbaPerfil = Button("5. Conta OAuth2", () -> {
-        alternarAba(4, painelPastos, painelGado, painelRemedios, painelTratamentos, painelPerfil)
-    })
+    var pageTitle = Label("Dashboard Overview")
+    pageTitle.bold = true
+    pageTitle.fontSize = 20
+    pageTitle.setClass("topbar-page-title")
 
-    btnAbaPastos.setClass("tab-btn active")
-    btnAbaGado.setClass("tab-btn")
-    btnAbaRemedios.setClass("tab-btn")
-    btnAbaTratamentos.setClass("tab-btn")
-    btnAbaPerfil.setClass("tab-btn")
+    var inpPesquisaGlobal = Input("")
+    inpPesquisaGlobal.setPlaceholder("Pesquisar em produtos, rebanho ou movimentações...")
+    inpPesquisaGlobal.setId("inp-pesquisa-global")
+    inpPesquisaGlobal.setClass("topbar-search-input")
 
-    btnAbaPastos.setId("tab-pastos")
-    btnAbaGado.setId("tab-gado")
-    btnAbaRemedios.setId("tab-remedios")
-    btnAbaTratamentos.setId("tab-tratamentos")
-    btnAbaPerfil.setId("tab-perfil")
+    var searchBox = Row(listOf(Icon("search", 16), inpPesquisaGlobal))
+    searchBox.setClass("topbar-search-box")
 
-    var navTabs = Row(listOf(btnAbaPastos, btnAbaGado, btnAbaRemedios, btnAbaTratamentos, btnAbaPerfil))
-    navTabs.setClass("tabs-bar")
-
-    // Controles do Header: Sincronizar, Popular Demo, Acessibilidade (A-, A+, Tema)
-    var btnSync = Button("Sincronizar Dados", () -> {
-        sincronizarPastosUi(tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiPastosValor, kpiPastosSub)
-        sincronizarGadosUi(tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiGadosValor, kpiGadosSub)
-        sincronizarRemediosUi(tabelaRemedios, selRemedioEstoque, selTratRemedio, kpiRemediosValor, kpiRemediosSub)
+    var btnSync = Button("Sincronizar", () -> {
+        sincronizarPastosUi(tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiDashPastos, kpiPastosTotal, kpiPastosProprios, kpiPastosArrendados, kpiPastosCusto)
+        sincronizarGadosUi(tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiDashProdutos, kpiGadoTotal, kpiGadoAtivos, kpiGadoInativos, kpiGadoAlerta)
+        sincronizarRemediosUi(tabelaRemedios, tabelaDashboardEstoque, selRemedioEstoque, selTratRemedio, kpiDashBaixo, kpiDashValor, kpiRemTotal, kpiRemAtivos, kpiRemBaixos, kpiRemZerados)
         if (UiState.gadoIds.size() > 0) {
-            carregarHistoricoGadoUi(UiState.gadoIds.get(0), tabelaTratamentos, selTratamentoVer, kpiTratValor, kpiTratSub)
+            carregarHistoricoGadoUi(UiState.gadoIds.get(0), tabelaTratamentos, selTratamentoVer)
         }
+        desenharGraficoLinha(canvasLinha, 0)
+        desenharGraficoDonut(canvasDonut)
         statusBanner.text = "Painel sincronizado: " + UiState.pastoIds.size() + " pastos, " + UiState.gadoIds.size() + " animais e " + UiState.remedioIds.size() + " medicamentos."
     })
-    btnSync.setClass("btn-secondary")
+    btnSync.setClass("btn-top-chip")
     btnSync.setId("btn-sync")
 
-    var btnSeedDemo = Button("Popular Fazenda Demo", () -> {
+    var btnSeedDemo = Button("Popular Demo", () -> {
         http.post(UiState.apiBase + "/pastos", "{\"nome\":\"Piquete Santa Helena\",\"dono\":true,\"valor_cabeca\":140}")
         http.post(UiState.apiBase + "/pastos", "{\"nome\":\"Pasto da Represa\",\"dono\":false,\"valor_cabeca\":185}")
-        sincronizarPastosUi(tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiPastosValor, kpiPastosSub)
+        sincronizarPastosUi(tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiDashPastos, kpiPastosTotal, kpiPastosProprios, kpiPastosArrendados, kpiPastosCusto)
 
         var p1 = ""
         if (UiState.pastoIds.size() > 0) {
@@ -1209,76 +2039,167 @@ main() {
         }
         http.post(UiState.apiBase + "/gados", "{\"nome\":\"Mimosa\",\"vaca_leitera\":true,\"pasto_uuid\":\"" + p1 + "\",\"saudeVaca\":\"SAUDAVEL\",\"numero_registro\":\"BR-101\",\"mae\":\"\",\"sexo\":\"FEMEA\",\"historico_tratamento_uuid\":\"\",\"data_nascimento\":\"2022-04-12\"}")
         http.post(UiState.apiBase + "/gados", "{\"nome\":\"Estrela\",\"vaca_leitera\":true,\"pasto_uuid\":\"" + p1 + "\",\"saudeVaca\":\"RECUPERACAO\",\"numero_registro\":\"BR-102\",\"mae\":\"\",\"sexo\":\"FEMEA\",\"historico_tratamento_uuid\":\"\",\"data_nascimento\":\"2023-08-20\"}")
-        sincronizarGadosUi(tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiGadosValor, kpiGadosSub)
+        http.post(UiState.apiBase + "/gados", "{\"nome\":\"Trovão\",\"vaca_leitera\":false,\"pasto_uuid\":\"" + p1 + "\",\"saudeVaca\":\"SAUDAVEL\",\"numero_registro\":\"BR-103\",\"mae\":\"\",\"sexo\":\"MACHO\",\"historico_tratamento_uuid\":\"\",\"data_nascimento\":\"2023-01-10\"}")
+        sincronizarGadosUi(tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiDashProdutos, kpiGadoTotal, kpiGadoAtivos, kpiGadoInativos, kpiGadoAlerta)
 
-        http.post(UiState.apiBase + "/remedios", "{\"nome\":\"Ivermectina 1% Ourofino\",\"data_compra\":\"2026-01-15\",\"data_vencimento\":\"2027-12-31\",\"valor\":54.9,\"aplicacao\":\"INJECAO\",\"estoque\":30}")
-        http.post(UiState.apiBase + "/remedios", "{\"nome\":\"Spray Cicatrizante Prata\",\"data_compra\":\"2026-02-10\",\"data_vencimento\":\"2028-02-10\",\"valor\":32.0,\"aplicacao\":\"CURA_FERIDAS\",\"estoque\":15}")
-        sincronizarRemediosUi(tabelaRemedios, selRemedioEstoque, selTratRemedio, kpiRemediosValor, kpiRemediosSub)
+        http.post(UiState.apiBase + "/remedios", "{\"nome\":\"Ivermectina 1% Ourofino\",\"data_compra\":\"2026-01-15\",\"data_vencimento\":\"2027-12-31\",\"valor\":48.99,\"aplicacao\":\"INJECAO\",\"estoque\":48}")
+        http.post(UiState.apiBase + "/remedios", "{\"nome\":\"Vacina Febre Aftosa\",\"data_compra\":\"2026-02-01\",\"data_vencimento\":\"2027-08-01\",\"valor\":89.90,\"aplicacao\":\"INJECAO\",\"estoque\":5}")
+        http.post(UiState.apiBase + "/remedios", "{\"nome\":\"Spray Cicatrizante Prata\",\"data_compra\":\"2026-02-10\",\"data_vencimento\":\"2028-02-10\",\"valor\":32.00,\"aplicacao\":\"CURA_FERIDAS\",\"estoque\":12}")
+        http.post(UiState.apiBase + "/remedios", "{\"nome\":\"Soro Fisiológico Ringer\",\"data_compra\":\"2026-03-05\",\"data_vencimento\":\"2028-03-05\",\"valor\":24.50,\"aplicacao\":\"SORO_FISIOLOGICO\",\"estoque\":32}")
+        sincronizarRemediosUi(tabelaRemedios, tabelaDashboardEstoque, selRemedioEstoque, selTratRemedio, kpiDashBaixo, kpiDashValor, kpiRemTotal, kpiRemAtivos, kpiRemBaixos, kpiRemZerados)
 
         if (UiState.gadoIds.size() > 0 && UiState.remedioIds.size() > 0) {
             var gId = UiState.gadoIds.get(0)
             var rId = UiState.remedioIds.get(0)
             http.post(UiState.apiBase + "/tratamentos", "{\"nome_doenca\":\"Controle Preventivo de Parasitas\",\"gado_uuid\":\"" + gId + "\",\"data_inicio\":\"2026-10-17\",\"data_fim\":\"2026-10-20\",\"observacoes\":\"Dose unica subcutanea aplicada no manejo matinal.\",\"fk_remedio_uuid\":\"" + rId + "\",\"dosagen\":10.0}")
-            sincronizarRemediosUi(tabelaRemedios, selRemedioEstoque, selTratRemedio, kpiRemediosValor, kpiRemediosSub)
-            carregarHistoricoGadoUi(gId, tabelaTratamentos, selTratamentoVer, kpiTratValor, kpiTratSub)
+            sincronizarRemediosUi(tabelaRemedios, tabelaDashboardEstoque, selRemedioEstoque, selTratRemedio, kpiDashBaixo, kpiDashValor, kpiRemTotal, kpiRemAtivos, kpiRemBaixos, kpiRemZerados)
+            carregarHistoricoGadoUi(gId, tabelaTratamentos, selTratamentoVer)
         }
-        statusBanner.text = "Fazenda Demo carregada com sucesso! Todos os pastos, animais, medicamentos e tratamentos foram populados."
+        desenharGraficoLinha(canvasLinha, 0)
+        desenharGraficoDonut(canvasDonut)
+        statusBanner.text = "Base de demonstração Estocaê · AgroKOF populada com sucesso!"
     })
-    btnSeedDemo.setClass("btn-primary")
+    btnSeedDemo.setClass("btn-top-chip primary-chip")
     btnSeedDemo.setId("btn-seed-demo")
 
     var btnDiminuirFonte = Button("A-", () -> {
         UiState.fontScale = calcularEscala(UiState.fontScale, -2)
-        brandTitle.fontSize = UiState.fontScale + 7
-        brandSubtitle.fontSize = UiState.fontScale - 1
+        pageTitle.fontSize = UiState.fontScale + 6
         statusBanner.fontSize = UiState.fontScale
-        statusBanner.text = "Acessibilidade (RNF07): Escala tipografica ajustada para " + UiState.fontScale + "px"
+        statusBanner.text = "Acessibilidade (RNF07): Escala tipográfica ajustada para " + UiState.fontScale + "px"
     })
-    btnDiminuirFonte.setClass("btn-icon")
+    btnDiminuirFonte.setClass("btn-top-chip")
     btnDiminuirFonte.setId("btn-font-dec")
 
     var btnAumentarFonte = Button("A+", () -> {
         UiState.fontScale = calcularEscala(UiState.fontScale, 2)
-        brandTitle.fontSize = UiState.fontScale + 7
-        brandSubtitle.fontSize = UiState.fontScale - 1
+        pageTitle.fontSize = UiState.fontScale + 6
         statusBanner.fontSize = UiState.fontScale
-        statusBanner.text = "Acessibilidade (RNF07): Escala tipografica ajustada para " + UiState.fontScale + "px"
+        statusBanner.text = "Acessibilidade (RNF07): Escala tipográfica ajustada para " + UiState.fontScale + "px"
     })
-    btnAumentarFonte.setClass("btn-icon")
+    btnAumentarFonte.setClass("btn-top-chip")
     btnAumentarFonte.setId("btn-font-inc")
 
-    var btnAlternarTema = Button("Tema Claro / Escuro", () -> {
+    var btnAlternarTema = Button("Tema", () -> {
         UiState.darkTheme = !UiState.darkTheme
         if (UiState.darkTheme) {
             w.theme = Theme.dark()
-            statusBanner.text = "Acessibilidade (RNF06): Tema Escuro (Dark Slate) ativado."
+            statusBanner.text = "Acessibilidade (RNF06): Tema Escuro ativado."
         } else {
             w.theme = Theme.light()
-            statusBanner.text = "Acessibilidade (RNF06): Tema Claro de Alto Contraste ativado."
+            statusBanner.text = "Acessibilidade (RNF06): Tema Claro Estocaê ativado."
         }
     })
-    btnAlternarTema.setClass("btn-icon")
+    btnAlternarTema.setClass("btn-top-chip")
     btnAlternarTema.setId("btn-theme-toggle")
 
-    var headerActions = Row(listOf(btnSeedDemo, btnSync, btnDiminuirFonte, btnAumentarFonte, btnAlternarTema))
-    headerActions.setClass("header-actions")
+    var notifBell = Column(listOf(Icon("mail", 18)))
+    notifBell.setClass("topbar-bell-btn")
 
-    var topbar = Row(listOf(brandCol, headerActions))
-    topbar.setClass("app-topbar")
+    var topbarRight = Row(listOf(searchBox, btnSeedDemo, btnSync, btnDiminuirFonte, btnAumentarFonte, btnAlternarTema, notifBell))
+    topbarRight.setClass("topbar-right")
 
-    var shell = Column(listOf(
+    var topbar = Row(listOf(pageTitle, topbarRight))
+    topbar.setClass("estocae-topbar")
+
+    // Botoes da Sidebar Esquerda
+    var btnNavDashboard = Button("🏠   Dashboard", () -> {
+        alternarTela(0, pageTitle, painelDashboard, painelGado, painelRemedios, painelPastos, painelTratamentos, painelPerfil)
+    })
+    var btnAbaGado = Button("📦   Produtos", () -> {
+        alternarTela(1, pageTitle, painelDashboard, painelGado, painelRemedios, painelPastos, painelTratamentos, painelPerfil)
+    })
+    var btnAbaRemedios = Button("🏢   Estoque", () -> {
+        alternarTela(2, pageTitle, painelDashboard, painelGado, painelRemedios, painelPastos, painelTratamentos, painelPerfil)
+    })
+    var btnAbaPastos = Button("🚚   Fornecedores", () -> {
+        alternarTela(3, pageTitle, painelDashboard, painelGado, painelRemedios, painelPastos, painelTratamentos, painelPerfil)
+    })
+    var btnAbaTratamentos = Button("💲   Movimentações", () -> {
+        alternarTela(4, pageTitle, painelDashboard, painelGado, painelRemedios, painelPastos, painelTratamentos, painelPerfil)
+    })
+    var btnNavSistema = Button("⚙   Sistema", () -> {
+        alternarTela(5, pageTitle, painelDashboard, painelGado, painelRemedios, painelPastos, painelTratamentos, painelPerfil)
+    })
+    var btnAbaPerfil = Button("👥   Usuários", () -> {
+        alternarTela(5, pageTitle, painelDashboard, painelGado, painelRemedios, painelPastos, painelTratamentos, painelPerfil)
+    })
+
+    btnVerTodosEstoque.on("click", (e) -> {
+        alternarTela(2, pageTitle, painelDashboard, painelGado, painelRemedios, painelPastos, painelTratamentos, painelPerfil)
+    })
+
+    btnNavDashboard.setClass("tab-btn sidebar-link active")
+    btnAbaGado.setClass("tab-btn sidebar-link")
+    btnAbaRemedios.setClass("tab-btn sidebar-link")
+    btnAbaPastos.setClass("tab-btn sidebar-link")
+    btnAbaTratamentos.setClass("tab-btn sidebar-link")
+    btnNavSistema.setClass("tab-btn sidebar-link")
+    btnAbaPerfil.setClass("tab-btn sidebar-link")
+
+    btnNavDashboard.setId("tab-dashboard")
+    btnAbaPastos.setId("tab-pastos")
+    btnAbaGado.setId("tab-gado")
+    btnAbaRemedios.setId("tab-remedios")
+    btnAbaTratamentos.setId("tab-tratamentos")
+    btnNavSistema.setId("tab-sistema")
+    btnAbaPerfil.setId("tab-perfil")
+
+    // Logo Estocaê na Sidebar
+    var logoCube = Label("❖")
+    logoCube.setClass("estocae-logo-cube")
+    var logoBrandText = Label("Estocaê")
+    logoBrandText.setClass("estocae-logo-text")
+    var logoHeader = Row(listOf(logoCube, logoBrandText))
+    logoHeader.setClass("estocae-sidebar-brand")
+
+    var lblMenuPrincipal = Label("MENU PRINCIPAL")
+    lblMenuPrincipal.setClass("sidebar-section-label")
+
+    var lblMenuConfig = Label("CONFIGURAÇÕES")
+    lblMenuConfig.setClass("sidebar-section-label")
+
+    var navGroup = Column(listOf(
+        lblMenuPrincipal,
+        btnNavDashboard,
+        btnAbaGado,
+        btnAbaRemedios,
+        btnAbaPastos,
+        btnAbaTratamentos,
+        lblMenuConfig,
+        btnNavSistema,
+        btnAbaPerfil
+    ))
+    navGroup.setClass("sidebar-nav-list")
+
+    // Rodape do Usuario na Sidebar
+    var sidebarAvatar = Label("JA")
+    sidebarAvatar.setClass("sidebar-user-avatar")
+    var lblSidebarRole = Label("Admin · AgroKOF")
+    lblSidebarRole.setClass("sidebar-user-role")
+    var sidebarUserInfo = Column(listOf(lblSidebarUserName, lblSidebarRole))
+    sidebarUserInfo.setClass("sidebar-user-info")
+    var sidebarFooter = Row(listOf(sidebarAvatar, sidebarUserInfo))
+    sidebarFooter.setClass("sidebar-user-footer")
+
+    var sidebar = Column(listOf(logoHeader, navGroup, sidebarFooter))
+    sidebar.setClass("estocae-sidebar")
+
+    var contentViewport = Column(listOf(
         topbar,
-        kpiGrid,
         statusBanner,
-        navTabs,
-        painelPastos,
+        painelDashboard,
         painelGado,
         painelRemedios,
+        painelPastos,
         painelTratamentos,
         painelPerfil
     ))
-    shell.setClass("app-shell")
+    contentViewport.setClass("estocae-main-area")
 
-    w.bind(shell)
+    var appLayout = Row(listOf(sidebar, contentViewport))
+    appLayout.setClass("estocae-app-shell")
+
+    w.bind(appLayout)
     w.show()
 }

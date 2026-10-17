@@ -2,7 +2,7 @@
 // Target: ECMAScript 2022+ (ES modules)
 // Module: Default
 
-import { kofListSize, kofListGet, kofUiLabelNew, kofUiWidgetSetClass, kofListNew, kofListAdd, kofUiColumnNew, kofFormat, kofHttpGet, kofUiTableSetRows, kofUiSelectSetOptions, kofUiLabelSetText, kofNumFmt, kofUiWindowNew, kofUiWindowSetTheme, kofUiLabelSetBold, kofUiLabelSetFontSize, kofUiWidgetSetId, kofUiRowNew, kofUiSelectNew, kofUiTableNew, kofUiInputNew, kofUiInputSetPlaceholder, kofUiButtonNewAction, kofUiHrNew, kofUiFieldsetNewLegend, kofUiTextareaNew, kofUiTextareaSetPlaceholder, kofUiWindowBind, kofUiWindowShow, kofValEq, kofHashCode, kofJsonFp, kofUiInputText, kofUiSelectSelected, kofHttpPost, kofHttpPut, kofHttpDelete, kofUiTextareaText } from './kof-runtime.mjs';
+import { kofListSize, kofListGet, kofUiLabelNew, kofUiWidgetSetClass, kofListNew, kofListAdd, kofUiColumnNew, kofUiButtonNewAction, kofUiWidgetOn, kofUiRowNew, kofUiCanvasClearRect, kofUiCanvasSetFill, kofUiCanvasBeginPath, kofUiCanvasMoveTo, kofUiCanvasLineTo, kofUiCanvasClosePath, kofUiCanvasFill, kofUiCanvasSetStroke, kofUiCanvasSetLineWidth, kofUiCanvasFillText, kofUiCanvasStroke, kofUiCanvasArc, kofUiLabelSetText, kofFormat, kofHttpGet, kofUiTableSetRows, kofUiSelectSetOptions, kofDivZero, kofD2I, kofNumFmt, kofUiWindowNew, kofUiWindowSetTheme, kofUiSelectNew, kofUiWidgetSetId, kofUiTableNew, kofUiIconNewSize, kofUiCanvasNew, kofUiInputNew, kofUiInputSetPlaceholder, kofUiTextareaNew, kofUiTextareaSetPlaceholder, kofUiHrNew, kofUiLabelSetBold, kofUiLabelSetFontSize, kofUiWindowBind, kofUiWindowShow, kofValEq, kofHashCode, kofJsonFp, kofUiInputText, kofUiSelectSelected, kofHttpPost, kofHttpPut, kofHttpDelete, kofUiInputSetText, kofUiTextareaSetText, kofUiTextareaText } from './kof-runtime.mjs';
 
 class PastoItem {
     _id;
@@ -358,16 +358,19 @@ class TratamentoRemedioItem {
 }
 
 class UiState {
-    static fontScale = 15;
-    static darkTheme = 1;
+    static fontScale = 14;
+    static darkTheme = 0;
     static apiBase = "";
     static abaAtiva = 0;
+    static tipoMovimentacao = 0;
+    static periodoGrafico = 0;
     static pastoIds;
     static pastoNomes;
     static gadoIds;
     static gadoNomes;
     static remedioIds;
     static remedioNomes;
+    static remedioEstoques;
     static tratamentoIds;
 
     constructor() {
@@ -380,6 +383,7 @@ class UiState {
         (UiState.gadoNomes = kofListNew());
         (UiState.remedioIds = kofListNew());
         (UiState.remedioNomes = kofListNew());
+        (UiState.remedioEstoques = kofListNew());
         (UiState.tratamentoIds = kofListNew());
         return;
     }
@@ -425,198 +429,244 @@ class Pair {
     }
 }
 
-class Lambda0 {
-    inpPastoNome;
-    selPastoDono;
-    inpPastoValor;
-    tabelaPastos;
-    selPastoEditar;
-    selGadoPasto;
-    selFiltroPasto;
-    kpiPastosValor;
-    kpiPastosSub;
-    statusBanner;
+class Box0 {
+    value;
 
-    invoke() {
-        let nome;
-        let donoStr;
-        let valorStr;
-        let payload;
-        let res;
-        let inpPastoNome = this.inpPastoNome;
-        let selPastoDono = this.selPastoDono;
-        let inpPastoValor = this.inpPastoValor;
-        let tabelaPastos = this.tabelaPastos;
-        let selPastoEditar = this.selPastoEditar;
-        let selGadoPasto = this.selGadoPasto;
-        let selFiltroPasto = this.selFiltroPasto;
-        let kpiPastosValor = this.kpiPastosValor;
-        let kpiPastosSub = this.kpiPastosSub;
-        let statusBanner = this.statusBanner;
-        nome = kofUiInputText(inpPastoNome);
-        if (((nome === "") ? 1 : 0)) {
-            nome = "Pasto Principal";
-        }
-        donoStr = "true";
-        if ((kofUiSelectSelected(selPastoDono) === 1)) {
-            donoStr = "false";
-        }
-        valorStr = kofUiInputText(inpPastoValor);
-        if (((valorStr === "") ? 1 : 0)) {
-            valorStr = "0";
-        }
-        payload = (kofFormat((kofFormat((kofFormat((kofFormat((kofFormat((kofFormat("{\"nome\":\"") + kofFormat(nome))) + kofFormat("\",\"dono\":"))) + kofFormat(donoStr))) + kofFormat(",\"valor_cabeca\":"))) + kofFormat(valorStr))) + kofFormat("}"));
-        res = kofHttpPost((kofFormat(UiState.apiBase) + kofFormat("/pastos")), payload);
-        sincronizarPastosUi(tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiPastosValor, kpiPastosSub);
-        kofUiLabelSetText(statusBanner, (kofFormat((kofFormat((kofFormat("Pasto cadastrado com sucesso (RF02): ") + kofFormat(nome))) + kofFormat(" -> "))) + kofFormat(res)));
+    constructor() {
+        (this.value = false);
         return;
     }
-    constructor(inpPastoNome, selPastoDono, inpPastoValor, tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiPastosValor, kpiPastosSub, statusBanner) {
-        (this.inpPastoNome = null);
-        (this.selPastoDono = null);
-        (this.inpPastoValor = null);
-        (this.tabelaPastos = null);
-        (this.selPastoEditar = null);
-        (this.selGadoPasto = null);
-        (this.selFiltroPasto = null);
-        (this.kpiPastosValor = null);
-        (this.kpiPastosSub = null);
-        (this.statusBanner = null);
-        (this.inpPastoNome = inpPastoNome);
-        (this.selPastoDono = selPastoDono);
-        (this.inpPastoValor = inpPastoValor);
-        (this.tabelaPastos = tabelaPastos);
-        (this.selPastoEditar = selPastoEditar);
-        (this.selGadoPasto = selGadoPasto);
-        (this.selFiltroPasto = selFiltroPasto);
-        (this.kpiPastosValor = kpiPastosValor);
-        (this.kpiPastosSub = kpiPastosSub);
-        (this.statusBanner = statusBanner);
+}
+
+class Lambda0 {
+    invoke() {
+        return;
+    }
+    constructor() {
         return;
     }
 }
 
 class Lambda1 {
-    inpPastoIdManual;
-    selPastoEditar;
-    inpPastoNome;
-    selPastoDono;
-    inpPastoValor;
-    tabelaPastos;
-    selGadoPasto;
-    selFiltroPasto;
-    kpiPastosValor;
-    kpiPastosSub;
-    statusBanner;
+    estado;
+    btnToggle;
 
-    invoke() {
-        let targetId;
-        let nome;
-        let donoStr;
-        let valorStr;
-        let payload;
-        let res;
-        let inpPastoIdManual = this.inpPastoIdManual;
-        let selPastoEditar = this.selPastoEditar;
-        let inpPastoNome = this.inpPastoNome;
-        let selPastoDono = this.selPastoDono;
-        let inpPastoValor = this.inpPastoValor;
-        let tabelaPastos = this.tabelaPastos;
-        let selGadoPasto = this.selGadoPasto;
-        let selFiltroPasto = this.selFiltroPasto;
-        let kpiPastosValor = this.kpiPastosValor;
-        let kpiPastosSub = this.kpiPastosSub;
-        let statusBanner = this.statusBanner;
-        targetId = kofUiInputText(inpPastoIdManual);
-        if ((!!(((targetId === "") ? 1 : 0) && (kofListSize(UiState.pastoIds) > 0)))) {
-            targetId = kofListGet(UiState.pastoIds, kofUiSelectSelected(selPastoEditar));
+    invoke(e) {
+        let btnToggle;
+        let $boxval4;
+        let estado = this.estado;
+        btnToggle = this.btnToggle;
+        $boxval4 = (estado.value ? 0 : 1);
+        (estado.value = $boxval4);
+        if (estado.value) {
+            kofUiWidgetSetClass(btnToggle, "estocae-switch on");
+        } else {
+            kofUiWidgetSetClass(btnToggle, "estocae-switch off");
         }
-        nome = kofUiInputText(inpPastoNome);
-        if (((nome === "") ? 1 : 0)) {
-            nome = "Pasto Atualizado";
-        }
-        donoStr = "true";
-        if ((kofUiSelectSelected(selPastoDono) === 1)) {
-            donoStr = "false";
-        }
-        valorStr = kofUiInputText(inpPastoValor);
-        if (((valorStr === "") ? 1 : 0)) {
-            valorStr = "0";
-        }
-        payload = (kofFormat((kofFormat((kofFormat((kofFormat((kofFormat((kofFormat("{\"nome\":\"") + kofFormat(nome))) + kofFormat("\",\"dono\":"))) + kofFormat(donoStr))) + kofFormat(",\"valor_cabeca\":"))) + kofFormat(valorStr))) + kofFormat("}"));
-        res = kofHttpPut((kofFormat((kofFormat(UiState.apiBase) + kofFormat("/pastos/"))) + kofFormat(targetId)), payload);
-        sincronizarPastosUi(tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiPastosValor, kpiPastosSub);
-        kofUiLabelSetText(statusBanner, (kofFormat("Pasto atualizado com sucesso (RF02): ") + kofFormat(res)));
         return;
     }
-    constructor(inpPastoIdManual, selPastoEditar, inpPastoNome, selPastoDono, inpPastoValor, tabelaPastos, selGadoPasto, selFiltroPasto, kpiPastosValor, kpiPastosSub, statusBanner) {
-        (this.inpPastoIdManual = null);
-        (this.selPastoEditar = null);
-        (this.inpPastoNome = null);
-        (this.selPastoDono = null);
-        (this.inpPastoValor = null);
-        (this.tabelaPastos = null);
-        (this.selGadoPasto = null);
-        (this.selFiltroPasto = null);
-        (this.kpiPastosValor = null);
-        (this.kpiPastosSub = null);
-        (this.statusBanner = null);
-        (this.inpPastoIdManual = inpPastoIdManual);
-        (this.selPastoEditar = selPastoEditar);
-        (this.inpPastoNome = inpPastoNome);
-        (this.selPastoDono = selPastoDono);
-        (this.inpPastoValor = inpPastoValor);
-        (this.tabelaPastos = tabelaPastos);
-        (this.selGadoPasto = selGadoPasto);
-        (this.selFiltroPasto = selFiltroPasto);
-        (this.kpiPastosValor = kpiPastosValor);
-        (this.kpiPastosSub = kpiPastosSub);
-        (this.statusBanner = statusBanner);
+    constructor(estado, btnToggle) {
+        (this.estado = null);
+        (this.btnToggle = null);
+        (this.estado = estado);
+        (this.btnToggle = btnToggle);
         return;
     }
 }
 
 class Lambda2 {
-    tabelaPastos;
-    selPastoEditar;
-    selGadoPasto;
-    selFiltroPasto;
-    kpiPastosValor;
-    kpiPastosSub;
-    statusBanner;
-
     invoke() {
-        let tabelaPastos = this.tabelaPastos;
-        let selPastoEditar = this.selPastoEditar;
-        let selGadoPasto = this.selGadoPasto;
-        let selFiltroPasto = this.selFiltroPasto;
-        let kpiPastosValor = this.kpiPastosValor;
-        let kpiPastosSub = this.kpiPastosSub;
-        let statusBanner = this.statusBanner;
-        sincronizarPastosUi(tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiPastosValor, kpiPastosSub);
-        kofUiLabelSetText(statusBanner, (kofFormat((kofFormat("Lista de pastos sincronizada com o banco SQLite (") + kofFormat(kofListSize(UiState.pastoIds)))) + kofFormat(" pastos ativos).")));
         return;
     }
-    constructor(tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiPastosValor, kpiPastosSub, statusBanner) {
-        (this.tabelaPastos = null);
-        (this.selPastoEditar = null);
-        (this.selGadoPasto = null);
-        (this.selFiltroPasto = null);
-        (this.kpiPastosValor = null);
-        (this.kpiPastosSub = null);
-        (this.statusBanner = null);
-        (this.tabelaPastos = tabelaPastos);
-        (this.selPastoEditar = selPastoEditar);
-        (this.selGadoPasto = selGadoPasto);
-        (this.selFiltroPasto = selFiltroPasto);
-        (this.kpiPastosValor = kpiPastosValor);
-        (this.kpiPastosSub = kpiPastosSub);
-        (this.statusBanner = statusBanner);
+    constructor() {
         return;
     }
 }
 
 class Lambda3 {
+    invoke() {
+        return;
+    }
+    constructor() {
+        return;
+    }
+}
+
+class Lambda4 {
+    invoke() {
+        return;
+    }
+    constructor() {
+        return;
+    }
+}
+
+class Lambda5 {
+    invoke() {
+        return;
+    }
+    constructor() {
+        return;
+    }
+}
+
+class Lambda6 {
+    invoke() {
+        return;
+    }
+    constructor() {
+        return;
+    }
+}
+
+class Lambda7 {
+    invoke() {
+        return;
+    }
+    constructor() {
+        return;
+    }
+}
+
+class Lambda8 {
+    invoke() {
+        return;
+    }
+    constructor() {
+        return;
+    }
+}
+
+class Lambda9 {
+    invoke() {
+        return;
+    }
+    constructor() {
+        return;
+    }
+}
+
+class Lambda10 {
+    invoke() {
+        return;
+    }
+    constructor() {
+        return;
+    }
+}
+
+class Lambda11 {
+    invoke() {
+        return;
+    }
+    constructor() {
+        return;
+    }
+}
+
+class Lambda12 {
+    btnPerMes;
+    btnPerSem;
+    btnPerDia;
+    canvasLinha;
+
+    invoke(e) {
+        let canvasLinha;
+        let btnPerMes = this.btnPerMes;
+        let btnPerSem = this.btnPerSem;
+        let btnPerDia = this.btnPerDia;
+        canvasLinha = this.canvasLinha;
+        kofUiWidgetSetClass(btnPerMes, "period-pill active");
+        kofUiWidgetSetClass(btnPerSem, "period-pill");
+        kofUiWidgetSetClass(btnPerDia, "period-pill");
+        desenharGraficoLinha(canvasLinha, 0);
+        return;
+    }
+    constructor(btnPerMes, btnPerSem, btnPerDia, canvasLinha) {
+        (this.btnPerMes = null);
+        (this.btnPerSem = null);
+        (this.btnPerDia = null);
+        (this.canvasLinha = null);
+        (this.btnPerMes = btnPerMes);
+        (this.btnPerSem = btnPerSem);
+        (this.btnPerDia = btnPerDia);
+        (this.canvasLinha = canvasLinha);
+        return;
+    }
+}
+
+class Lambda13 {
+    btnPerMes;
+    btnPerSem;
+    btnPerDia;
+    canvasLinha;
+
+    invoke(e) {
+        let canvasLinha;
+        let btnPerMes = this.btnPerMes;
+        let btnPerSem = this.btnPerSem;
+        let btnPerDia = this.btnPerDia;
+        canvasLinha = this.canvasLinha;
+        kofUiWidgetSetClass(btnPerMes, "period-pill");
+        kofUiWidgetSetClass(btnPerSem, "period-pill active");
+        kofUiWidgetSetClass(btnPerDia, "period-pill");
+        desenharGraficoLinha(canvasLinha, 1);
+        return;
+    }
+    constructor(btnPerMes, btnPerSem, btnPerDia, canvasLinha) {
+        (this.btnPerMes = null);
+        (this.btnPerSem = null);
+        (this.btnPerDia = null);
+        (this.canvasLinha = null);
+        (this.btnPerMes = btnPerMes);
+        (this.btnPerSem = btnPerSem);
+        (this.btnPerDia = btnPerDia);
+        (this.canvasLinha = canvasLinha);
+        return;
+    }
+}
+
+class Lambda14 {
+    btnPerMes;
+    btnPerSem;
+    btnPerDia;
+    canvasLinha;
+
+    invoke(e) {
+        let canvasLinha;
+        let btnPerMes = this.btnPerMes;
+        let btnPerSem = this.btnPerSem;
+        let btnPerDia = this.btnPerDia;
+        canvasLinha = this.canvasLinha;
+        kofUiWidgetSetClass(btnPerMes, "period-pill");
+        kofUiWidgetSetClass(btnPerSem, "period-pill");
+        kofUiWidgetSetClass(btnPerDia, "period-pill active");
+        desenharGraficoLinha(canvasLinha, 2);
+        return;
+    }
+    constructor(btnPerMes, btnPerSem, btnPerDia, canvasLinha) {
+        (this.btnPerMes = null);
+        (this.btnPerSem = null);
+        (this.btnPerDia = null);
+        (this.canvasLinha = null);
+        (this.btnPerMes = btnPerMes);
+        (this.btnPerSem = btnPerSem);
+        (this.btnPerDia = btnPerDia);
+        (this.canvasLinha = canvasLinha);
+        return;
+    }
+}
+
+class Lambda15 {
+    invoke() {
+        return;
+    }
+    constructor() {
+        return;
+    }
+}
+
+class Lambda16 {
     inpGadoNome;
     inpGadoRegistro;
     inpGadoPastoManual;
@@ -631,8 +681,12 @@ class Lambda3 {
     tabelaGados;
     selGadoEditar;
     selTratGado;
-    kpiGadosValor;
-    kpiGadosSub;
+    kpiDashProdutos;
+    kpiGadoTotal;
+    kpiGadoAtivos;
+    kpiGadoInativos;
+    kpiGadoAlerta;
+    act3S;
     statusBanner;
 
     invoke() {
@@ -660,8 +714,12 @@ class Lambda3 {
         let tabelaGados = this.tabelaGados;
         let selGadoEditar = this.selGadoEditar;
         let selTratGado = this.selTratGado;
-        let kpiGadosValor = this.kpiGadosValor;
-        let kpiGadosSub = this.kpiGadosSub;
+        let kpiDashProdutos = this.kpiDashProdutos;
+        let kpiGadoTotal = this.kpiGadoTotal;
+        let kpiGadoAtivos = this.kpiGadoAtivos;
+        let kpiGadoInativos = this.kpiGadoInativos;
+        let kpiGadoAlerta = this.kpiGadoAlerta;
+        let act3S = this.act3S;
         let statusBanner = this.statusBanner;
         nome = kofUiInputText(inpGadoNome);
         if (((nome === "") ? 1 : 0)) {
@@ -688,11 +746,12 @@ class Lambda3 {
         }
         payload = (kofFormat((kofFormat((kofFormat((kofFormat((kofFormat((kofFormat((kofFormat((kofFormat((kofFormat((kofFormat((kofFormat((kofFormat((kofFormat((kofFormat((kofFormat((kofFormat("{\"nome\":\"") + kofFormat(nome))) + kofFormat("\",\"vaca_leitera\":"))) + kofFormat(leiteira))) + kofFormat(",\"pasto_uuid\":\""))) + kofFormat(pastoId))) + kofFormat("\",\"saudeVaca\":\""))) + kofFormat(saude))) + kofFormat("\",\"numero_registro\":\""))) + kofFormat(reg))) + kofFormat("\",\"mae\":\""))) + kofFormat(maeId))) + kofFormat("\",\"sexo\":\""))) + kofFormat(sexo))) + kofFormat("\",\"historico_tratamento_uuid\":\"\",\"data_nascimento\":\""))) + kofFormat(kofUiInputText(inpGadoNasc)))) + kofFormat("\"}"));
         res = kofHttpPost((kofFormat(UiState.apiBase) + kofFormat("/gados")), payload);
-        sincronizarGadosUi(tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiGadosValor, kpiGadosSub);
-        kofUiLabelSetText(statusBanner, (kofFormat((kofFormat((kofFormat((kofFormat((kofFormat("Animal cadastrado no rebanho (RF01): ") + kofFormat(nome))) + kofFormat(" ["))) + kofFormat(reg))) + kofFormat("] -> "))) + kofFormat(res)));
+        sincronizarGadosUi(tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiDashProdutos, kpiGadoTotal, kpiGadoAtivos, kpiGadoInativos, kpiGadoAlerta);
+        kofUiLabelSetText(act3S, (kofFormat((kofFormat((kofFormat((kofFormat("Animal ") + kofFormat(nome))) + kofFormat(" ["))) + kofFormat(reg))) + kofFormat("] - agora mesmo")));
+        kofUiLabelSetText(statusBanner, (kofFormat((kofFormat((kofFormat((kofFormat("Animal cadastrado no inventario (RF01): ") + kofFormat(nome))) + kofFormat(" ["))) + kofFormat(reg))) + kofFormat("]")));
         return;
     }
-    constructor(inpGadoNome, inpGadoRegistro, inpGadoPastoManual, selGadoPasto, selGadoMae, opcoesSaude, selGadoSaude, opcoesSexo, selGadoSexo, selGadoLeiteira, inpGadoNasc, tabelaGados, selGadoEditar, selTratGado, kpiGadosValor, kpiGadosSub, statusBanner) {
+    constructor(inpGadoNome, inpGadoRegistro, inpGadoPastoManual, selGadoPasto, selGadoMae, opcoesSaude, selGadoSaude, opcoesSexo, selGadoSexo, selGadoLeiteira, inpGadoNasc, tabelaGados, selGadoEditar, selTratGado, kpiDashProdutos, kpiGadoTotal, kpiGadoAtivos, kpiGadoInativos, kpiGadoAlerta, act3S, statusBanner) {
         (this.inpGadoNome = null);
         (this.inpGadoRegistro = null);
         (this.inpGadoPastoManual = null);
@@ -707,8 +766,12 @@ class Lambda3 {
         (this.tabelaGados = null);
         (this.selGadoEditar = null);
         (this.selTratGado = null);
-        (this.kpiGadosValor = null);
-        (this.kpiGadosSub = null);
+        (this.kpiDashProdutos = null);
+        (this.kpiGadoTotal = null);
+        (this.kpiGadoAtivos = null);
+        (this.kpiGadoInativos = null);
+        (this.kpiGadoAlerta = null);
+        (this.act3S = null);
         (this.statusBanner = null);
         (this.inpGadoNome = inpGadoNome);
         (this.inpGadoRegistro = inpGadoRegistro);
@@ -724,14 +787,18 @@ class Lambda3 {
         (this.tabelaGados = tabelaGados);
         (this.selGadoEditar = selGadoEditar);
         (this.selTratGado = selTratGado);
-        (this.kpiGadosValor = kpiGadosValor);
-        (this.kpiGadosSub = kpiGadosSub);
+        (this.kpiDashProdutos = kpiDashProdutos);
+        (this.kpiGadoTotal = kpiGadoTotal);
+        (this.kpiGadoAtivos = kpiGadoAtivos);
+        (this.kpiGadoInativos = kpiGadoInativos);
+        (this.kpiGadoAlerta = kpiGadoAlerta);
+        (this.act3S = act3S);
         (this.statusBanner = statusBanner);
         return;
     }
 }
 
-class Lambda4 {
+class Lambda17 {
     inpGadoIdManual;
     selGadoEditar;
     inpGadoNome;
@@ -747,8 +814,11 @@ class Lambda4 {
     inpGadoNasc;
     tabelaGados;
     selTratGado;
-    kpiGadosValor;
-    kpiGadosSub;
+    kpiDashProdutos;
+    kpiGadoTotal;
+    kpiGadoAtivos;
+    kpiGadoInativos;
+    kpiGadoAlerta;
     statusBanner;
 
     invoke() {
@@ -778,8 +848,11 @@ class Lambda4 {
         let inpGadoNasc = this.inpGadoNasc;
         let tabelaGados = this.tabelaGados;
         let selTratGado = this.selTratGado;
-        let kpiGadosValor = this.kpiGadosValor;
-        let kpiGadosSub = this.kpiGadosSub;
+        let kpiDashProdutos = this.kpiDashProdutos;
+        let kpiGadoTotal = this.kpiGadoTotal;
+        let kpiGadoAtivos = this.kpiGadoAtivos;
+        let kpiGadoInativos = this.kpiGadoInativos;
+        let kpiGadoAlerta = this.kpiGadoAlerta;
         let statusBanner = this.statusBanner;
         gadoId = kofUiInputText(inpGadoIdManual);
         if ((!!(((gadoId === "") ? 1 : 0) && (kofListSize(UiState.gadoIds) > 0)))) {
@@ -810,11 +883,11 @@ class Lambda4 {
         }
         payload = (kofFormat((kofFormat((kofFormat((kofFormat((kofFormat((kofFormat((kofFormat((kofFormat((kofFormat((kofFormat((kofFormat((kofFormat((kofFormat((kofFormat((kofFormat((kofFormat("{\"nome\":\"") + kofFormat(nome))) + kofFormat("\",\"vaca_leitera\":"))) + kofFormat(leiteira))) + kofFormat(",\"pasto_uuid\":\""))) + kofFormat(pastoId))) + kofFormat("\",\"saudeVaca\":\""))) + kofFormat(saude))) + kofFormat("\",\"numero_registro\":\""))) + kofFormat(reg))) + kofFormat("\",\"mae\":\""))) + kofFormat(maeId))) + kofFormat("\",\"sexo\":\""))) + kofFormat(sexo))) + kofFormat("\",\"historico_tratamento_uuid\":\"\",\"data_nascimento\":\""))) + kofFormat(kofUiInputText(inpGadoNasc)))) + kofFormat("\"}"));
         res = kofHttpPut((kofFormat((kofFormat(UiState.apiBase) + kofFormat("/gados/"))) + kofFormat(gadoId)), payload);
-        sincronizarGadosUi(tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiGadosValor, kpiGadosSub);
+        sincronizarGadosUi(tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiDashProdutos, kpiGadoTotal, kpiGadoAtivos, kpiGadoInativos, kpiGadoAlerta);
         kofUiLabelSetText(statusBanner, (kofFormat("Cadastro do animal atualizado (RF01): ") + kofFormat(res)));
         return;
     }
-    constructor(inpGadoIdManual, selGadoEditar, inpGadoNome, inpGadoRegistro, inpGadoPastoManual, selGadoPasto, selGadoMae, opcoesSaude, selGadoSaude, opcoesSexo, selGadoSexo, selGadoLeiteira, inpGadoNasc, tabelaGados, selTratGado, kpiGadosValor, kpiGadosSub, statusBanner) {
+    constructor(inpGadoIdManual, selGadoEditar, inpGadoNome, inpGadoRegistro, inpGadoPastoManual, selGadoPasto, selGadoMae, opcoesSaude, selGadoSaude, opcoesSexo, selGadoSexo, selGadoLeiteira, inpGadoNasc, tabelaGados, selTratGado, kpiDashProdutos, kpiGadoTotal, kpiGadoAtivos, kpiGadoInativos, kpiGadoAlerta, statusBanner) {
         (this.inpGadoIdManual = null);
         (this.selGadoEditar = null);
         (this.inpGadoNome = null);
@@ -830,8 +903,11 @@ class Lambda4 {
         (this.inpGadoNasc = null);
         (this.tabelaGados = null);
         (this.selTratGado = null);
-        (this.kpiGadosValor = null);
-        (this.kpiGadosSub = null);
+        (this.kpiDashProdutos = null);
+        (this.kpiGadoTotal = null);
+        (this.kpiGadoAtivos = null);
+        (this.kpiGadoInativos = null);
+        (this.kpiGadoAlerta = null);
         (this.statusBanner = null);
         (this.inpGadoIdManual = inpGadoIdManual);
         (this.selGadoEditar = selGadoEditar);
@@ -848,21 +924,27 @@ class Lambda4 {
         (this.inpGadoNasc = inpGadoNasc);
         (this.tabelaGados = tabelaGados);
         (this.selTratGado = selTratGado);
-        (this.kpiGadosValor = kpiGadosValor);
-        (this.kpiGadosSub = kpiGadosSub);
+        (this.kpiDashProdutos = kpiDashProdutos);
+        (this.kpiGadoTotal = kpiGadoTotal);
+        (this.kpiGadoAtivos = kpiGadoAtivos);
+        (this.kpiGadoInativos = kpiGadoInativos);
+        (this.kpiGadoAlerta = kpiGadoAlerta);
         (this.statusBanner = statusBanner);
         return;
     }
 }
 
-class Lambda5 {
+class Lambda18 {
     inpGadoIdManual;
     selGadoEditar;
     tabelaGados;
     selGadoMae;
     selTratGado;
-    kpiGadosValor;
-    kpiGadosSub;
+    kpiDashProdutos;
+    kpiGadoTotal;
+    kpiGadoAtivos;
+    kpiGadoInativos;
+    kpiGadoAlerta;
     statusBanner;
 
     invoke() {
@@ -873,40 +955,49 @@ class Lambda5 {
         let tabelaGados = this.tabelaGados;
         let selGadoMae = this.selGadoMae;
         let selTratGado = this.selTratGado;
-        let kpiGadosValor = this.kpiGadosValor;
-        let kpiGadosSub = this.kpiGadosSub;
+        let kpiDashProdutos = this.kpiDashProdutos;
+        let kpiGadoTotal = this.kpiGadoTotal;
+        let kpiGadoAtivos = this.kpiGadoAtivos;
+        let kpiGadoInativos = this.kpiGadoInativos;
+        let kpiGadoAlerta = this.kpiGadoAlerta;
         let statusBanner = this.statusBanner;
         gadoId = kofUiInputText(inpGadoIdManual);
         if ((!!(((gadoId === "") ? 1 : 0) && (kofListSize(UiState.gadoIds) > 0)))) {
             gadoId = kofListGet(UiState.gadoIds, kofUiSelectSelected(selGadoEditar));
         }
         res = kofHttpDelete((kofFormat((kofFormat(UiState.apiBase) + kofFormat("/gados/"))) + kofFormat(gadoId)));
-        sincronizarGadosUi(tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiGadosValor, kpiGadosSub);
+        sincronizarGadosUi(tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiDashProdutos, kpiGadoTotal, kpiGadoAtivos, kpiGadoInativos, kpiGadoAlerta);
         kofUiLabelSetText(statusBanner, (kofFormat("Animal removido do rebanho (RF01): ") + kofFormat(res)));
         return;
     }
-    constructor(inpGadoIdManual, selGadoEditar, tabelaGados, selGadoMae, selTratGado, kpiGadosValor, kpiGadosSub, statusBanner) {
+    constructor(inpGadoIdManual, selGadoEditar, tabelaGados, selGadoMae, selTratGado, kpiDashProdutos, kpiGadoTotal, kpiGadoAtivos, kpiGadoInativos, kpiGadoAlerta, statusBanner) {
         (this.inpGadoIdManual = null);
         (this.selGadoEditar = null);
         (this.tabelaGados = null);
         (this.selGadoMae = null);
         (this.selTratGado = null);
-        (this.kpiGadosValor = null);
-        (this.kpiGadosSub = null);
+        (this.kpiDashProdutos = null);
+        (this.kpiGadoTotal = null);
+        (this.kpiGadoAtivos = null);
+        (this.kpiGadoInativos = null);
+        (this.kpiGadoAlerta = null);
         (this.statusBanner = null);
         (this.inpGadoIdManual = inpGadoIdManual);
         (this.selGadoEditar = selGadoEditar);
         (this.tabelaGados = tabelaGados);
         (this.selGadoMae = selGadoMae);
         (this.selTratGado = selTratGado);
-        (this.kpiGadosValor = kpiGadosValor);
-        (this.kpiGadosSub = kpiGadosSub);
+        (this.kpiDashProdutos = kpiDashProdutos);
+        (this.kpiGadoTotal = kpiGadoTotal);
+        (this.kpiGadoAtivos = kpiGadoAtivos);
+        (this.kpiGadoInativos = kpiGadoInativos);
+        (this.kpiGadoAlerta = kpiGadoAlerta);
         (this.statusBanner = statusBanner);
         return;
     }
 }
 
-class Lambda6 {
+class Lambda19 {
     inpGadoPastoManual;
     selFiltroPasto;
     tabelaGados;
@@ -928,9 +1019,7 @@ class Lambda6 {
         if (res.startsWith("[")) {
             _scopedVar$filtrados = JSON.parse(res).map((o) => __kof_decode_GadoItem(o));
             popularTabelaGadosUi(_scopedVar$filtrados, tabelaGados);
-            kofUiLabelSetText(statusBanner, (kofFormat((kofFormat((kofFormat("Filtro RF07 aplicado: ") + kofFormat(kofListSize(_scopedVar$filtrados)))) + kofFormat(" animais alocados em "))) + kofFormat(nomeDoPastoPorId(pastoId))));
-        } else {
-            kofUiLabelSetText(statusBanner, (kofFormat("Resultado do filtro por pasto (RF07): ") + kofFormat(res)));
+            kofUiLabelSetText(statusBanner, (kofFormat((kofFormat((kofFormat("Filtro RF07 aplicado: ") + kofFormat(kofListSize(_scopedVar$filtrados)))) + kofFormat(" animais em "))) + kofFormat(nomeDoPastoPorId(pastoId))));
         }
         return;
     }
@@ -947,13 +1036,16 @@ class Lambda6 {
     }
 }
 
-class Lambda7 {
+class Lambda20 {
     tabelaGados;
     selGadoEditar;
     selGadoMae;
     selTratGado;
-    kpiGadosValor;
-    kpiGadosSub;
+    kpiDashProdutos;
+    kpiGadoTotal;
+    kpiGadoAtivos;
+    kpiGadoInativos;
+    kpiGadoAlerta;
     statusBanner;
 
     invoke() {
@@ -961,33 +1053,42 @@ class Lambda7 {
         let selGadoEditar = this.selGadoEditar;
         let selGadoMae = this.selGadoMae;
         let selTratGado = this.selTratGado;
-        let kpiGadosValor = this.kpiGadosValor;
-        let kpiGadosSub = this.kpiGadosSub;
+        let kpiDashProdutos = this.kpiDashProdutos;
+        let kpiGadoTotal = this.kpiGadoTotal;
+        let kpiGadoAtivos = this.kpiGadoAtivos;
+        let kpiGadoInativos = this.kpiGadoInativos;
+        let kpiGadoAlerta = this.kpiGadoAlerta;
         let statusBanner = this.statusBanner;
-        sincronizarGadosUi(tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiGadosValor, kpiGadosSub);
-        kofUiLabelSetText(statusBanner, (kofFormat((kofFormat("Exibindo rebanho completo (") + kofFormat(kofListSize(UiState.gadoIds)))) + kofFormat(" animais).")));
+        sincronizarGadosUi(tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiDashProdutos, kpiGadoTotal, kpiGadoAtivos, kpiGadoInativos, kpiGadoAlerta);
+        kofUiLabelSetText(statusBanner, (kofFormat((kofFormat("Exibindo inventario completo do rebanho (") + kofFormat(kofListSize(UiState.gadoIds)))) + kofFormat(" animais).")));
         return;
     }
-    constructor(tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiGadosValor, kpiGadosSub, statusBanner) {
+    constructor(tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiDashProdutos, kpiGadoTotal, kpiGadoAtivos, kpiGadoInativos, kpiGadoAlerta, statusBanner) {
         (this.tabelaGados = null);
         (this.selGadoEditar = null);
         (this.selGadoMae = null);
         (this.selTratGado = null);
-        (this.kpiGadosValor = null);
-        (this.kpiGadosSub = null);
+        (this.kpiDashProdutos = null);
+        (this.kpiGadoTotal = null);
+        (this.kpiGadoAtivos = null);
+        (this.kpiGadoInativos = null);
+        (this.kpiGadoAlerta = null);
         (this.statusBanner = null);
         (this.tabelaGados = tabelaGados);
         (this.selGadoEditar = selGadoEditar);
         (this.selGadoMae = selGadoMae);
         (this.selTratGado = selTratGado);
-        (this.kpiGadosValor = kpiGadosValor);
-        (this.kpiGadosSub = kpiGadosSub);
+        (this.kpiDashProdutos = kpiDashProdutos);
+        (this.kpiGadoTotal = kpiGadoTotal);
+        (this.kpiGadoAtivos = kpiGadoAtivos);
+        (this.kpiGadoInativos = kpiGadoInativos);
+        (this.kpiGadoAlerta = kpiGadoAlerta);
         (this.statusBanner = statusBanner);
         return;
     }
 }
 
-class Lambda8 {
+class Lambda21 {
     inpRemNome;
     opcoesAplicacao;
     selRemAplicacao;
@@ -996,10 +1097,16 @@ class Lambda8 {
     inpRemCompra;
     inpRemVenc;
     tabelaRemedios;
+    tabelaDashboardEstoque;
     selRemedioEstoque;
     selTratRemedio;
-    kpiRemediosValor;
-    kpiRemediosSub;
+    kpiDashBaixo;
+    kpiDashValor;
+    kpiRemTotal;
+    kpiRemAtivos;
+    kpiRemBaixos;
+    kpiRemZerados;
+    act2S;
     statusBanner;
 
     invoke() {
@@ -1017,10 +1124,16 @@ class Lambda8 {
         let inpRemCompra = this.inpRemCompra;
         let inpRemVenc = this.inpRemVenc;
         let tabelaRemedios = this.tabelaRemedios;
+        let tabelaDashboardEstoque = this.tabelaDashboardEstoque;
         let selRemedioEstoque = this.selRemedioEstoque;
         let selTratRemedio = this.selTratRemedio;
-        let kpiRemediosValor = this.kpiRemediosValor;
-        let kpiRemediosSub = this.kpiRemediosSub;
+        let kpiDashBaixo = this.kpiDashBaixo;
+        let kpiDashValor = this.kpiDashValor;
+        let kpiRemTotal = this.kpiRemTotal;
+        let kpiRemAtivos = this.kpiRemAtivos;
+        let kpiRemBaixos = this.kpiRemBaixos;
+        let kpiRemZerados = this.kpiRemZerados;
+        let act2S = this.act2S;
         let statusBanner = this.statusBanner;
         nome = kofUiInputText(inpRemNome);
         if (((nome === "") ? 1 : 0)) {
@@ -1037,11 +1150,12 @@ class Lambda8 {
         }
         payload = (kofFormat((kofFormat((kofFormat((kofFormat((kofFormat((kofFormat((kofFormat((kofFormat((kofFormat((kofFormat((kofFormat((kofFormat("{\"nome\":\"") + kofFormat(nome))) + kofFormat("\",\"data_compra\":\""))) + kofFormat(kofUiInputText(inpRemCompra)))) + kofFormat("\",\"data_vencimento\":\""))) + kofFormat(kofUiInputText(inpRemVenc)))) + kofFormat("\",\"valor\":"))) + kofFormat(valorStr))) + kofFormat(",\"aplicacao\":\""))) + kofFormat(aplic))) + kofFormat("\",\"estoque\":"))) + kofFormat(estStr))) + kofFormat("}"));
         res = kofHttpPost((kofFormat(UiState.apiBase) + kofFormat("/remedios")), payload);
-        sincronizarRemediosUi(tabelaRemedios, selRemedioEstoque, selTratRemedio, kpiRemediosValor, kpiRemediosSub);
-        kofUiLabelSetText(statusBanner, (kofFormat((kofFormat((kofFormat("Medicamento registrado na farmacia (RF03): ") + kofFormat(nome))) + kofFormat(" -> "))) + kofFormat(res)));
+        sincronizarRemediosUi(tabelaRemedios, tabelaDashboardEstoque, selRemedioEstoque, selTratRemedio, kpiDashBaixo, kpiDashValor, kpiRemTotal, kpiRemAtivos, kpiRemBaixos, kpiRemZerados);
+        kofUiLabelSetText(act2S, (kofFormat((kofFormat((kofFormat(nome) + kofFormat(" ("))) + kofFormat(estStr))) + kofFormat(" un.) - agora mesmo")));
+        kofUiLabelSetText(statusBanner, (kofFormat("Produto registrado no estoque (RF03): ") + kofFormat(nome)));
         return;
     }
-    constructor(inpRemNome, opcoesAplicacao, selRemAplicacao, inpRemValor, inpRemEstoque, inpRemCompra, inpRemVenc, tabelaRemedios, selRemedioEstoque, selTratRemedio, kpiRemediosValor, kpiRemediosSub, statusBanner) {
+    constructor(inpRemNome, opcoesAplicacao, selRemAplicacao, inpRemValor, inpRemEstoque, inpRemCompra, inpRemVenc, tabelaRemedios, tabelaDashboardEstoque, selRemedioEstoque, selTratRemedio, kpiDashBaixo, kpiDashValor, kpiRemTotal, kpiRemAtivos, kpiRemBaixos, kpiRemZerados, act2S, statusBanner) {
         (this.inpRemNome = null);
         (this.opcoesAplicacao = null);
         (this.selRemAplicacao = null);
@@ -1050,10 +1164,16 @@ class Lambda8 {
         (this.inpRemCompra = null);
         (this.inpRemVenc = null);
         (this.tabelaRemedios = null);
+        (this.tabelaDashboardEstoque = null);
         (this.selRemedioEstoque = null);
         (this.selTratRemedio = null);
-        (this.kpiRemediosValor = null);
-        (this.kpiRemediosSub = null);
+        (this.kpiDashBaixo = null);
+        (this.kpiDashValor = null);
+        (this.kpiRemTotal = null);
+        (this.kpiRemAtivos = null);
+        (this.kpiRemBaixos = null);
+        (this.kpiRemZerados = null);
+        (this.act2S = null);
         (this.statusBanner = null);
         (this.inpRemNome = inpRemNome);
         (this.opcoesAplicacao = opcoesAplicacao);
@@ -1063,23 +1183,34 @@ class Lambda8 {
         (this.inpRemCompra = inpRemCompra);
         (this.inpRemVenc = inpRemVenc);
         (this.tabelaRemedios = tabelaRemedios);
+        (this.tabelaDashboardEstoque = tabelaDashboardEstoque);
         (this.selRemedioEstoque = selRemedioEstoque);
         (this.selTratRemedio = selTratRemedio);
-        (this.kpiRemediosValor = kpiRemediosValor);
-        (this.kpiRemediosSub = kpiRemediosSub);
+        (this.kpiDashBaixo = kpiDashBaixo);
+        (this.kpiDashValor = kpiDashValor);
+        (this.kpiRemTotal = kpiRemTotal);
+        (this.kpiRemAtivos = kpiRemAtivos);
+        (this.kpiRemBaixos = kpiRemBaixos);
+        (this.kpiRemZerados = kpiRemZerados);
+        (this.act2S = act2S);
         (this.statusBanner = statusBanner);
         return;
     }
 }
 
-class Lambda9 {
+class Lambda22 {
     inpRemIdManual;
     selRemedioEstoque;
     inpRemEstoque;
     tabelaRemedios;
+    tabelaDashboardEstoque;
     selTratRemedio;
-    kpiRemediosValor;
-    kpiRemediosSub;
+    kpiDashBaixo;
+    kpiDashValor;
+    kpiRemTotal;
+    kpiRemAtivos;
+    kpiRemBaixos;
+    kpiRemZerados;
     statusBanner;
 
     invoke() {
@@ -1090,9 +1221,14 @@ class Lambda9 {
         let selRemedioEstoque = this.selRemedioEstoque;
         let inpRemEstoque = this.inpRemEstoque;
         let tabelaRemedios = this.tabelaRemedios;
+        let tabelaDashboardEstoque = this.tabelaDashboardEstoque;
         let selTratRemedio = this.selTratRemedio;
-        let kpiRemediosValor = this.kpiRemediosValor;
-        let kpiRemediosSub = this.kpiRemediosSub;
+        let kpiDashBaixo = this.kpiDashBaixo;
+        let kpiDashValor = this.kpiDashValor;
+        let kpiRemTotal = this.kpiRemTotal;
+        let kpiRemAtivos = this.kpiRemAtivos;
+        let kpiRemBaixos = this.kpiRemBaixos;
+        let kpiRemZerados = this.kpiRemZerados;
         let statusBanner = this.statusBanner;
         remId = kofUiInputText(inpRemIdManual);
         if ((!!(((remId === "") ? 1 : 0) && (kofListSize(UiState.remedioIds) > 0)))) {
@@ -1103,68 +1239,463 @@ class Lambda9 {
             estStr = "0";
         }
         res = kofHttpPut((kofFormat((kofFormat((kofFormat(UiState.apiBase) + kofFormat("/remedios/"))) + kofFormat(remId))) + kofFormat("/estoque")), (kofFormat((kofFormat("{\"estoque\":") + kofFormat(estStr))) + kofFormat("}")));
-        sincronizarRemediosUi(tabelaRemedios, selRemedioEstoque, selTratRemedio, kpiRemediosValor, kpiRemediosSub);
+        sincronizarRemediosUi(tabelaRemedios, tabelaDashboardEstoque, selRemedioEstoque, selTratRemedio, kpiDashBaixo, kpiDashValor, kpiRemTotal, kpiRemAtivos, kpiRemBaixos, kpiRemZerados);
         kofUiLabelSetText(statusBanner, (kofFormat("Saldo de estoque atualizado (RF06): ") + kofFormat(res)));
         return;
     }
-    constructor(inpRemIdManual, selRemedioEstoque, inpRemEstoque, tabelaRemedios, selTratRemedio, kpiRemediosValor, kpiRemediosSub, statusBanner) {
+    constructor(inpRemIdManual, selRemedioEstoque, inpRemEstoque, tabelaRemedios, tabelaDashboardEstoque, selTratRemedio, kpiDashBaixo, kpiDashValor, kpiRemTotal, kpiRemAtivos, kpiRemBaixos, kpiRemZerados, statusBanner) {
         (this.inpRemIdManual = null);
         (this.selRemedioEstoque = null);
         (this.inpRemEstoque = null);
         (this.tabelaRemedios = null);
+        (this.tabelaDashboardEstoque = null);
         (this.selTratRemedio = null);
-        (this.kpiRemediosValor = null);
-        (this.kpiRemediosSub = null);
+        (this.kpiDashBaixo = null);
+        (this.kpiDashValor = null);
+        (this.kpiRemTotal = null);
+        (this.kpiRemAtivos = null);
+        (this.kpiRemBaixos = null);
+        (this.kpiRemZerados = null);
         (this.statusBanner = null);
         (this.inpRemIdManual = inpRemIdManual);
         (this.selRemedioEstoque = selRemedioEstoque);
         (this.inpRemEstoque = inpRemEstoque);
         (this.tabelaRemedios = tabelaRemedios);
+        (this.tabelaDashboardEstoque = tabelaDashboardEstoque);
         (this.selTratRemedio = selTratRemedio);
-        (this.kpiRemediosValor = kpiRemediosValor);
-        (this.kpiRemediosSub = kpiRemediosSub);
+        (this.kpiDashBaixo = kpiDashBaixo);
+        (this.kpiDashValor = kpiDashValor);
+        (this.kpiRemTotal = kpiRemTotal);
+        (this.kpiRemAtivos = kpiRemAtivos);
+        (this.kpiRemBaixos = kpiRemBaixos);
+        (this.kpiRemZerados = kpiRemZerados);
         (this.statusBanner = statusBanner);
         return;
     }
 }
 
-class Lambda10 {
+class Lambda23 {
     tabelaRemedios;
+    tabelaDashboardEstoque;
     selRemedioEstoque;
     selTratRemedio;
-    kpiRemediosValor;
-    kpiRemediosSub;
+    kpiDashBaixo;
+    kpiDashValor;
+    kpiRemTotal;
+    kpiRemAtivos;
+    kpiRemBaixos;
+    kpiRemZerados;
     statusBanner;
 
     invoke() {
         let tabelaRemedios = this.tabelaRemedios;
+        let tabelaDashboardEstoque = this.tabelaDashboardEstoque;
         let selRemedioEstoque = this.selRemedioEstoque;
         let selTratRemedio = this.selTratRemedio;
-        let kpiRemediosValor = this.kpiRemediosValor;
-        let kpiRemediosSub = this.kpiRemediosSub;
+        let kpiDashBaixo = this.kpiDashBaixo;
+        let kpiDashValor = this.kpiDashValor;
+        let kpiRemTotal = this.kpiRemTotal;
+        let kpiRemAtivos = this.kpiRemAtivos;
+        let kpiRemBaixos = this.kpiRemBaixos;
+        let kpiRemZerados = this.kpiRemZerados;
         let statusBanner = this.statusBanner;
-        sincronizarRemediosUi(tabelaRemedios, selRemedioEstoque, selTratRemedio, kpiRemediosValor, kpiRemediosSub);
-        kofUiLabelSetText(statusBanner, (kofFormat((kofFormat("Inventario da farmacia atualizado (") + kofFormat(kofListSize(UiState.remedioIds)))) + kofFormat(" medicamentos).")));
+        sincronizarRemediosUi(tabelaRemedios, tabelaDashboardEstoque, selRemedioEstoque, selTratRemedio, kpiDashBaixo, kpiDashValor, kpiRemTotal, kpiRemAtivos, kpiRemBaixos, kpiRemZerados);
+        kofUiLabelSetText(statusBanner, (kofFormat((kofFormat("Inventario sincronizado (") + kofFormat(kofListSize(UiState.remedioIds)))) + kofFormat(" produtos).")));
         return;
     }
-    constructor(tabelaRemedios, selRemedioEstoque, selTratRemedio, kpiRemediosValor, kpiRemediosSub, statusBanner) {
+    constructor(tabelaRemedios, tabelaDashboardEstoque, selRemedioEstoque, selTratRemedio, kpiDashBaixo, kpiDashValor, kpiRemTotal, kpiRemAtivos, kpiRemBaixos, kpiRemZerados, statusBanner) {
         (this.tabelaRemedios = null);
+        (this.tabelaDashboardEstoque = null);
         (this.selRemedioEstoque = null);
         (this.selTratRemedio = null);
-        (this.kpiRemediosValor = null);
-        (this.kpiRemediosSub = null);
+        (this.kpiDashBaixo = null);
+        (this.kpiDashValor = null);
+        (this.kpiRemTotal = null);
+        (this.kpiRemAtivos = null);
+        (this.kpiRemBaixos = null);
+        (this.kpiRemZerados = null);
         (this.statusBanner = null);
         (this.tabelaRemedios = tabelaRemedios);
+        (this.tabelaDashboardEstoque = tabelaDashboardEstoque);
         (this.selRemedioEstoque = selRemedioEstoque);
         (this.selTratRemedio = selTratRemedio);
-        (this.kpiRemediosValor = kpiRemediosValor);
-        (this.kpiRemediosSub = kpiRemediosSub);
+        (this.kpiDashBaixo = kpiDashBaixo);
+        (this.kpiDashValor = kpiDashValor);
+        (this.kpiRemTotal = kpiRemTotal);
+        (this.kpiRemAtivos = kpiRemAtivos);
+        (this.kpiRemBaixos = kpiRemBaixos);
+        (this.kpiRemZerados = kpiRemZerados);
         (this.statusBanner = statusBanner);
         return;
     }
 }
 
-class Lambda11 {
+class Lambda24 {
+    inpPastoNome;
+    selPastoDono;
+    inpPastoValor;
+    tabelaPastos;
+    selPastoEditar;
+    selGadoPasto;
+    selFiltroPasto;
+    kpiDashPastos;
+    kpiPastosTotal;
+    kpiPastosProprios;
+    kpiPastosArrendados;
+    kpiPastosCusto;
+    act1S;
+    statusBanner;
+
+    invoke() {
+        let nome;
+        let donoStr;
+        let valorStr;
+        let payload;
+        let res;
+        let inpPastoNome = this.inpPastoNome;
+        let selPastoDono = this.selPastoDono;
+        let inpPastoValor = this.inpPastoValor;
+        let tabelaPastos = this.tabelaPastos;
+        let selPastoEditar = this.selPastoEditar;
+        let selGadoPasto = this.selGadoPasto;
+        let selFiltroPasto = this.selFiltroPasto;
+        let kpiDashPastos = this.kpiDashPastos;
+        let kpiPastosTotal = this.kpiPastosTotal;
+        let kpiPastosProprios = this.kpiPastosProprios;
+        let kpiPastosArrendados = this.kpiPastosArrendados;
+        let kpiPastosCusto = this.kpiPastosCusto;
+        let act1S = this.act1S;
+        let statusBanner = this.statusBanner;
+        nome = kofUiInputText(inpPastoNome);
+        if (((nome === "") ? 1 : 0)) {
+            nome = "Pasto Principal";
+        }
+        donoStr = "true";
+        if ((kofUiSelectSelected(selPastoDono) === 1)) {
+            donoStr = "false";
+        }
+        valorStr = kofUiInputText(inpPastoValor);
+        if (((valorStr === "") ? 1 : 0)) {
+            valorStr = "0";
+        }
+        payload = (kofFormat((kofFormat((kofFormat((kofFormat((kofFormat((kofFormat("{\"nome\":\"") + kofFormat(nome))) + kofFormat("\",\"dono\":"))) + kofFormat(donoStr))) + kofFormat(",\"valor_cabeca\":"))) + kofFormat(valorStr))) + kofFormat("}"));
+        res = kofHttpPost((kofFormat(UiState.apiBase) + kofFormat("/pastos")), payload);
+        sincronizarPastosUi(tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiDashPastos, kpiPastosTotal, kpiPastosProprios, kpiPastosArrendados, kpiPastosCusto);
+        kofUiLabelSetText(act1S, (kofFormat(nome) + kofFormat(" - agora mesmo")));
+        kofUiLabelSetText(statusBanner, (kofFormat("Pasto cadastrado com sucesso (RF02): ") + kofFormat(nome)));
+        return;
+    }
+    constructor(inpPastoNome, selPastoDono, inpPastoValor, tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiDashPastos, kpiPastosTotal, kpiPastosProprios, kpiPastosArrendados, kpiPastosCusto, act1S, statusBanner) {
+        (this.inpPastoNome = null);
+        (this.selPastoDono = null);
+        (this.inpPastoValor = null);
+        (this.tabelaPastos = null);
+        (this.selPastoEditar = null);
+        (this.selGadoPasto = null);
+        (this.selFiltroPasto = null);
+        (this.kpiDashPastos = null);
+        (this.kpiPastosTotal = null);
+        (this.kpiPastosProprios = null);
+        (this.kpiPastosArrendados = null);
+        (this.kpiPastosCusto = null);
+        (this.act1S = null);
+        (this.statusBanner = null);
+        (this.inpPastoNome = inpPastoNome);
+        (this.selPastoDono = selPastoDono);
+        (this.inpPastoValor = inpPastoValor);
+        (this.tabelaPastos = tabelaPastos);
+        (this.selPastoEditar = selPastoEditar);
+        (this.selGadoPasto = selGadoPasto);
+        (this.selFiltroPasto = selFiltroPasto);
+        (this.kpiDashPastos = kpiDashPastos);
+        (this.kpiPastosTotal = kpiPastosTotal);
+        (this.kpiPastosProprios = kpiPastosProprios);
+        (this.kpiPastosArrendados = kpiPastosArrendados);
+        (this.kpiPastosCusto = kpiPastosCusto);
+        (this.act1S = act1S);
+        (this.statusBanner = statusBanner);
+        return;
+    }
+}
+
+class Lambda25 {
+    inpPastoIdManual;
+    selPastoEditar;
+    inpPastoNome;
+    selPastoDono;
+    inpPastoValor;
+    tabelaPastos;
+    selGadoPasto;
+    selFiltroPasto;
+    kpiDashPastos;
+    kpiPastosTotal;
+    kpiPastosProprios;
+    kpiPastosArrendados;
+    kpiPastosCusto;
+    statusBanner;
+
+    invoke() {
+        let targetId;
+        let nome;
+        let donoStr;
+        let valorStr;
+        let payload;
+        let res;
+        let inpPastoIdManual = this.inpPastoIdManual;
+        let selPastoEditar = this.selPastoEditar;
+        let inpPastoNome = this.inpPastoNome;
+        let selPastoDono = this.selPastoDono;
+        let inpPastoValor = this.inpPastoValor;
+        let tabelaPastos = this.tabelaPastos;
+        let selGadoPasto = this.selGadoPasto;
+        let selFiltroPasto = this.selFiltroPasto;
+        let kpiDashPastos = this.kpiDashPastos;
+        let kpiPastosTotal = this.kpiPastosTotal;
+        let kpiPastosProprios = this.kpiPastosProprios;
+        let kpiPastosArrendados = this.kpiPastosArrendados;
+        let kpiPastosCusto = this.kpiPastosCusto;
+        let statusBanner = this.statusBanner;
+        targetId = kofUiInputText(inpPastoIdManual);
+        if ((!!(((targetId === "") ? 1 : 0) && (kofListSize(UiState.pastoIds) > 0)))) {
+            targetId = kofListGet(UiState.pastoIds, kofUiSelectSelected(selPastoEditar));
+        }
+        nome = kofUiInputText(inpPastoNome);
+        if (((nome === "") ? 1 : 0)) {
+            nome = "Pasto Atualizado";
+        }
+        donoStr = "true";
+        if ((kofUiSelectSelected(selPastoDono) === 1)) {
+            donoStr = "false";
+        }
+        valorStr = kofUiInputText(inpPastoValor);
+        if (((valorStr === "") ? 1 : 0)) {
+            valorStr = "0";
+        }
+        payload = (kofFormat((kofFormat((kofFormat((kofFormat((kofFormat((kofFormat("{\"nome\":\"") + kofFormat(nome))) + kofFormat("\",\"dono\":"))) + kofFormat(donoStr))) + kofFormat(",\"valor_cabeca\":"))) + kofFormat(valorStr))) + kofFormat("}"));
+        res = kofHttpPut((kofFormat((kofFormat(UiState.apiBase) + kofFormat("/pastos/"))) + kofFormat(targetId)), payload);
+        sincronizarPastosUi(tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiDashPastos, kpiPastosTotal, kpiPastosProprios, kpiPastosArrendados, kpiPastosCusto);
+        kofUiLabelSetText(statusBanner, (kofFormat("Pasto atualizado com sucesso (RF02): ") + kofFormat(res)));
+        return;
+    }
+    constructor(inpPastoIdManual, selPastoEditar, inpPastoNome, selPastoDono, inpPastoValor, tabelaPastos, selGadoPasto, selFiltroPasto, kpiDashPastos, kpiPastosTotal, kpiPastosProprios, kpiPastosArrendados, kpiPastosCusto, statusBanner) {
+        (this.inpPastoIdManual = null);
+        (this.selPastoEditar = null);
+        (this.inpPastoNome = null);
+        (this.selPastoDono = null);
+        (this.inpPastoValor = null);
+        (this.tabelaPastos = null);
+        (this.selGadoPasto = null);
+        (this.selFiltroPasto = null);
+        (this.kpiDashPastos = null);
+        (this.kpiPastosTotal = null);
+        (this.kpiPastosProprios = null);
+        (this.kpiPastosArrendados = null);
+        (this.kpiPastosCusto = null);
+        (this.statusBanner = null);
+        (this.inpPastoIdManual = inpPastoIdManual);
+        (this.selPastoEditar = selPastoEditar);
+        (this.inpPastoNome = inpPastoNome);
+        (this.selPastoDono = selPastoDono);
+        (this.inpPastoValor = inpPastoValor);
+        (this.tabelaPastos = tabelaPastos);
+        (this.selGadoPasto = selGadoPasto);
+        (this.selFiltroPasto = selFiltroPasto);
+        (this.kpiDashPastos = kpiDashPastos);
+        (this.kpiPastosTotal = kpiPastosTotal);
+        (this.kpiPastosProprios = kpiPastosProprios);
+        (this.kpiPastosArrendados = kpiPastosArrendados);
+        (this.kpiPastosCusto = kpiPastosCusto);
+        (this.statusBanner = statusBanner);
+        return;
+    }
+}
+
+class Lambda26 {
+    tabelaPastos;
+    selPastoEditar;
+    selGadoPasto;
+    selFiltroPasto;
+    kpiDashPastos;
+    kpiPastosTotal;
+    kpiPastosProprios;
+    kpiPastosArrendados;
+    kpiPastosCusto;
+    statusBanner;
+
+    invoke() {
+        let tabelaPastos = this.tabelaPastos;
+        let selPastoEditar = this.selPastoEditar;
+        let selGadoPasto = this.selGadoPasto;
+        let selFiltroPasto = this.selFiltroPasto;
+        let kpiDashPastos = this.kpiDashPastos;
+        let kpiPastosTotal = this.kpiPastosTotal;
+        let kpiPastosProprios = this.kpiPastosProprios;
+        let kpiPastosArrendados = this.kpiPastosArrendados;
+        let kpiPastosCusto = this.kpiPastosCusto;
+        let statusBanner = this.statusBanner;
+        sincronizarPastosUi(tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiDashPastos, kpiPastosTotal, kpiPastosProprios, kpiPastosArrendados, kpiPastosCusto);
+        kofUiLabelSetText(statusBanner, (kofFormat((kofFormat("Lista de pastos sincronizada (") + kofFormat(kofListSize(UiState.pastoIds)))) + kofFormat(" pastos).")));
+        return;
+    }
+    constructor(tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiDashPastos, kpiPastosTotal, kpiPastosProprios, kpiPastosArrendados, kpiPastosCusto, statusBanner) {
+        (this.tabelaPastos = null);
+        (this.selPastoEditar = null);
+        (this.selGadoPasto = null);
+        (this.selFiltroPasto = null);
+        (this.kpiDashPastos = null);
+        (this.kpiPastosTotal = null);
+        (this.kpiPastosProprios = null);
+        (this.kpiPastosArrendados = null);
+        (this.kpiPastosCusto = null);
+        (this.statusBanner = null);
+        (this.tabelaPastos = tabelaPastos);
+        (this.selPastoEditar = selPastoEditar);
+        (this.selGadoPasto = selGadoPasto);
+        (this.selFiltroPasto = selFiltroPasto);
+        (this.kpiDashPastos = kpiDashPastos);
+        (this.kpiPastosTotal = kpiPastosTotal);
+        (this.kpiPastosProprios = kpiPastosProprios);
+        (this.kpiPastosArrendados = kpiPastosArrendados);
+        (this.kpiPastosCusto = kpiPastosCusto);
+        (this.statusBanner = statusBanner);
+        return;
+    }
+}
+
+class Lambda27 {
+    invoke() {
+        return;
+    }
+    constructor() {
+        return;
+    }
+}
+
+class Lambda28 {
+    invoke() {
+        return;
+    }
+    constructor() {
+        return;
+    }
+}
+
+class Lambda29 {
+    invoke() {
+        return;
+    }
+    constructor() {
+        return;
+    }
+}
+
+class Lambda30 {
+    btnTipoEntrada;
+    btnTipoSaida;
+    btnTipoAjuste;
+
+    invoke(e) {
+        let btnTipoAjuste;
+        let btnTipoEntrada = this.btnTipoEntrada;
+        let btnTipoSaida = this.btnTipoSaida;
+        btnTipoAjuste = this.btnTipoAjuste;
+        (UiState.tipoMovimentacao = 0);
+        kofUiWidgetSetClass(btnTipoEntrada, "mov-type-btn active");
+        kofUiWidgetSetClass(btnTipoSaida, "mov-type-btn");
+        kofUiWidgetSetClass(btnTipoAjuste, "mov-type-btn");
+        return;
+    }
+    constructor(btnTipoEntrada, btnTipoSaida, btnTipoAjuste) {
+        (this.btnTipoEntrada = null);
+        (this.btnTipoSaida = null);
+        (this.btnTipoAjuste = null);
+        (this.btnTipoEntrada = btnTipoEntrada);
+        (this.btnTipoSaida = btnTipoSaida);
+        (this.btnTipoAjuste = btnTipoAjuste);
+        return;
+    }
+}
+
+class Lambda31 {
+    btnTipoEntrada;
+    btnTipoSaida;
+    btnTipoAjuste;
+
+    invoke(e) {
+        let btnTipoAjuste;
+        let btnTipoEntrada = this.btnTipoEntrada;
+        let btnTipoSaida = this.btnTipoSaida;
+        btnTipoAjuste = this.btnTipoAjuste;
+        (UiState.tipoMovimentacao = 1);
+        kofUiWidgetSetClass(btnTipoEntrada, "mov-type-btn");
+        kofUiWidgetSetClass(btnTipoSaida, "mov-type-btn active");
+        kofUiWidgetSetClass(btnTipoAjuste, "mov-type-btn");
+        return;
+    }
+    constructor(btnTipoEntrada, btnTipoSaida, btnTipoAjuste) {
+        (this.btnTipoEntrada = null);
+        (this.btnTipoSaida = null);
+        (this.btnTipoAjuste = null);
+        (this.btnTipoEntrada = btnTipoEntrada);
+        (this.btnTipoSaida = btnTipoSaida);
+        (this.btnTipoAjuste = btnTipoAjuste);
+        return;
+    }
+}
+
+class Lambda32 {
+    btnTipoEntrada;
+    btnTipoSaida;
+    btnTipoAjuste;
+
+    invoke(e) {
+        let btnTipoAjuste;
+        let btnTipoEntrada = this.btnTipoEntrada;
+        let btnTipoSaida = this.btnTipoSaida;
+        btnTipoAjuste = this.btnTipoAjuste;
+        (UiState.tipoMovimentacao = 2);
+        kofUiWidgetSetClass(btnTipoEntrada, "mov-type-btn");
+        kofUiWidgetSetClass(btnTipoSaida, "mov-type-btn");
+        kofUiWidgetSetClass(btnTipoAjuste, "mov-type-btn active");
+        return;
+    }
+    constructor(btnTipoEntrada, btnTipoSaida, btnTipoAjuste) {
+        (this.btnTipoEntrada = null);
+        (this.btnTipoSaida = null);
+        (this.btnTipoAjuste = null);
+        (this.btnTipoEntrada = btnTipoEntrada);
+        (this.btnTipoSaida = btnTipoSaida);
+        (this.btnTipoAjuste = btnTipoAjuste);
+        return;
+    }
+}
+
+class Lambda33 {
+    inpTratDoenca;
+    taTratObs;
+    statusBanner;
+
+    invoke() {
+        let inpTratDoenca = this.inpTratDoenca;
+        let taTratObs = this.taTratObs;
+        let statusBanner = this.statusBanner;
+        kofUiInputSetText(inpTratDoenca, "");
+        kofUiTextareaSetText(taTratObs, "");
+        kofUiLabelSetText(statusBanner, "Formulário de movimentação limpo.");
+        return;
+    }
+    constructor(inpTratDoenca, taTratObs, statusBanner) {
+        (this.inpTratDoenca = null);
+        (this.taTratObs = null);
+        (this.statusBanner = null);
+        (this.inpTratDoenca = inpTratDoenca);
+        (this.taTratObs = taTratObs);
+        (this.statusBanner = statusBanner);
+        return;
+    }
+}
+
+class Lambda34 {
     inpTratDoenca;
     inpTratGadoManual;
     selTratGado;
@@ -1175,13 +1706,16 @@ class Lambda11 {
     inpTratInicio;
     inpTratFim;
     tabelaRemedios;
+    tabelaDashboardEstoque;
     selRemedioEstoque;
-    kpiRemediosValor;
-    kpiRemediosSub;
+    kpiDashBaixo;
+    kpiDashValor;
+    kpiRemTotal;
+    kpiRemAtivos;
+    kpiRemBaixos;
+    kpiRemZerados;
     tabelaTratamentos;
     selTratamentoVer;
-    kpiTratValor;
-    kpiTratSub;
     statusBanner;
 
     invoke() {
@@ -1202,13 +1736,16 @@ class Lambda11 {
         let inpTratInicio = this.inpTratInicio;
         let inpTratFim = this.inpTratFim;
         let tabelaRemedios = this.tabelaRemedios;
+        let tabelaDashboardEstoque = this.tabelaDashboardEstoque;
         let selRemedioEstoque = this.selRemedioEstoque;
-        let kpiRemediosValor = this.kpiRemediosValor;
-        let kpiRemediosSub = this.kpiRemediosSub;
+        let kpiDashBaixo = this.kpiDashBaixo;
+        let kpiDashValor = this.kpiDashValor;
+        let kpiRemTotal = this.kpiRemTotal;
+        let kpiRemAtivos = this.kpiRemAtivos;
+        let kpiRemBaixos = this.kpiRemBaixos;
+        let kpiRemZerados = this.kpiRemZerados;
         let tabelaTratamentos = this.tabelaTratamentos;
         let selTratamentoVer = this.selTratamentoVer;
-        let kpiTratValor = this.kpiTratValor;
-        let kpiTratSub = this.kpiTratSub;
         let statusBanner = this.statusBanner;
         doenca = kofUiInputText(inpTratDoenca);
         if (((doenca === "") ? 1 : 0)) {
@@ -1228,16 +1765,16 @@ class Lambda11 {
         }
         obs = kofUiTextareaText(taTratObs);
         if (((obs === "") ? 1 : 0)) {
-            obs = "Aplicacao supervisionada com baixa automatica de 1 unidade no estoque.";
+            obs = "Aplicacao supervisionada com baixa automatica no estoque.";
         }
         payload = (kofFormat((kofFormat((kofFormat((kofFormat((kofFormat((kofFormat((kofFormat((kofFormat((kofFormat((kofFormat((kofFormat((kofFormat((kofFormat((kofFormat("{\"nome_doenca\":\"") + kofFormat(doenca))) + kofFormat("\",\"gado_uuid\":\""))) + kofFormat(gadoId))) + kofFormat("\",\"data_inicio\":\""))) + kofFormat(kofUiInputText(inpTratInicio)))) + kofFormat("\",\"data_fim\":\""))) + kofFormat(kofUiInputText(inpTratFim)))) + kofFormat("\",\"observacoes\":\""))) + kofFormat(obs))) + kofFormat("\",\"fk_remedio_uuid\":\""))) + kofFormat(remId))) + kofFormat("\",\"dosagen\":"))) + kofFormat(dosStr))) + kofFormat("}"));
         res = kofHttpPost((kofFormat(UiState.apiBase) + kofFormat("/tratamentos")), payload);
-        sincronizarRemediosUi(tabelaRemedios, selRemedioEstoque, selTratRemedio, kpiRemediosValor, kpiRemediosSub);
-        carregarHistoricoGadoUi(gadoId, tabelaTratamentos, selTratamentoVer, kpiTratValor, kpiTratSub);
-        kofUiLabelSetText(statusBanner, (kofFormat("Tratamento registrado e estoque debitado (RF05/RF06): ") + kofFormat(res)));
+        sincronizarRemediosUi(tabelaRemedios, tabelaDashboardEstoque, selRemedioEstoque, selTratRemedio, kpiDashBaixo, kpiDashValor, kpiRemTotal, kpiRemAtivos, kpiRemBaixos, kpiRemZerados);
+        carregarHistoricoGadoUi(gadoId, tabelaTratamentos, selTratamentoVer);
+        kofUiLabelSetText(statusBanner, (kofFormat("Movimentacao / tratamento registrado e estoque atualizado (RF05/RF06): ") + kofFormat(res)));
         return;
     }
-    constructor(inpTratDoenca, inpTratGadoManual, selTratGado, inpTratRemedioManual, selTratRemedio, inpTratDosagem, taTratObs, inpTratInicio, inpTratFim, tabelaRemedios, selRemedioEstoque, kpiRemediosValor, kpiRemediosSub, tabelaTratamentos, selTratamentoVer, kpiTratValor, kpiTratSub, statusBanner) {
+    constructor(inpTratDoenca, inpTratGadoManual, selTratGado, inpTratRemedioManual, selTratRemedio, inpTratDosagem, taTratObs, inpTratInicio, inpTratFim, tabelaRemedios, tabelaDashboardEstoque, selRemedioEstoque, kpiDashBaixo, kpiDashValor, kpiRemTotal, kpiRemAtivos, kpiRemBaixos, kpiRemZerados, tabelaTratamentos, selTratamentoVer, statusBanner) {
         (this.inpTratDoenca = null);
         (this.inpTratGadoManual = null);
         (this.selTratGado = null);
@@ -1248,13 +1785,16 @@ class Lambda11 {
         (this.inpTratInicio = null);
         (this.inpTratFim = null);
         (this.tabelaRemedios = null);
+        (this.tabelaDashboardEstoque = null);
         (this.selRemedioEstoque = null);
-        (this.kpiRemediosValor = null);
-        (this.kpiRemediosSub = null);
+        (this.kpiDashBaixo = null);
+        (this.kpiDashValor = null);
+        (this.kpiRemTotal = null);
+        (this.kpiRemAtivos = null);
+        (this.kpiRemBaixos = null);
+        (this.kpiRemZerados = null);
         (this.tabelaTratamentos = null);
         (this.selTratamentoVer = null);
-        (this.kpiTratValor = null);
-        (this.kpiTratSub = null);
         (this.statusBanner = null);
         (this.inpTratDoenca = inpTratDoenca);
         (this.inpTratGadoManual = inpTratGadoManual);
@@ -1266,25 +1806,26 @@ class Lambda11 {
         (this.inpTratInicio = inpTratInicio);
         (this.inpTratFim = inpTratFim);
         (this.tabelaRemedios = tabelaRemedios);
+        (this.tabelaDashboardEstoque = tabelaDashboardEstoque);
         (this.selRemedioEstoque = selRemedioEstoque);
-        (this.kpiRemediosValor = kpiRemediosValor);
-        (this.kpiRemediosSub = kpiRemediosSub);
+        (this.kpiDashBaixo = kpiDashBaixo);
+        (this.kpiDashValor = kpiDashValor);
+        (this.kpiRemTotal = kpiRemTotal);
+        (this.kpiRemAtivos = kpiRemAtivos);
+        (this.kpiRemBaixos = kpiRemBaixos);
+        (this.kpiRemZerados = kpiRemZerados);
         (this.tabelaTratamentos = tabelaTratamentos);
         (this.selTratamentoVer = selTratamentoVer);
-        (this.kpiTratValor = kpiTratValor);
-        (this.kpiTratSub = kpiTratSub);
         (this.statusBanner = statusBanner);
         return;
     }
 }
 
-class Lambda12 {
+class Lambda35 {
     inpTratGadoManual;
     selTratGado;
     tabelaTratamentos;
     selTratamentoVer;
-    kpiTratValor;
-    kpiTratSub;
     statusBanner;
 
     invoke() {
@@ -1293,37 +1834,31 @@ class Lambda12 {
         let selTratGado = this.selTratGado;
         let tabelaTratamentos = this.tabelaTratamentos;
         let selTratamentoVer = this.selTratamentoVer;
-        let kpiTratValor = this.kpiTratValor;
-        let kpiTratSub = this.kpiTratSub;
         let statusBanner = this.statusBanner;
         gadoId = kofUiInputText(inpTratGadoManual);
         if ((!!(((gadoId === "") ? 1 : 0) && (kofListSize(UiState.gadoIds) > 0)))) {
             gadoId = kofListGet(UiState.gadoIds, kofUiSelectSelected(selTratGado));
         }
-        carregarHistoricoGadoUi(gadoId, tabelaTratamentos, selTratamentoVer, kpiTratValor, kpiTratSub);
-        kofUiLabelSetText(statusBanner, (kofFormat("Historico clinico carregado para o animal ") + kofFormat(nomeDoGadoPorId(gadoId))));
+        carregarHistoricoGadoUi(gadoId, tabelaTratamentos, selTratamentoVer);
+        kofUiLabelSetText(statusBanner, (kofFormat("Historico carregado para ") + kofFormat(nomeDoGadoPorId(gadoId))));
         return;
     }
-    constructor(inpTratGadoManual, selTratGado, tabelaTratamentos, selTratamentoVer, kpiTratValor, kpiTratSub, statusBanner) {
+    constructor(inpTratGadoManual, selTratGado, tabelaTratamentos, selTratamentoVer, statusBanner) {
         (this.inpTratGadoManual = null);
         (this.selTratGado = null);
         (this.tabelaTratamentos = null);
         (this.selTratamentoVer = null);
-        (this.kpiTratValor = null);
-        (this.kpiTratSub = null);
         (this.statusBanner = null);
         (this.inpTratGadoManual = inpTratGadoManual);
         (this.selTratGado = selTratGado);
         (this.tabelaTratamentos = tabelaTratamentos);
         (this.selTratamentoVer = selTratamentoVer);
-        (this.kpiTratValor = kpiTratValor);
-        (this.kpiTratSub = kpiTratSub);
         (this.statusBanner = statusBanner);
         return;
     }
 }
 
-class Lambda13 {
+class Lambda36 {
     inpTratIdManual;
     selTratamentoVer;
     tabelaReceituario;
@@ -1376,7 +1911,7 @@ class Lambda13 {
                 kofListAdd(_scopedVar$linhasRec, __kof_t5);
             }
             kofUiTableSetRows(tabelaReceituario, _scopedVar$linhasRec);
-            kofUiLabelSetText(statusBanner, (kofFormat((kofFormat("Receituario carregado (") + kofFormat(kofListSize(_scopedVar$itens)))) + kofFormat(" medicamentos vinculados ao tratamento).")));
+            kofUiLabelSetText(statusBanner, (kofFormat((kofFormat("Receituario carregado (") + kofFormat(kofListSize(_scopedVar$itens)))) + kofFormat(" itens).")));
         } else {
             kofUiLabelSetText(statusBanner, (kofFormat("Receituario do tratamento (RF05): ") + kofFormat(res)));
         }
@@ -1395,7 +1930,27 @@ class Lambda13 {
     }
 }
 
-class Lambda14 {
+class Lambda37 {
+    statusBanner;
+    inpNovoEmail;
+
+    invoke() {
+        let statusBanner = this.statusBanner;
+        let inpNovoEmail = this.inpNovoEmail;
+        kofUiLabelSetText(statusBanner, (kofFormat("E-mail adicionado à lista de notificações: ") + kofFormat(kofUiInputText(inpNovoEmail))));
+        kofUiInputSetText(inpNovoEmail, "");
+        return;
+    }
+    constructor(statusBanner, inpNovoEmail) {
+        (this.statusBanner = null);
+        (this.inpNovoEmail = null);
+        (this.statusBanner = statusBanner);
+        (this.inpNovoEmail = inpNovoEmail);
+        return;
+    }
+}
+
+class Lambda38 {
     tabelaPerfil;
     statusBanner;
 
@@ -1421,9 +1976,9 @@ class Lambda14 {
         kofListAdd(__kof_t0, __kof_t2);
         (__kof_t3 = __kof_t0);
         (__kof_t4 = kofListNew());
-        kofListAdd(__kof_t4, "Politica de Privacidade (RNF09)");
+        kofListAdd(__kof_t4, "Política de Privacidade (RNF09)");
         (__kof_t5 = __kof_t4);
-        kofListAdd(__kof_t5, "Coleta minima sem rastreamento");
+        kofListAdd(__kof_t5, "Coleta mínima sem rastreamento");
         kofListAdd(__kof_t3, __kof_t5);
         (__kof_t6 = __kof_t3);
         (__kof_t7 = kofListNew());
@@ -1432,7 +1987,7 @@ class Lambda14 {
         kofListAdd(__kof_t8, res);
         kofListAdd(__kof_t6, __kof_t8);
         kofUiTableSetRows(tabelaPerfil, __kof_t6);
-        kofUiLabelSetText(statusBanner, (kofFormat("Verificacao de Perfil OAuth2 (RF04/RNF08): ") + kofFormat(res)));
+        kofUiLabelSetText(statusBanner, (kofFormat("Verificação de Perfil OAuth2 (RF04/RNF08): ") + kofFormat(res)));
         return;
     }
     constructor(tabelaPerfil, statusBanner) {
@@ -1444,13 +1999,18 @@ class Lambda14 {
     }
 }
 
-class Lambda15 {
+class Lambda39 {
     inpPerfilNome;
+    inpPerfilSobrenome;
     inpPerfilEmail;
+    lblProfileDisplayName;
+    lblProfileDisplayEmail;
+    lblSidebarUserName;
     tabelaPerfil;
     statusBanner;
 
     invoke() {
+        let nomeCompleto;
         let payload;
         let res;
         let __kof_t0;
@@ -1463,223 +2023,94 @@ class Lambda15 {
         let __kof_t7;
         let __kof_t8;
         let inpPerfilNome = this.inpPerfilNome;
+        let inpPerfilSobrenome = this.inpPerfilSobrenome;
         let inpPerfilEmail = this.inpPerfilEmail;
+        let lblProfileDisplayName = this.lblProfileDisplayName;
+        let lblProfileDisplayEmail = this.lblProfileDisplayEmail;
+        let lblSidebarUserName = this.lblSidebarUserName;
         let tabelaPerfil = this.tabelaPerfil;
         let statusBanner = this.statusBanner;
-        payload = (kofFormat((kofFormat((kofFormat((kofFormat("{\"nome\":\"") + kofFormat(kofUiInputText(inpPerfilNome)))) + kofFormat("\",\"email\":\""))) + kofFormat(kofUiInputText(inpPerfilEmail)))) + kofFormat("\"}"));
+        nomeCompleto = kofUiInputText(inpPerfilNome);
+        if ((((kofUiInputText(inpPerfilSobrenome) === "") ? 1 : 0) === 0)) {
+            nomeCompleto = (kofFormat((kofFormat(nomeCompleto) + kofFormat(" "))) + kofFormat(kofUiInputText(inpPerfilSobrenome)));
+        }
+        payload = (kofFormat((kofFormat((kofFormat((kofFormat("{\"nome\":\"") + kofFormat(nomeCompleto))) + kofFormat("\",\"email\":\""))) + kofFormat(kofUiInputText(inpPerfilEmail)))) + kofFormat("\"}"));
         res = kofHttpPut((kofFormat(UiState.apiBase) + kofFormat("/perfil")), payload);
+        kofUiLabelSetText(lblProfileDisplayName, nomeCompleto);
+        kofUiLabelSetText(lblProfileDisplayEmail, kofUiInputText(inpPerfilEmail));
+        kofUiLabelSetText(lblSidebarUserName, nomeCompleto);
         (__kof_t0 = kofListNew());
         (__kof_t1 = kofListNew());
-        kofListAdd(__kof_t1, "Nome Informado");
+        kofListAdd(__kof_t1, "Nome Atualizado");
         (__kof_t2 = __kof_t1);
-        kofListAdd(__kof_t2, kofUiInputText(inpPerfilNome));
+        kofListAdd(__kof_t2, nomeCompleto);
         kofListAdd(__kof_t0, __kof_t2);
         (__kof_t3 = __kof_t0);
         (__kof_t4 = kofListNew());
-        kofListAdd(__kof_t4, "E-mail Informado");
+        kofListAdd(__kof_t4, "E-mail Atualizado");
         (__kof_t5 = __kof_t4);
         kofListAdd(__kof_t5, kofUiInputText(inpPerfilEmail));
         kofListAdd(__kof_t3, __kof_t5);
         (__kof_t6 = __kof_t3);
         (__kof_t7 = kofListNew());
-        kofListAdd(__kof_t7, "Retorno do Servidor (/perfil)");
+        kofListAdd(__kof_t7, "Retorno da API (/perfil)");
         (__kof_t8 = __kof_t7);
         kofListAdd(__kof_t8, res);
         kofListAdd(__kof_t6, __kof_t8);
         kofUiTableSetRows(tabelaPerfil, __kof_t6);
-        kofUiLabelSetText(statusBanner, (kofFormat("Atualizacao de Perfil OAuth2 (RF04/RNF09): ") + kofFormat(res)));
+        kofUiLabelSetText(statusBanner, (kofFormat("Atualização de Perfil OAuth2 (RF04/RNF09): ") + kofFormat(res)));
         return;
     }
-    constructor(inpPerfilNome, inpPerfilEmail, tabelaPerfil, statusBanner) {
+    constructor(inpPerfilNome, inpPerfilSobrenome, inpPerfilEmail, lblProfileDisplayName, lblProfileDisplayEmail, lblSidebarUserName, tabelaPerfil, statusBanner) {
         (this.inpPerfilNome = null);
+        (this.inpPerfilSobrenome = null);
         (this.inpPerfilEmail = null);
+        (this.lblProfileDisplayName = null);
+        (this.lblProfileDisplayEmail = null);
+        (this.lblSidebarUserName = null);
         (this.tabelaPerfil = null);
         (this.statusBanner = null);
         (this.inpPerfilNome = inpPerfilNome);
+        (this.inpPerfilSobrenome = inpPerfilSobrenome);
         (this.inpPerfilEmail = inpPerfilEmail);
+        (this.lblProfileDisplayName = lblProfileDisplayName);
+        (this.lblProfileDisplayEmail = lblProfileDisplayEmail);
+        (this.lblSidebarUserName = lblSidebarUserName);
         (this.tabelaPerfil = tabelaPerfil);
         (this.statusBanner = statusBanner);
         return;
     }
 }
 
-class Lambda16 {
-    painelPastos;
-    painelGado;
-    painelRemedios;
-    painelTratamentos;
-    painelPerfil;
-
-    invoke() {
-        let painelPastos = this.painelPastos;
-        let painelGado = this.painelGado;
-        let painelRemedios = this.painelRemedios;
-        let painelTratamentos = this.painelTratamentos;
-        let painelPerfil = this.painelPerfil;
-        alternarAba(0, painelPastos, painelGado, painelRemedios, painelTratamentos, painelPerfil);
-        return;
-    }
-    constructor(painelPastos, painelGado, painelRemedios, painelTratamentos, painelPerfil) {
-        (this.painelPastos = null);
-        (this.painelGado = null);
-        (this.painelRemedios = null);
-        (this.painelTratamentos = null);
-        (this.painelPerfil = null);
-        (this.painelPastos = painelPastos);
-        (this.painelGado = painelGado);
-        (this.painelRemedios = painelRemedios);
-        (this.painelTratamentos = painelTratamentos);
-        (this.painelPerfil = painelPerfil);
-        return;
-    }
-}
-
-class Lambda17 {
-    painelPastos;
-    painelGado;
-    painelRemedios;
-    painelTratamentos;
-    painelPerfil;
-
-    invoke() {
-        let painelPastos = this.painelPastos;
-        let painelGado = this.painelGado;
-        let painelRemedios = this.painelRemedios;
-        let painelTratamentos = this.painelTratamentos;
-        let painelPerfil = this.painelPerfil;
-        alternarAba(1, painelPastos, painelGado, painelRemedios, painelTratamentos, painelPerfil);
-        return;
-    }
-    constructor(painelPastos, painelGado, painelRemedios, painelTratamentos, painelPerfil) {
-        (this.painelPastos = null);
-        (this.painelGado = null);
-        (this.painelRemedios = null);
-        (this.painelTratamentos = null);
-        (this.painelPerfil = null);
-        (this.painelPastos = painelPastos);
-        (this.painelGado = painelGado);
-        (this.painelRemedios = painelRemedios);
-        (this.painelTratamentos = painelTratamentos);
-        (this.painelPerfil = painelPerfil);
-        return;
-    }
-}
-
-class Lambda18 {
-    painelPastos;
-    painelGado;
-    painelRemedios;
-    painelTratamentos;
-    painelPerfil;
-
-    invoke() {
-        let painelPastos = this.painelPastos;
-        let painelGado = this.painelGado;
-        let painelRemedios = this.painelRemedios;
-        let painelTratamentos = this.painelTratamentos;
-        let painelPerfil = this.painelPerfil;
-        alternarAba(2, painelPastos, painelGado, painelRemedios, painelTratamentos, painelPerfil);
-        return;
-    }
-    constructor(painelPastos, painelGado, painelRemedios, painelTratamentos, painelPerfil) {
-        (this.painelPastos = null);
-        (this.painelGado = null);
-        (this.painelRemedios = null);
-        (this.painelTratamentos = null);
-        (this.painelPerfil = null);
-        (this.painelPastos = painelPastos);
-        (this.painelGado = painelGado);
-        (this.painelRemedios = painelRemedios);
-        (this.painelTratamentos = painelTratamentos);
-        (this.painelPerfil = painelPerfil);
-        return;
-    }
-}
-
-class Lambda19 {
-    painelPastos;
-    painelGado;
-    painelRemedios;
-    painelTratamentos;
-    painelPerfil;
-
-    invoke() {
-        let painelPastos = this.painelPastos;
-        let painelGado = this.painelGado;
-        let painelRemedios = this.painelRemedios;
-        let painelTratamentos = this.painelTratamentos;
-        let painelPerfil = this.painelPerfil;
-        alternarAba(3, painelPastos, painelGado, painelRemedios, painelTratamentos, painelPerfil);
-        return;
-    }
-    constructor(painelPastos, painelGado, painelRemedios, painelTratamentos, painelPerfil) {
-        (this.painelPastos = null);
-        (this.painelGado = null);
-        (this.painelRemedios = null);
-        (this.painelTratamentos = null);
-        (this.painelPerfil = null);
-        (this.painelPastos = painelPastos);
-        (this.painelGado = painelGado);
-        (this.painelRemedios = painelRemedios);
-        (this.painelTratamentos = painelTratamentos);
-        (this.painelPerfil = painelPerfil);
-        return;
-    }
-}
-
-class Lambda20 {
-    painelPastos;
-    painelGado;
-    painelRemedios;
-    painelTratamentos;
-    painelPerfil;
-
-    invoke() {
-        let painelPastos = this.painelPastos;
-        let painelGado = this.painelGado;
-        let painelRemedios = this.painelRemedios;
-        let painelTratamentos = this.painelTratamentos;
-        let painelPerfil = this.painelPerfil;
-        alternarAba(4, painelPastos, painelGado, painelRemedios, painelTratamentos, painelPerfil);
-        return;
-    }
-    constructor(painelPastos, painelGado, painelRemedios, painelTratamentos, painelPerfil) {
-        (this.painelPastos = null);
-        (this.painelGado = null);
-        (this.painelRemedios = null);
-        (this.painelTratamentos = null);
-        (this.painelPerfil = null);
-        (this.painelPastos = painelPastos);
-        (this.painelGado = painelGado);
-        (this.painelRemedios = painelRemedios);
-        (this.painelTratamentos = painelTratamentos);
-        (this.painelPerfil = painelPerfil);
-        return;
-    }
-}
-
-class Lambda21 {
+class Lambda40 {
     tabelaPastos;
     selPastoEditar;
     selGadoPasto;
     selFiltroPasto;
-    kpiPastosValor;
-    kpiPastosSub;
+    kpiDashPastos;
+    kpiPastosTotal;
+    kpiPastosProprios;
+    kpiPastosArrendados;
+    kpiPastosCusto;
     tabelaGados;
     selGadoEditar;
     selGadoMae;
     selTratGado;
-    kpiGadosValor;
-    kpiGadosSub;
+    kpiDashProdutos;
+    kpiGadoTotal;
+    kpiGadoAtivos;
+    kpiGadoInativos;
+    kpiGadoAlerta;
     tabelaRemedios;
+    tabelaDashboardEstoque;
     selRemedioEstoque;
     selTratRemedio;
-    kpiRemediosValor;
-    kpiRemediosSub;
-    tabelaTratamentos;
-    selTratamentoVer;
-    kpiTratValor;
-    kpiTratSub;
+    kpiDashBaixo;
+    kpiDashValor;
+    kpiRemTotal;
+    kpiRemAtivos;
+    kpiRemBaixos;
+    kpiRemZerados;
     statusBanner;
 
     invoke() {
@@ -1687,104 +2118,284 @@ class Lambda21 {
         let selPastoEditar = this.selPastoEditar;
         let selGadoPasto = this.selGadoPasto;
         let selFiltroPasto = this.selFiltroPasto;
-        let kpiPastosValor = this.kpiPastosValor;
-        let kpiPastosSub = this.kpiPastosSub;
+        let kpiDashPastos = this.kpiDashPastos;
+        let kpiPastosTotal = this.kpiPastosTotal;
+        let kpiPastosProprios = this.kpiPastosProprios;
+        let kpiPastosArrendados = this.kpiPastosArrendados;
+        let kpiPastosCusto = this.kpiPastosCusto;
         let tabelaGados = this.tabelaGados;
         let selGadoEditar = this.selGadoEditar;
         let selGadoMae = this.selGadoMae;
         let selTratGado = this.selTratGado;
-        let kpiGadosValor = this.kpiGadosValor;
-        let kpiGadosSub = this.kpiGadosSub;
+        let kpiDashProdutos = this.kpiDashProdutos;
+        let kpiGadoTotal = this.kpiGadoTotal;
+        let kpiGadoAtivos = this.kpiGadoAtivos;
+        let kpiGadoInativos = this.kpiGadoInativos;
+        let kpiGadoAlerta = this.kpiGadoAlerta;
         let tabelaRemedios = this.tabelaRemedios;
+        let tabelaDashboardEstoque = this.tabelaDashboardEstoque;
         let selRemedioEstoque = this.selRemedioEstoque;
         let selTratRemedio = this.selTratRemedio;
-        let kpiRemediosValor = this.kpiRemediosValor;
-        let kpiRemediosSub = this.kpiRemediosSub;
-        let tabelaTratamentos = this.tabelaTratamentos;
-        let selTratamentoVer = this.selTratamentoVer;
-        let kpiTratValor = this.kpiTratValor;
-        let kpiTratSub = this.kpiTratSub;
+        let kpiDashBaixo = this.kpiDashBaixo;
+        let kpiDashValor = this.kpiDashValor;
+        let kpiRemTotal = this.kpiRemTotal;
+        let kpiRemAtivos = this.kpiRemAtivos;
+        let kpiRemBaixos = this.kpiRemBaixos;
+        let kpiRemZerados = this.kpiRemZerados;
         let statusBanner = this.statusBanner;
-        sincronizarPastosUi(tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiPastosValor, kpiPastosSub);
-        sincronizarGadosUi(tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiGadosValor, kpiGadosSub);
-        sincronizarRemediosUi(tabelaRemedios, selRemedioEstoque, selTratRemedio, kpiRemediosValor, kpiRemediosSub);
-        if ((kofListSize(UiState.gadoIds) > 0)) {
-            carregarHistoricoGadoUi(kofListGet(UiState.gadoIds, 0), tabelaTratamentos, selTratamentoVer, kpiTratValor, kpiTratSub);
-        }
-        kofUiLabelSetText(statusBanner, (kofFormat((kofFormat((kofFormat((kofFormat((kofFormat((kofFormat("Painel sincronizado: ") + kofFormat(kofListSize(UiState.pastoIds)))) + kofFormat(" pastos, "))) + kofFormat(kofListSize(UiState.gadoIds)))) + kofFormat(" animais e "))) + kofFormat(kofListSize(UiState.remedioIds)))) + kofFormat(" medicamentos.")));
+        sincronizarPastosUi(tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiDashPastos, kpiPastosTotal, kpiPastosProprios, kpiPastosArrendados, kpiPastosCusto);
+        sincronizarGadosUi(tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiDashProdutos, kpiGadoTotal, kpiGadoAtivos, kpiGadoInativos, kpiGadoAlerta);
+        sincronizarRemediosUi(tabelaRemedios, tabelaDashboardEstoque, selRemedioEstoque, selTratRemedio, kpiDashBaixo, kpiDashValor, kpiRemTotal, kpiRemAtivos, kpiRemBaixos, kpiRemZerados);
+        kofUiLabelSetText(statusBanner, "Backup e sincronização concluídos com sucesso!");
         return;
     }
-    constructor(tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiPastosValor, kpiPastosSub, tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiGadosValor, kpiGadosSub, tabelaRemedios, selRemedioEstoque, selTratRemedio, kpiRemediosValor, kpiRemediosSub, tabelaTratamentos, selTratamentoVer, kpiTratValor, kpiTratSub, statusBanner) {
+    constructor(tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiDashPastos, kpiPastosTotal, kpiPastosProprios, kpiPastosArrendados, kpiPastosCusto, tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiDashProdutos, kpiGadoTotal, kpiGadoAtivos, kpiGadoInativos, kpiGadoAlerta, tabelaRemedios, tabelaDashboardEstoque, selRemedioEstoque, selTratRemedio, kpiDashBaixo, kpiDashValor, kpiRemTotal, kpiRemAtivos, kpiRemBaixos, kpiRemZerados, statusBanner) {
         (this.tabelaPastos = null);
         (this.selPastoEditar = null);
         (this.selGadoPasto = null);
         (this.selFiltroPasto = null);
-        (this.kpiPastosValor = null);
-        (this.kpiPastosSub = null);
+        (this.kpiDashPastos = null);
+        (this.kpiPastosTotal = null);
+        (this.kpiPastosProprios = null);
+        (this.kpiPastosArrendados = null);
+        (this.kpiPastosCusto = null);
         (this.tabelaGados = null);
         (this.selGadoEditar = null);
         (this.selGadoMae = null);
         (this.selTratGado = null);
-        (this.kpiGadosValor = null);
-        (this.kpiGadosSub = null);
+        (this.kpiDashProdutos = null);
+        (this.kpiGadoTotal = null);
+        (this.kpiGadoAtivos = null);
+        (this.kpiGadoInativos = null);
+        (this.kpiGadoAlerta = null);
         (this.tabelaRemedios = null);
+        (this.tabelaDashboardEstoque = null);
         (this.selRemedioEstoque = null);
         (this.selTratRemedio = null);
-        (this.kpiRemediosValor = null);
-        (this.kpiRemediosSub = null);
-        (this.tabelaTratamentos = null);
-        (this.selTratamentoVer = null);
-        (this.kpiTratValor = null);
-        (this.kpiTratSub = null);
+        (this.kpiDashBaixo = null);
+        (this.kpiDashValor = null);
+        (this.kpiRemTotal = null);
+        (this.kpiRemAtivos = null);
+        (this.kpiRemBaixos = null);
+        (this.kpiRemZerados = null);
         (this.statusBanner = null);
         (this.tabelaPastos = tabelaPastos);
         (this.selPastoEditar = selPastoEditar);
         (this.selGadoPasto = selGadoPasto);
         (this.selFiltroPasto = selFiltroPasto);
-        (this.kpiPastosValor = kpiPastosValor);
-        (this.kpiPastosSub = kpiPastosSub);
+        (this.kpiDashPastos = kpiDashPastos);
+        (this.kpiPastosTotal = kpiPastosTotal);
+        (this.kpiPastosProprios = kpiPastosProprios);
+        (this.kpiPastosArrendados = kpiPastosArrendados);
+        (this.kpiPastosCusto = kpiPastosCusto);
         (this.tabelaGados = tabelaGados);
         (this.selGadoEditar = selGadoEditar);
         (this.selGadoMae = selGadoMae);
         (this.selTratGado = selTratGado);
-        (this.kpiGadosValor = kpiGadosValor);
-        (this.kpiGadosSub = kpiGadosSub);
+        (this.kpiDashProdutos = kpiDashProdutos);
+        (this.kpiGadoTotal = kpiGadoTotal);
+        (this.kpiGadoAtivos = kpiGadoAtivos);
+        (this.kpiGadoInativos = kpiGadoInativos);
+        (this.kpiGadoAlerta = kpiGadoAlerta);
         (this.tabelaRemedios = tabelaRemedios);
+        (this.tabelaDashboardEstoque = tabelaDashboardEstoque);
         (this.selRemedioEstoque = selRemedioEstoque);
         (this.selTratRemedio = selTratRemedio);
-        (this.kpiRemediosValor = kpiRemediosValor);
-        (this.kpiRemediosSub = kpiRemediosSub);
-        (this.tabelaTratamentos = tabelaTratamentos);
-        (this.selTratamentoVer = selTratamentoVer);
-        (this.kpiTratValor = kpiTratValor);
-        (this.kpiTratSub = kpiTratSub);
+        (this.kpiDashBaixo = kpiDashBaixo);
+        (this.kpiDashValor = kpiDashValor);
+        (this.kpiRemTotal = kpiRemTotal);
+        (this.kpiRemAtivos = kpiRemAtivos);
+        (this.kpiRemBaixos = kpiRemBaixos);
+        (this.kpiRemZerados = kpiRemZerados);
         (this.statusBanner = statusBanner);
         return;
     }
 }
 
-class Lambda22 {
+class Lambda41 {
     tabelaPastos;
     selPastoEditar;
     selGadoPasto;
     selFiltroPasto;
-    kpiPastosValor;
-    kpiPastosSub;
+    kpiDashPastos;
+    kpiPastosTotal;
+    kpiPastosProprios;
+    kpiPastosArrendados;
+    kpiPastosCusto;
     tabelaGados;
     selGadoEditar;
     selGadoMae;
     selTratGado;
-    kpiGadosValor;
-    kpiGadosSub;
+    kpiDashProdutos;
+    kpiGadoTotal;
+    kpiGadoAtivos;
+    kpiGadoInativos;
+    kpiGadoAlerta;
     tabelaRemedios;
+    tabelaDashboardEstoque;
     selRemedioEstoque;
     selTratRemedio;
-    kpiRemediosValor;
-    kpiRemediosSub;
+    kpiDashBaixo;
+    kpiDashValor;
+    kpiRemTotal;
+    kpiRemAtivos;
+    kpiRemBaixos;
+    kpiRemZerados;
     tabelaTratamentos;
     selTratamentoVer;
-    kpiTratValor;
-    kpiTratSub;
+    canvasLinha;
+    canvasDonut;
+    statusBanner;
+
+    invoke() {
+        let tabelaPastos = this.tabelaPastos;
+        let selPastoEditar = this.selPastoEditar;
+        let selGadoPasto = this.selGadoPasto;
+        let selFiltroPasto = this.selFiltroPasto;
+        let kpiDashPastos = this.kpiDashPastos;
+        let kpiPastosTotal = this.kpiPastosTotal;
+        let kpiPastosProprios = this.kpiPastosProprios;
+        let kpiPastosArrendados = this.kpiPastosArrendados;
+        let kpiPastosCusto = this.kpiPastosCusto;
+        let tabelaGados = this.tabelaGados;
+        let selGadoEditar = this.selGadoEditar;
+        let selGadoMae = this.selGadoMae;
+        let selTratGado = this.selTratGado;
+        let kpiDashProdutos = this.kpiDashProdutos;
+        let kpiGadoTotal = this.kpiGadoTotal;
+        let kpiGadoAtivos = this.kpiGadoAtivos;
+        let kpiGadoInativos = this.kpiGadoInativos;
+        let kpiGadoAlerta = this.kpiGadoAlerta;
+        let tabelaRemedios = this.tabelaRemedios;
+        let tabelaDashboardEstoque = this.tabelaDashboardEstoque;
+        let selRemedioEstoque = this.selRemedioEstoque;
+        let selTratRemedio = this.selTratRemedio;
+        let kpiDashBaixo = this.kpiDashBaixo;
+        let kpiDashValor = this.kpiDashValor;
+        let kpiRemTotal = this.kpiRemTotal;
+        let kpiRemAtivos = this.kpiRemAtivos;
+        let kpiRemBaixos = this.kpiRemBaixos;
+        let kpiRemZerados = this.kpiRemZerados;
+        let tabelaTratamentos = this.tabelaTratamentos;
+        let selTratamentoVer = this.selTratamentoVer;
+        let canvasLinha = this.canvasLinha;
+        let canvasDonut = this.canvasDonut;
+        let statusBanner = this.statusBanner;
+        sincronizarPastosUi(tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiDashPastos, kpiPastosTotal, kpiPastosProprios, kpiPastosArrendados, kpiPastosCusto);
+        sincronizarGadosUi(tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiDashProdutos, kpiGadoTotal, kpiGadoAtivos, kpiGadoInativos, kpiGadoAlerta);
+        sincronizarRemediosUi(tabelaRemedios, tabelaDashboardEstoque, selRemedioEstoque, selTratRemedio, kpiDashBaixo, kpiDashValor, kpiRemTotal, kpiRemAtivos, kpiRemBaixos, kpiRemZerados);
+        if ((kofListSize(UiState.gadoIds) > 0)) {
+            carregarHistoricoGadoUi(kofListGet(UiState.gadoIds, 0), tabelaTratamentos, selTratamentoVer);
+        }
+        desenharGraficoLinha(canvasLinha, 0);
+        desenharGraficoDonut(canvasDonut);
+        kofUiLabelSetText(statusBanner, (kofFormat((kofFormat((kofFormat((kofFormat((kofFormat((kofFormat("Painel sincronizado: ") + kofFormat(kofListSize(UiState.pastoIds)))) + kofFormat(" pastos, "))) + kofFormat(kofListSize(UiState.gadoIds)))) + kofFormat(" animais e "))) + kofFormat(kofListSize(UiState.remedioIds)))) + kofFormat(" medicamentos.")));
+        return;
+    }
+    constructor(tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiDashPastos, kpiPastosTotal, kpiPastosProprios, kpiPastosArrendados, kpiPastosCusto, tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiDashProdutos, kpiGadoTotal, kpiGadoAtivos, kpiGadoInativos, kpiGadoAlerta, tabelaRemedios, tabelaDashboardEstoque, selRemedioEstoque, selTratRemedio, kpiDashBaixo, kpiDashValor, kpiRemTotal, kpiRemAtivos, kpiRemBaixos, kpiRemZerados, tabelaTratamentos, selTratamentoVer, canvasLinha, canvasDonut, statusBanner) {
+        (this.tabelaPastos = null);
+        (this.selPastoEditar = null);
+        (this.selGadoPasto = null);
+        (this.selFiltroPasto = null);
+        (this.kpiDashPastos = null);
+        (this.kpiPastosTotal = null);
+        (this.kpiPastosProprios = null);
+        (this.kpiPastosArrendados = null);
+        (this.kpiPastosCusto = null);
+        (this.tabelaGados = null);
+        (this.selGadoEditar = null);
+        (this.selGadoMae = null);
+        (this.selTratGado = null);
+        (this.kpiDashProdutos = null);
+        (this.kpiGadoTotal = null);
+        (this.kpiGadoAtivos = null);
+        (this.kpiGadoInativos = null);
+        (this.kpiGadoAlerta = null);
+        (this.tabelaRemedios = null);
+        (this.tabelaDashboardEstoque = null);
+        (this.selRemedioEstoque = null);
+        (this.selTratRemedio = null);
+        (this.kpiDashBaixo = null);
+        (this.kpiDashValor = null);
+        (this.kpiRemTotal = null);
+        (this.kpiRemAtivos = null);
+        (this.kpiRemBaixos = null);
+        (this.kpiRemZerados = null);
+        (this.tabelaTratamentos = null);
+        (this.selTratamentoVer = null);
+        (this.canvasLinha = null);
+        (this.canvasDonut = null);
+        (this.statusBanner = null);
+        (this.tabelaPastos = tabelaPastos);
+        (this.selPastoEditar = selPastoEditar);
+        (this.selGadoPasto = selGadoPasto);
+        (this.selFiltroPasto = selFiltroPasto);
+        (this.kpiDashPastos = kpiDashPastos);
+        (this.kpiPastosTotal = kpiPastosTotal);
+        (this.kpiPastosProprios = kpiPastosProprios);
+        (this.kpiPastosArrendados = kpiPastosArrendados);
+        (this.kpiPastosCusto = kpiPastosCusto);
+        (this.tabelaGados = tabelaGados);
+        (this.selGadoEditar = selGadoEditar);
+        (this.selGadoMae = selGadoMae);
+        (this.selTratGado = selTratGado);
+        (this.kpiDashProdutos = kpiDashProdutos);
+        (this.kpiGadoTotal = kpiGadoTotal);
+        (this.kpiGadoAtivos = kpiGadoAtivos);
+        (this.kpiGadoInativos = kpiGadoInativos);
+        (this.kpiGadoAlerta = kpiGadoAlerta);
+        (this.tabelaRemedios = tabelaRemedios);
+        (this.tabelaDashboardEstoque = tabelaDashboardEstoque);
+        (this.selRemedioEstoque = selRemedioEstoque);
+        (this.selTratRemedio = selTratRemedio);
+        (this.kpiDashBaixo = kpiDashBaixo);
+        (this.kpiDashValor = kpiDashValor);
+        (this.kpiRemTotal = kpiRemTotal);
+        (this.kpiRemAtivos = kpiRemAtivos);
+        (this.kpiRemBaixos = kpiRemBaixos);
+        (this.kpiRemZerados = kpiRemZerados);
+        (this.tabelaTratamentos = tabelaTratamentos);
+        (this.selTratamentoVer = selTratamentoVer);
+        (this.canvasLinha = canvasLinha);
+        (this.canvasDonut = canvasDonut);
+        (this.statusBanner = statusBanner);
+        return;
+    }
+}
+
+class Lambda42 {
+    tabelaPastos;
+    selPastoEditar;
+    selGadoPasto;
+    selFiltroPasto;
+    kpiDashPastos;
+    kpiPastosTotal;
+    kpiPastosProprios;
+    kpiPastosArrendados;
+    kpiPastosCusto;
+    tabelaGados;
+    selGadoEditar;
+    selGadoMae;
+    selTratGado;
+    kpiDashProdutos;
+    kpiGadoTotal;
+    kpiGadoAtivos;
+    kpiGadoInativos;
+    kpiGadoAlerta;
+    tabelaRemedios;
+    tabelaDashboardEstoque;
+    selRemedioEstoque;
+    selTratRemedio;
+    kpiDashBaixo;
+    kpiDashValor;
+    kpiRemTotal;
+    kpiRemAtivos;
+    kpiRemBaixos;
+    kpiRemZerados;
+    tabelaTratamentos;
+    selTratamentoVer;
+    canvasLinha;
+    canvasDonut;
     statusBanner;
 
     invoke() {
@@ -1795,151 +2406,179 @@ class Lambda22 {
         let selPastoEditar = this.selPastoEditar;
         let selGadoPasto = this.selGadoPasto;
         let selFiltroPasto = this.selFiltroPasto;
-        let kpiPastosValor = this.kpiPastosValor;
-        let kpiPastosSub = this.kpiPastosSub;
+        let kpiDashPastos = this.kpiDashPastos;
+        let kpiPastosTotal = this.kpiPastosTotal;
+        let kpiPastosProprios = this.kpiPastosProprios;
+        let kpiPastosArrendados = this.kpiPastosArrendados;
+        let kpiPastosCusto = this.kpiPastosCusto;
         let tabelaGados = this.tabelaGados;
         let selGadoEditar = this.selGadoEditar;
         let selGadoMae = this.selGadoMae;
         let selTratGado = this.selTratGado;
-        let kpiGadosValor = this.kpiGadosValor;
-        let kpiGadosSub = this.kpiGadosSub;
+        let kpiDashProdutos = this.kpiDashProdutos;
+        let kpiGadoTotal = this.kpiGadoTotal;
+        let kpiGadoAtivos = this.kpiGadoAtivos;
+        let kpiGadoInativos = this.kpiGadoInativos;
+        let kpiGadoAlerta = this.kpiGadoAlerta;
         let tabelaRemedios = this.tabelaRemedios;
+        let tabelaDashboardEstoque = this.tabelaDashboardEstoque;
         let selRemedioEstoque = this.selRemedioEstoque;
         let selTratRemedio = this.selTratRemedio;
-        let kpiRemediosValor = this.kpiRemediosValor;
-        let kpiRemediosSub = this.kpiRemediosSub;
+        let kpiDashBaixo = this.kpiDashBaixo;
+        let kpiDashValor = this.kpiDashValor;
+        let kpiRemTotal = this.kpiRemTotal;
+        let kpiRemAtivos = this.kpiRemAtivos;
+        let kpiRemBaixos = this.kpiRemBaixos;
+        let kpiRemZerados = this.kpiRemZerados;
         let tabelaTratamentos = this.tabelaTratamentos;
         let selTratamentoVer = this.selTratamentoVer;
-        let kpiTratValor = this.kpiTratValor;
-        let kpiTratSub = this.kpiTratSub;
+        let canvasLinha = this.canvasLinha;
+        let canvasDonut = this.canvasDonut;
         let statusBanner = this.statusBanner;
         kofHttpPost((kofFormat(UiState.apiBase) + kofFormat("/pastos")), "{\"nome\":\"Piquete Santa Helena\",\"dono\":true,\"valor_cabeca\":140}");
         kofHttpPost((kofFormat(UiState.apiBase) + kofFormat("/pastos")), "{\"nome\":\"Pasto da Represa\",\"dono\":false,\"valor_cabeca\":185}");
-        sincronizarPastosUi(tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiPastosValor, kpiPastosSub);
+        sincronizarPastosUi(tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiDashPastos, kpiPastosTotal, kpiPastosProprios, kpiPastosArrendados, kpiPastosCusto);
         p1 = "";
         if ((kofListSize(UiState.pastoIds) > 0)) {
             p1 = kofListGet(UiState.pastoIds, 0);
         }
         kofHttpPost((kofFormat(UiState.apiBase) + kofFormat("/gados")), (kofFormat((kofFormat("{\"nome\":\"Mimosa\",\"vaca_leitera\":true,\"pasto_uuid\":\"") + kofFormat(p1))) + kofFormat("\",\"saudeVaca\":\"SAUDAVEL\",\"numero_registro\":\"BR-101\",\"mae\":\"\",\"sexo\":\"FEMEA\",\"historico_tratamento_uuid\":\"\",\"data_nascimento\":\"2022-04-12\"}")));
         kofHttpPost((kofFormat(UiState.apiBase) + kofFormat("/gados")), (kofFormat((kofFormat("{\"nome\":\"Estrela\",\"vaca_leitera\":true,\"pasto_uuid\":\"") + kofFormat(p1))) + kofFormat("\",\"saudeVaca\":\"RECUPERACAO\",\"numero_registro\":\"BR-102\",\"mae\":\"\",\"sexo\":\"FEMEA\",\"historico_tratamento_uuid\":\"\",\"data_nascimento\":\"2023-08-20\"}")));
-        sincronizarGadosUi(tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiGadosValor, kpiGadosSub);
-        kofHttpPost((kofFormat(UiState.apiBase) + kofFormat("/remedios")), "{\"nome\":\"Ivermectina 1% Ourofino\",\"data_compra\":\"2026-01-15\",\"data_vencimento\":\"2027-12-31\",\"valor\":54.9,\"aplicacao\":\"INJECAO\",\"estoque\":30}");
-        kofHttpPost((kofFormat(UiState.apiBase) + kofFormat("/remedios")), "{\"nome\":\"Spray Cicatrizante Prata\",\"data_compra\":\"2026-02-10\",\"data_vencimento\":\"2028-02-10\",\"valor\":32.0,\"aplicacao\":\"CURA_FERIDAS\",\"estoque\":15}");
-        sincronizarRemediosUi(tabelaRemedios, selRemedioEstoque, selTratRemedio, kpiRemediosValor, kpiRemediosSub);
+        kofHttpPost((kofFormat(UiState.apiBase) + kofFormat("/gados")), (kofFormat((kofFormat("{\"nome\":\"Trovão\",\"vaca_leitera\":false,\"pasto_uuid\":\"") + kofFormat(p1))) + kofFormat("\",\"saudeVaca\":\"SAUDAVEL\",\"numero_registro\":\"BR-103\",\"mae\":\"\",\"sexo\":\"MACHO\",\"historico_tratamento_uuid\":\"\",\"data_nascimento\":\"2023-01-10\"}")));
+        sincronizarGadosUi(tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiDashProdutos, kpiGadoTotal, kpiGadoAtivos, kpiGadoInativos, kpiGadoAlerta);
+        kofHttpPost((kofFormat(UiState.apiBase) + kofFormat("/remedios")), "{\"nome\":\"Ivermectina 1% Ourofino\",\"data_compra\":\"2026-01-15\",\"data_vencimento\":\"2027-12-31\",\"valor\":48.99,\"aplicacao\":\"INJECAO\",\"estoque\":48}");
+        kofHttpPost((kofFormat(UiState.apiBase) + kofFormat("/remedios")), "{\"nome\":\"Vacina Febre Aftosa\",\"data_compra\":\"2026-02-01\",\"data_vencimento\":\"2027-08-01\",\"valor\":89.90,\"aplicacao\":\"INJECAO\",\"estoque\":5}");
+        kofHttpPost((kofFormat(UiState.apiBase) + kofFormat("/remedios")), "{\"nome\":\"Spray Cicatrizante Prata\",\"data_compra\":\"2026-02-10\",\"data_vencimento\":\"2028-02-10\",\"valor\":32.00,\"aplicacao\":\"CURA_FERIDAS\",\"estoque\":12}");
+        kofHttpPost((kofFormat(UiState.apiBase) + kofFormat("/remedios")), "{\"nome\":\"Soro Fisiológico Ringer\",\"data_compra\":\"2026-03-05\",\"data_vencimento\":\"2028-03-05\",\"valor\":24.50,\"aplicacao\":\"SORO_FISIOLOGICO\",\"estoque\":32}");
+        sincronizarRemediosUi(tabelaRemedios, tabelaDashboardEstoque, selRemedioEstoque, selTratRemedio, kpiDashBaixo, kpiDashValor, kpiRemTotal, kpiRemAtivos, kpiRemBaixos, kpiRemZerados);
         if ((!!((kofListSize(UiState.gadoIds) > 0) && (kofListSize(UiState.remedioIds) > 0)))) {
             _scopedVar$gId = kofListGet(UiState.gadoIds, 0);
             _scopedVar$rId = kofListGet(UiState.remedioIds, 0);
             kofHttpPost((kofFormat(UiState.apiBase) + kofFormat("/tratamentos")), (kofFormat((kofFormat((kofFormat((kofFormat("{\"nome_doenca\":\"Controle Preventivo de Parasitas\",\"gado_uuid\":\"") + kofFormat(_scopedVar$gId))) + kofFormat("\",\"data_inicio\":\"2026-10-17\",\"data_fim\":\"2026-10-20\",\"observacoes\":\"Dose unica subcutanea aplicada no manejo matinal.\",\"fk_remedio_uuid\":\""))) + kofFormat(_scopedVar$rId))) + kofFormat("\",\"dosagen\":10.0}")));
-            sincronizarRemediosUi(tabelaRemedios, selRemedioEstoque, selTratRemedio, kpiRemediosValor, kpiRemediosSub);
-            carregarHistoricoGadoUi(_scopedVar$gId, tabelaTratamentos, selTratamentoVer, kpiTratValor, kpiTratSub);
+            sincronizarRemediosUi(tabelaRemedios, tabelaDashboardEstoque, selRemedioEstoque, selTratRemedio, kpiDashBaixo, kpiDashValor, kpiRemTotal, kpiRemAtivos, kpiRemBaixos, kpiRemZerados);
+            carregarHistoricoGadoUi(_scopedVar$gId, tabelaTratamentos, selTratamentoVer);
         }
-        kofUiLabelSetText(statusBanner, "Fazenda Demo carregada com sucesso! Todos os pastos, animais, medicamentos e tratamentos foram populados.");
+        desenharGraficoLinha(canvasLinha, 0);
+        desenharGraficoDonut(canvasDonut);
+        kofUiLabelSetText(statusBanner, "Base de demonstração Estocaê · AgroKOF populada com sucesso!");
         return;
     }
-    constructor(tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiPastosValor, kpiPastosSub, tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiGadosValor, kpiGadosSub, tabelaRemedios, selRemedioEstoque, selTratRemedio, kpiRemediosValor, kpiRemediosSub, tabelaTratamentos, selTratamentoVer, kpiTratValor, kpiTratSub, statusBanner) {
+    constructor(tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiDashPastos, kpiPastosTotal, kpiPastosProprios, kpiPastosArrendados, kpiPastosCusto, tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiDashProdutos, kpiGadoTotal, kpiGadoAtivos, kpiGadoInativos, kpiGadoAlerta, tabelaRemedios, tabelaDashboardEstoque, selRemedioEstoque, selTratRemedio, kpiDashBaixo, kpiDashValor, kpiRemTotal, kpiRemAtivos, kpiRemBaixos, kpiRemZerados, tabelaTratamentos, selTratamentoVer, canvasLinha, canvasDonut, statusBanner) {
         (this.tabelaPastos = null);
         (this.selPastoEditar = null);
         (this.selGadoPasto = null);
         (this.selFiltroPasto = null);
-        (this.kpiPastosValor = null);
-        (this.kpiPastosSub = null);
+        (this.kpiDashPastos = null);
+        (this.kpiPastosTotal = null);
+        (this.kpiPastosProprios = null);
+        (this.kpiPastosArrendados = null);
+        (this.kpiPastosCusto = null);
         (this.tabelaGados = null);
         (this.selGadoEditar = null);
         (this.selGadoMae = null);
         (this.selTratGado = null);
-        (this.kpiGadosValor = null);
-        (this.kpiGadosSub = null);
+        (this.kpiDashProdutos = null);
+        (this.kpiGadoTotal = null);
+        (this.kpiGadoAtivos = null);
+        (this.kpiGadoInativos = null);
+        (this.kpiGadoAlerta = null);
         (this.tabelaRemedios = null);
+        (this.tabelaDashboardEstoque = null);
         (this.selRemedioEstoque = null);
         (this.selTratRemedio = null);
-        (this.kpiRemediosValor = null);
-        (this.kpiRemediosSub = null);
+        (this.kpiDashBaixo = null);
+        (this.kpiDashValor = null);
+        (this.kpiRemTotal = null);
+        (this.kpiRemAtivos = null);
+        (this.kpiRemBaixos = null);
+        (this.kpiRemZerados = null);
         (this.tabelaTratamentos = null);
         (this.selTratamentoVer = null);
-        (this.kpiTratValor = null);
-        (this.kpiTratSub = null);
+        (this.canvasLinha = null);
+        (this.canvasDonut = null);
         (this.statusBanner = null);
         (this.tabelaPastos = tabelaPastos);
         (this.selPastoEditar = selPastoEditar);
         (this.selGadoPasto = selGadoPasto);
         (this.selFiltroPasto = selFiltroPasto);
-        (this.kpiPastosValor = kpiPastosValor);
-        (this.kpiPastosSub = kpiPastosSub);
+        (this.kpiDashPastos = kpiDashPastos);
+        (this.kpiPastosTotal = kpiPastosTotal);
+        (this.kpiPastosProprios = kpiPastosProprios);
+        (this.kpiPastosArrendados = kpiPastosArrendados);
+        (this.kpiPastosCusto = kpiPastosCusto);
         (this.tabelaGados = tabelaGados);
         (this.selGadoEditar = selGadoEditar);
         (this.selGadoMae = selGadoMae);
         (this.selTratGado = selTratGado);
-        (this.kpiGadosValor = kpiGadosValor);
-        (this.kpiGadosSub = kpiGadosSub);
+        (this.kpiDashProdutos = kpiDashProdutos);
+        (this.kpiGadoTotal = kpiGadoTotal);
+        (this.kpiGadoAtivos = kpiGadoAtivos);
+        (this.kpiGadoInativos = kpiGadoInativos);
+        (this.kpiGadoAlerta = kpiGadoAlerta);
         (this.tabelaRemedios = tabelaRemedios);
+        (this.tabelaDashboardEstoque = tabelaDashboardEstoque);
         (this.selRemedioEstoque = selRemedioEstoque);
         (this.selTratRemedio = selTratRemedio);
-        (this.kpiRemediosValor = kpiRemediosValor);
-        (this.kpiRemediosSub = kpiRemediosSub);
+        (this.kpiDashBaixo = kpiDashBaixo);
+        (this.kpiDashValor = kpiDashValor);
+        (this.kpiRemTotal = kpiRemTotal);
+        (this.kpiRemAtivos = kpiRemAtivos);
+        (this.kpiRemBaixos = kpiRemBaixos);
+        (this.kpiRemZerados = kpiRemZerados);
         (this.tabelaTratamentos = tabelaTratamentos);
         (this.selTratamentoVer = selTratamentoVer);
-        (this.kpiTratValor = kpiTratValor);
-        (this.kpiTratSub = kpiTratSub);
+        (this.canvasLinha = canvasLinha);
+        (this.canvasDonut = canvasDonut);
         (this.statusBanner = statusBanner);
         return;
     }
 }
 
-class Lambda23 {
-    brandTitle;
-    brandSubtitle;
+class Lambda43 {
+    pageTitle;
     statusBanner;
 
     invoke() {
-        let brandTitle = this.brandTitle;
-        let brandSubtitle = this.brandSubtitle;
+        let pageTitle = this.pageTitle;
         let statusBanner = this.statusBanner;
         (UiState.fontScale = calcularEscala(UiState.fontScale, -2));
-        kofUiLabelSetFontSize(brandTitle, ((UiState.fontScale + 7) | 0));
-        kofUiLabelSetFontSize(brandSubtitle, ((UiState.fontScale - 1) | 0));
+        kofUiLabelSetFontSize(pageTitle, ((UiState.fontScale + 6) | 0));
         kofUiLabelSetFontSize(statusBanner, UiState.fontScale);
-        kofUiLabelSetText(statusBanner, (kofFormat((kofFormat("Acessibilidade (RNF07): Escala tipografica ajustada para ") + kofFormat(UiState.fontScale))) + kofFormat("px")));
+        kofUiLabelSetText(statusBanner, (kofFormat((kofFormat("Acessibilidade (RNF07): Escala tipográfica ajustada para ") + kofFormat(UiState.fontScale))) + kofFormat("px")));
         return;
     }
-    constructor(brandTitle, brandSubtitle, statusBanner) {
-        (this.brandTitle = null);
-        (this.brandSubtitle = null);
+    constructor(pageTitle, statusBanner) {
+        (this.pageTitle = null);
         (this.statusBanner = null);
-        (this.brandTitle = brandTitle);
-        (this.brandSubtitle = brandSubtitle);
+        (this.pageTitle = pageTitle);
         (this.statusBanner = statusBanner);
         return;
     }
 }
 
-class Lambda24 {
-    brandTitle;
-    brandSubtitle;
+class Lambda44 {
+    pageTitle;
     statusBanner;
 
     invoke() {
-        let brandTitle = this.brandTitle;
-        let brandSubtitle = this.brandSubtitle;
+        let pageTitle = this.pageTitle;
         let statusBanner = this.statusBanner;
         (UiState.fontScale = calcularEscala(UiState.fontScale, 2));
-        kofUiLabelSetFontSize(brandTitle, ((UiState.fontScale + 7) | 0));
-        kofUiLabelSetFontSize(brandSubtitle, ((UiState.fontScale - 1) | 0));
+        kofUiLabelSetFontSize(pageTitle, ((UiState.fontScale + 6) | 0));
         kofUiLabelSetFontSize(statusBanner, UiState.fontScale);
-        kofUiLabelSetText(statusBanner, (kofFormat((kofFormat("Acessibilidade (RNF07): Escala tipografica ajustada para ") + kofFormat(UiState.fontScale))) + kofFormat("px")));
+        kofUiLabelSetText(statusBanner, (kofFormat((kofFormat("Acessibilidade (RNF07): Escala tipográfica ajustada para ") + kofFormat(UiState.fontScale))) + kofFormat("px")));
         return;
     }
-    constructor(brandTitle, brandSubtitle, statusBanner) {
-        (this.brandTitle = null);
-        (this.brandSubtitle = null);
+    constructor(pageTitle, statusBanner) {
+        (this.pageTitle = null);
         (this.statusBanner = null);
-        (this.brandTitle = brandTitle);
-        (this.brandSubtitle = brandSubtitle);
+        (this.pageTitle = pageTitle);
         (this.statusBanner = statusBanner);
         return;
     }
 }
 
-class Lambda25 {
+class Lambda45 {
     w;
     statusBanner;
 
@@ -1949,10 +2588,10 @@ class Lambda25 {
         (UiState.darkTheme = (UiState.darkTheme ? 0 : 1));
         if (UiState.darkTheme) {
             kofUiWindowSetTheme(w, 1);
-            kofUiLabelSetText(statusBanner, "Acessibilidade (RNF06): Tema Escuro (Dark Slate) ativado.");
+            kofUiLabelSetText(statusBanner, "Acessibilidade (RNF06): Tema Escuro ativado.");
         } else {
             kofUiWindowSetTheme(w, 0);
-            kofUiLabelSetText(statusBanner, "Acessibilidade (RNF06): Tema Claro de Alto Contraste ativado.");
+            kofUiLabelSetText(statusBanner, "Acessibilidade (RNF06): Tema Claro Estocaê ativado.");
         }
         return;
     }
@@ -1961,6 +2600,319 @@ class Lambda25 {
         (this.statusBanner = null);
         (this.w = w);
         (this.statusBanner = statusBanner);
+        return;
+    }
+}
+
+class Lambda46 {
+    pageTitle;
+    painelDashboard;
+    painelGado;
+    painelRemedios;
+    painelPastos;
+    painelTratamentos;
+    painelPerfil;
+
+    invoke() {
+        let pageTitle = this.pageTitle;
+        let painelDashboard = this.painelDashboard;
+        let painelGado = this.painelGado;
+        let painelRemedios = this.painelRemedios;
+        let painelPastos = this.painelPastos;
+        let painelTratamentos = this.painelTratamentos;
+        let painelPerfil = this.painelPerfil;
+        alternarTela(0, pageTitle, painelDashboard, painelGado, painelRemedios, painelPastos, painelTratamentos, painelPerfil);
+        return;
+    }
+    constructor(pageTitle, painelDashboard, painelGado, painelRemedios, painelPastos, painelTratamentos, painelPerfil) {
+        (this.pageTitle = null);
+        (this.painelDashboard = null);
+        (this.painelGado = null);
+        (this.painelRemedios = null);
+        (this.painelPastos = null);
+        (this.painelTratamentos = null);
+        (this.painelPerfil = null);
+        (this.pageTitle = pageTitle);
+        (this.painelDashboard = painelDashboard);
+        (this.painelGado = painelGado);
+        (this.painelRemedios = painelRemedios);
+        (this.painelPastos = painelPastos);
+        (this.painelTratamentos = painelTratamentos);
+        (this.painelPerfil = painelPerfil);
+        return;
+    }
+}
+
+class Lambda47 {
+    pageTitle;
+    painelDashboard;
+    painelGado;
+    painelRemedios;
+    painelPastos;
+    painelTratamentos;
+    painelPerfil;
+
+    invoke() {
+        let pageTitle = this.pageTitle;
+        let painelDashboard = this.painelDashboard;
+        let painelGado = this.painelGado;
+        let painelRemedios = this.painelRemedios;
+        let painelPastos = this.painelPastos;
+        let painelTratamentos = this.painelTratamentos;
+        let painelPerfil = this.painelPerfil;
+        alternarTela(1, pageTitle, painelDashboard, painelGado, painelRemedios, painelPastos, painelTratamentos, painelPerfil);
+        return;
+    }
+    constructor(pageTitle, painelDashboard, painelGado, painelRemedios, painelPastos, painelTratamentos, painelPerfil) {
+        (this.pageTitle = null);
+        (this.painelDashboard = null);
+        (this.painelGado = null);
+        (this.painelRemedios = null);
+        (this.painelPastos = null);
+        (this.painelTratamentos = null);
+        (this.painelPerfil = null);
+        (this.pageTitle = pageTitle);
+        (this.painelDashboard = painelDashboard);
+        (this.painelGado = painelGado);
+        (this.painelRemedios = painelRemedios);
+        (this.painelPastos = painelPastos);
+        (this.painelTratamentos = painelTratamentos);
+        (this.painelPerfil = painelPerfil);
+        return;
+    }
+}
+
+class Lambda48 {
+    pageTitle;
+    painelDashboard;
+    painelGado;
+    painelRemedios;
+    painelPastos;
+    painelTratamentos;
+    painelPerfil;
+
+    invoke() {
+        let pageTitle = this.pageTitle;
+        let painelDashboard = this.painelDashboard;
+        let painelGado = this.painelGado;
+        let painelRemedios = this.painelRemedios;
+        let painelPastos = this.painelPastos;
+        let painelTratamentos = this.painelTratamentos;
+        let painelPerfil = this.painelPerfil;
+        alternarTela(2, pageTitle, painelDashboard, painelGado, painelRemedios, painelPastos, painelTratamentos, painelPerfil);
+        return;
+    }
+    constructor(pageTitle, painelDashboard, painelGado, painelRemedios, painelPastos, painelTratamentos, painelPerfil) {
+        (this.pageTitle = null);
+        (this.painelDashboard = null);
+        (this.painelGado = null);
+        (this.painelRemedios = null);
+        (this.painelPastos = null);
+        (this.painelTratamentos = null);
+        (this.painelPerfil = null);
+        (this.pageTitle = pageTitle);
+        (this.painelDashboard = painelDashboard);
+        (this.painelGado = painelGado);
+        (this.painelRemedios = painelRemedios);
+        (this.painelPastos = painelPastos);
+        (this.painelTratamentos = painelTratamentos);
+        (this.painelPerfil = painelPerfil);
+        return;
+    }
+}
+
+class Lambda49 {
+    pageTitle;
+    painelDashboard;
+    painelGado;
+    painelRemedios;
+    painelPastos;
+    painelTratamentos;
+    painelPerfil;
+
+    invoke() {
+        let pageTitle = this.pageTitle;
+        let painelDashboard = this.painelDashboard;
+        let painelGado = this.painelGado;
+        let painelRemedios = this.painelRemedios;
+        let painelPastos = this.painelPastos;
+        let painelTratamentos = this.painelTratamentos;
+        let painelPerfil = this.painelPerfil;
+        alternarTela(3, pageTitle, painelDashboard, painelGado, painelRemedios, painelPastos, painelTratamentos, painelPerfil);
+        return;
+    }
+    constructor(pageTitle, painelDashboard, painelGado, painelRemedios, painelPastos, painelTratamentos, painelPerfil) {
+        (this.pageTitle = null);
+        (this.painelDashboard = null);
+        (this.painelGado = null);
+        (this.painelRemedios = null);
+        (this.painelPastos = null);
+        (this.painelTratamentos = null);
+        (this.painelPerfil = null);
+        (this.pageTitle = pageTitle);
+        (this.painelDashboard = painelDashboard);
+        (this.painelGado = painelGado);
+        (this.painelRemedios = painelRemedios);
+        (this.painelPastos = painelPastos);
+        (this.painelTratamentos = painelTratamentos);
+        (this.painelPerfil = painelPerfil);
+        return;
+    }
+}
+
+class Lambda50 {
+    pageTitle;
+    painelDashboard;
+    painelGado;
+    painelRemedios;
+    painelPastos;
+    painelTratamentos;
+    painelPerfil;
+
+    invoke() {
+        let pageTitle = this.pageTitle;
+        let painelDashboard = this.painelDashboard;
+        let painelGado = this.painelGado;
+        let painelRemedios = this.painelRemedios;
+        let painelPastos = this.painelPastos;
+        let painelTratamentos = this.painelTratamentos;
+        let painelPerfil = this.painelPerfil;
+        alternarTela(4, pageTitle, painelDashboard, painelGado, painelRemedios, painelPastos, painelTratamentos, painelPerfil);
+        return;
+    }
+    constructor(pageTitle, painelDashboard, painelGado, painelRemedios, painelPastos, painelTratamentos, painelPerfil) {
+        (this.pageTitle = null);
+        (this.painelDashboard = null);
+        (this.painelGado = null);
+        (this.painelRemedios = null);
+        (this.painelPastos = null);
+        (this.painelTratamentos = null);
+        (this.painelPerfil = null);
+        (this.pageTitle = pageTitle);
+        (this.painelDashboard = painelDashboard);
+        (this.painelGado = painelGado);
+        (this.painelRemedios = painelRemedios);
+        (this.painelPastos = painelPastos);
+        (this.painelTratamentos = painelTratamentos);
+        (this.painelPerfil = painelPerfil);
+        return;
+    }
+}
+
+class Lambda51 {
+    pageTitle;
+    painelDashboard;
+    painelGado;
+    painelRemedios;
+    painelPastos;
+    painelTratamentos;
+    painelPerfil;
+
+    invoke() {
+        let pageTitle = this.pageTitle;
+        let painelDashboard = this.painelDashboard;
+        let painelGado = this.painelGado;
+        let painelRemedios = this.painelRemedios;
+        let painelPastos = this.painelPastos;
+        let painelTratamentos = this.painelTratamentos;
+        let painelPerfil = this.painelPerfil;
+        alternarTela(5, pageTitle, painelDashboard, painelGado, painelRemedios, painelPastos, painelTratamentos, painelPerfil);
+        return;
+    }
+    constructor(pageTitle, painelDashboard, painelGado, painelRemedios, painelPastos, painelTratamentos, painelPerfil) {
+        (this.pageTitle = null);
+        (this.painelDashboard = null);
+        (this.painelGado = null);
+        (this.painelRemedios = null);
+        (this.painelPastos = null);
+        (this.painelTratamentos = null);
+        (this.painelPerfil = null);
+        (this.pageTitle = pageTitle);
+        (this.painelDashboard = painelDashboard);
+        (this.painelGado = painelGado);
+        (this.painelRemedios = painelRemedios);
+        (this.painelPastos = painelPastos);
+        (this.painelTratamentos = painelTratamentos);
+        (this.painelPerfil = painelPerfil);
+        return;
+    }
+}
+
+class Lambda52 {
+    pageTitle;
+    painelDashboard;
+    painelGado;
+    painelRemedios;
+    painelPastos;
+    painelTratamentos;
+    painelPerfil;
+
+    invoke() {
+        let pageTitle = this.pageTitle;
+        let painelDashboard = this.painelDashboard;
+        let painelGado = this.painelGado;
+        let painelRemedios = this.painelRemedios;
+        let painelPastos = this.painelPastos;
+        let painelTratamentos = this.painelTratamentos;
+        let painelPerfil = this.painelPerfil;
+        alternarTela(5, pageTitle, painelDashboard, painelGado, painelRemedios, painelPastos, painelTratamentos, painelPerfil);
+        return;
+    }
+    constructor(pageTitle, painelDashboard, painelGado, painelRemedios, painelPastos, painelTratamentos, painelPerfil) {
+        (this.pageTitle = null);
+        (this.painelDashboard = null);
+        (this.painelGado = null);
+        (this.painelRemedios = null);
+        (this.painelPastos = null);
+        (this.painelTratamentos = null);
+        (this.painelPerfil = null);
+        (this.pageTitle = pageTitle);
+        (this.painelDashboard = painelDashboard);
+        (this.painelGado = painelGado);
+        (this.painelRemedios = painelRemedios);
+        (this.painelPastos = painelPastos);
+        (this.painelTratamentos = painelTratamentos);
+        (this.painelPerfil = painelPerfil);
+        return;
+    }
+}
+
+class Lambda53 {
+    pageTitle;
+    painelDashboard;
+    painelGado;
+    painelRemedios;
+    painelPastos;
+    painelTratamentos;
+    painelPerfil;
+
+    invoke(e) {
+        let painelPerfil;
+        let pageTitle = this.pageTitle;
+        let painelDashboard = this.painelDashboard;
+        let painelGado = this.painelGado;
+        let painelRemedios = this.painelRemedios;
+        let painelPastos = this.painelPastos;
+        let painelTratamentos = this.painelTratamentos;
+        painelPerfil = this.painelPerfil;
+        alternarTela(2, pageTitle, painelDashboard, painelGado, painelRemedios, painelPastos, painelTratamentos, painelPerfil);
+        return;
+    }
+    constructor(pageTitle, painelDashboard, painelGado, painelRemedios, painelPastos, painelTratamentos, painelPerfil) {
+        (this.pageTitle = null);
+        (this.painelDashboard = null);
+        (this.painelGado = null);
+        (this.painelRemedios = null);
+        (this.painelPastos = null);
+        (this.painelTratamentos = null);
+        (this.painelPerfil = null);
+        (this.pageTitle = pageTitle);
+        (this.painelDashboard = painelDashboard);
+        (this.painelGado = painelGado);
+        (this.painelRemedios = painelRemedios);
+        (this.painelPastos = painelPastos);
+        (this.painelTratamentos = painelTratamentos);
+        (this.painelPerfil = painelPerfil);
         return;
     }
 }
@@ -2016,7 +2968,7 @@ function nomeDoRemedioPorId(id) {
 function nomeDoGadoPorId(id) {
     let i;
     if (((id === "") ? 1 : 0)) {
-        return "Nenhuma (Matriz Externa)";
+        return "Matriz Externa";
     } else {
         i = 0;
         while ((i < kofListSize(UiState.gadoIds))) {
@@ -2032,9 +2984,9 @@ function nomeDoGadoPorId(id) {
 
 function formatarPosse(dono) {
     if (dono) {
-        return "Proprio (Fazenda)";
+        return "Ativo (Proprio)";
     } else {
-        return "Arrendado (Terceiros)";
+        return "Arrendado";
     }
 }
 
@@ -2042,19 +2994,19 @@ function formatarLeiteira(leiteira) {
     if (leiteira) {
         return "Leiteira";
     } else {
-        return "Corte / Misto";
+        return "Corte / Recria";
     }
 }
 
 function formatarAplicacao(aplic) {
     if (((aplic === "INJECAO") ? 1 : 0)) {
-        return "Injecao (IM/SC)";
+        return "Injetavel (IM/SC)";
     } else {
         if (((aplic === "CURA_FERIDAS") ? 1 : 0)) {
-            return "Cura de Feridas (Topico)";
+            return "Topico / Cicatrizante";
         } else {
             if (((aplic === "SORO_FISIOLOGICO") ? 1 : 0)) {
-                return "Soro Fisiologico (IV)";
+                return "Hidratacao (IV)";
             } else {
                 return aplic;
             }
@@ -2110,47 +3062,56 @@ function campoTextarea(rotulo, controle) {
     return grupo;
 }
 
-function alternarAba(indice, p1, p2, p3, p4, p5) {
-    (UiState.abaAtiva = indice);
-    if ((!indice)) {
-        kofUiWidgetSetClass(p1, "tab-panel");
+function criarSwitchRow(titulo, subtitulo, inicialAtivo) {
+    let t;
+    let s;
+    let colTxt;
+    let estado;
+    let $boxinit7;
+    let btnToggle;
+    let linha;
+    let __kof_t0;
+    let __kof_t1;
+    let __kof_t2;
+    let __kof_t3;
+    t = kofUiLabelNew(titulo);
+    kofUiWidgetSetClass(t, "switch-title");
+    s = kofUiLabelNew(subtitulo);
+    kofUiWidgetSetClass(s, "switch-sub");
+    (__kof_t0 = kofListNew());
+    kofListAdd(__kof_t0, t);
+    (__kof_t1 = __kof_t0);
+    kofListAdd(__kof_t1, s);
+    colTxt = kofUiColumnNew(__kof_t1);
+    kofUiWidgetSetClass(colTxt, "switch-text-col");
+    estado = new Box0();
+    $boxinit7 = inicialAtivo;
+    (estado.value = inicialAtivo);
+    btnToggle = kofUiButtonNewAction("", new Lambda0());
+    if (estado.value) {
+        kofUiWidgetSetClass(btnToggle, "estocae-switch on");
     } else {
-        kofUiWidgetSetClass(p1, "tab-panel hidden");
+        kofUiWidgetSetClass(btnToggle, "estocae-switch off");
     }
-    if ((indice === 1)) {
-        kofUiWidgetSetClass(p2, "tab-panel");
-    } else {
-        kofUiWidgetSetClass(p2, "tab-panel hidden");
-    }
-    if ((indice === 2)) {
-        kofUiWidgetSetClass(p3, "tab-panel");
-    } else {
-        kofUiWidgetSetClass(p3, "tab-panel hidden");
-    }
-    if ((indice === 3)) {
-        kofUiWidgetSetClass(p4, "tab-panel");
-    } else {
-        kofUiWidgetSetClass(p4, "tab-panel hidden");
-    }
-    if ((indice === 4)) {
-        kofUiWidgetSetClass(p5, "tab-panel");
-    } else {
-        kofUiWidgetSetClass(p5, "tab-panel hidden");
-    }
-    return;
+    kofUiWidgetOn(btnToggle, "click", new Lambda1(estado, btnToggle));
+    (__kof_t2 = kofListNew());
+    kofListAdd(__kof_t2, colTxt);
+    (__kof_t3 = __kof_t2);
+    kofListAdd(__kof_t3, btnToggle);
+    linha = kofUiRowNew(__kof_t3);
+    kofUiWidgetSetClass(linha, "switch-row");
+    return linha;
 }
 
-function sincronizarPastosUi(tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiPastosValor, kpiPastosSub) {
-    let res;
-    let lista;
-    let ids;
-    let nomes;
-    let opcoesSelect;
-    let linhas;
-    let proprios;
-    let i;
-    let _scopedVar$p;
-    let arrendados;
+function criarPaginacaoEstocae() {
+    let bPrev;
+    let b1;
+    let b2;
+    let b3;
+    let b4;
+    let b5;
+    let bNext;
+    let pag;
     let __kof_t0;
     let __kof_t1;
     let __kof_t2;
@@ -2158,66 +3119,59 @@ function sincronizarPastosUi(tabelaPastos, selPastoEditar, selGadoPasto, selFilt
     let __kof_t4;
     let __kof_t5;
     let __kof_t6;
-    let __kof_t7;
-    res = kofHttpGet((kofFormat(UiState.apiBase) + kofFormat("/pastos")));
-    if ((res.startsWith("[") ? 0 : 1)) {
-        return;
-    } else {
-        lista = JSON.parse(res).map((o) => __kof_decode_PastoItem(o));
-        ids = kofListNew();
-        nomes = kofListNew();
-        opcoesSelect = kofListNew();
-        linhas = kofListNew();
-        proprios = 0;
-        i = 0;
-        while ((i < kofListSize(lista))) {
-            _scopedVar$p = kofListGet(lista, i);
-            kofListAdd(ids, _scopedVar$p._id);
-            kofListAdd(nomes, _scopedVar$p._nome);
-            kofListAdd(opcoesSelect, (kofFormat((kofFormat((kofFormat(_scopedVar$p._nome) + kofFormat(" (R$ "))) + kofFormat(_scopedVar$p._valor_cabeca))) + kofFormat("/cab)")));
-            if (_scopedVar$p._dono) {
-                proprios = ((proprios + 1) | 0);
-            }
-            (__kof_t0 = kofListNew());
-            kofListAdd(__kof_t0, _scopedVar$p._nome);
-            (__kof_t1 = __kof_t0);
-            kofListAdd(__kof_t1, formatarPosse(_scopedVar$p._dono));
-            (__kof_t2 = __kof_t1);
-            kofListAdd(__kof_t2, (kofFormat((kofFormat("R$ ") + kofFormat(_scopedVar$p._valor_cabeca))) + kofFormat(",00 / cabeca")));
-            (__kof_t3 = __kof_t2);
-            kofListAdd(__kof_t3, _scopedVar$p._id);
-            kofListAdd(linhas, __kof_t3);
-            i = ((i + 1) | 0);
-        }
-        (UiState.pastoIds = ids);
-        (UiState.pastoNomes = nomes);
-        if ((!kofListSize(linhas))) {
-            (__kof_t4 = kofListNew());
-            kofListAdd(__kof_t4, "Nenhum pasto cadastrado");
-            (__kof_t5 = __kof_t4);
-            kofListAdd(__kof_t5, "Use o formulario ao lado ou clique em Popular Demo");
-            (__kof_t6 = __kof_t5);
-            kofListAdd(__kof_t6, "-");
-            (__kof_t7 = __kof_t6);
-            kofListAdd(__kof_t7, "-");
-            kofListAdd(linhas, __kof_t7);
-            kofListAdd(opcoesSelect, "Cadastre um pasto primeiro");
-        }
-        kofUiTableSetRows(tabelaPastos, linhas);
-        kofUiSelectSetOptions(selPastoEditar, opcoesSelect);
-        kofUiSelectSetOptions(selGadoPasto, opcoesSelect);
-        kofUiSelectSetOptions(selFiltroPasto, opcoesSelect);
-        kofUiLabelSetText(kpiPastosValor, (kofFormat("") + kofFormat(kofListSize(lista))));
-        arrendados = ((kofListSize(lista) - proprios) | 0);
-        kofUiLabelSetText(kpiPastosSub, (kofFormat((kofFormat((kofFormat((kofFormat("") + kofFormat(proprios))) + kofFormat(" proprios · "))) + kofFormat(arrendados))) + kofFormat(" arrendados")));
-    }
-    return;
+    bPrev = kofUiButtonNewAction("<", new Lambda2());
+    kofUiWidgetSetClass(bPrev, "page-btn");
+    b1 = kofUiButtonNewAction("1", new Lambda3());
+    kofUiWidgetSetClass(b1, "page-btn active");
+    b2 = kofUiButtonNewAction("2", new Lambda4());
+    kofUiWidgetSetClass(b2, "page-btn");
+    b3 = kofUiButtonNewAction("3", new Lambda5());
+    kofUiWidgetSetClass(b3, "page-btn");
+    b4 = kofUiButtonNewAction("4", new Lambda6());
+    kofUiWidgetSetClass(b4, "page-btn");
+    b5 = kofUiButtonNewAction("5", new Lambda7());
+    kofUiWidgetSetClass(b5, "page-btn");
+    bNext = kofUiButtonNewAction(">", new Lambda8());
+    kofUiWidgetSetClass(bNext, "page-btn");
+    (__kof_t0 = kofListNew());
+    kofListAdd(__kof_t0, bPrev);
+    (__kof_t1 = __kof_t0);
+    kofListAdd(__kof_t1, b1);
+    (__kof_t2 = __kof_t1);
+    kofListAdd(__kof_t2, b2);
+    (__kof_t3 = __kof_t2);
+    kofListAdd(__kof_t3, b3);
+    (__kof_t4 = __kof_t3);
+    kofListAdd(__kof_t4, b4);
+    (__kof_t5 = __kof_t4);
+    kofListAdd(__kof_t5, b5);
+    (__kof_t6 = __kof_t5);
+    kofListAdd(__kof_t6, bNext);
+    pag = kofUiRowNew(__kof_t6);
+    kofUiWidgetSetClass(pag, "pagination-bar");
+    return pag;
 }
 
-function popularTabelaGadosUi(lista, tabelaGados) {
-    let linhas;
+function desenharGraficoLinha(cv, variante) {
+    let corGrade;
+    let corTexto;
+    let corAzul;
+    let corAzulArea;
+    let corVerde;
+    let corBranco;
+    let yLevels;
+    let yLabels;
+    let xs;
+    let meses;
+    let ysAzul;
+    let ysVerde;
+    let k;
     let i;
-    let _scopedVar$g;
+    let _scopedVar$y;
+    let m;
+    let a;
+    let b;
+    let p;
     let __kof_t0;
     let __kof_t1;
     let __kof_t2;
@@ -2236,36 +3190,492 @@ function popularTabelaGadosUi(lista, tabelaGados) {
     let __kof_t15;
     let __kof_t16;
     let __kof_t17;
+    let __kof_t18;
+    let __kof_t19;
+    let __kof_t20;
+    let __kof_t21;
+    let __kof_t22;
+    let __kof_t23;
+    let __kof_t24;
+    let __kof_t25;
+    let __kof_t26;
+    let __kof_t27;
+    let __kof_t28;
+    let __kof_t29;
+    let __kof_t30;
+    let __kof_t31;
+    let __kof_t32;
+    let __kof_t33;
+    let __kof_t34;
+    let __kof_t35;
+    let __kof_t36;
+    let __kof_t37;
+    let __kof_t38;
+    let __kof_t39;
+    let __kof_t40;
+    let __kof_t41;
+    let __kof_t42;
+    let __kof_t43;
+    let __kof_t44;
+    let __kof_t45;
+    let __kof_t46;
+    let __kof_t47;
+    let __kof_t48;
+    let __kof_t49;
+    let __kof_t50;
+    let __kof_t51;
+    let __kof_t52;
+    let __kof_t53;
+    kofUiCanvasClearRect(cv, 0, 0, 660, 220);
+    corGrade = -437785601;
+    corTexto = 1802666239;
+    corAzul = 627305471;
+    corAzulArea = -269025281;
+    corVerde = 280592895;
+    corBranco = -1;
+    (__kof_t0 = kofListNew());
+    kofListAdd(__kof_t0, 25);
+    (__kof_t1 = __kof_t0);
+    kofListAdd(__kof_t1, 55);
+    (__kof_t2 = __kof_t1);
+    kofListAdd(__kof_t2, 85);
+    (__kof_t3 = __kof_t2);
+    kofListAdd(__kof_t3, 115);
+    (__kof_t4 = __kof_t3);
+    kofListAdd(__kof_t4, 145);
+    (__kof_t5 = __kof_t4);
+    kofListAdd(__kof_t5, 175);
+    yLevels = __kof_t5;
+    (__kof_t6 = kofListNew());
+    kofListAdd(__kof_t6, "50");
+    (__kof_t7 = __kof_t6);
+    kofListAdd(__kof_t7, "40");
+    (__kof_t8 = __kof_t7);
+    kofListAdd(__kof_t8, "30");
+    (__kof_t9 = __kof_t8);
+    kofListAdd(__kof_t9, "20");
+    (__kof_t10 = __kof_t9);
+    kofListAdd(__kof_t10, "10");
+    (__kof_t11 = __kof_t10);
+    kofListAdd(__kof_t11, "0");
+    yLabels = __kof_t11;
+    (__kof_t12 = kofListNew());
+    kofListAdd(__kof_t12, 42);
+    (__kof_t13 = __kof_t12);
+    kofListAdd(__kof_t13, 141);
+    (__kof_t14 = __kof_t13);
+    kofListAdd(__kof_t14, 240);
+    (__kof_t15 = __kof_t14);
+    kofListAdd(__kof_t15, 339);
+    (__kof_t16 = __kof_t15);
+    kofListAdd(__kof_t16, 438);
+    (__kof_t17 = __kof_t16);
+    kofListAdd(__kof_t17, 537);
+    (__kof_t18 = __kof_t17);
+    kofListAdd(__kof_t18, 636);
+    xs = __kof_t18;
+    (__kof_t19 = kofListNew());
+    kofListAdd(__kof_t19, "Jan");
+    (__kof_t20 = __kof_t19);
+    kofListAdd(__kof_t20, "Fev");
+    (__kof_t21 = __kof_t20);
+    kofListAdd(__kof_t21, "Mar");
+    (__kof_t22 = __kof_t21);
+    kofListAdd(__kof_t22, "Abr");
+    (__kof_t23 = __kof_t22);
+    kofListAdd(__kof_t23, "Mai");
+    (__kof_t24 = __kof_t23);
+    kofListAdd(__kof_t24, "Jun");
+    (__kof_t25 = __kof_t24);
+    kofListAdd(__kof_t25, "Jul");
+    meses = __kof_t25;
+    (__kof_t26 = kofListNew());
+    kofListAdd(__kof_t26, 78);
+    (__kof_t27 = __kof_t26);
+    kofListAdd(__kof_t27, 84);
+    (__kof_t28 = __kof_t27);
+    kofListAdd(__kof_t28, 54);
+    (__kof_t29 = __kof_t28);
+    kofListAdd(__kof_t29, 53);
+    (__kof_t30 = __kof_t29);
+    kofListAdd(__kof_t30, 46);
+    (__kof_t31 = __kof_t30);
+    kofListAdd(__kof_t31, 36);
+    (__kof_t32 = __kof_t31);
+    kofListAdd(__kof_t32, 25);
+    ysAzul = __kof_t32;
+    if ((variante === 1)) {
+        (__kof_t33 = kofListNew());
+        kofListAdd(__kof_t33, 90);
+        (__kof_t34 = __kof_t33);
+        kofListAdd(__kof_t34, 70);
+        (__kof_t35 = __kof_t34);
+        kofListAdd(__kof_t35, 62);
+        (__kof_t36 = __kof_t35);
+        kofListAdd(__kof_t36, 48);
+        (__kof_t37 = __kof_t36);
+        kofListAdd(__kof_t37, 52);
+        (__kof_t38 = __kof_t37);
+        kofListAdd(__kof_t38, 34);
+        (__kof_t39 = __kof_t38);
+        kofListAdd(__kof_t39, 28);
+        ysAzul = __kof_t39;
+    }
+    if ((variante === 2)) {
+        (__kof_t40 = kofListNew());
+        kofListAdd(__kof_t40, 64);
+        (__kof_t41 = __kof_t40);
+        kofListAdd(__kof_t41, 60);
+        (__kof_t42 = __kof_t41);
+        kofListAdd(__kof_t42, 58);
+        (__kof_t43 = __kof_t42);
+        kofListAdd(__kof_t43, 44);
+        (__kof_t44 = __kof_t43);
+        kofListAdd(__kof_t44, 40);
+        (__kof_t45 = __kof_t44);
+        kofListAdd(__kof_t45, 32);
+        (__kof_t46 = __kof_t45);
+        kofListAdd(__kof_t46, 24);
+        ysAzul = __kof_t46;
+    }
+    (__kof_t47 = kofListNew());
+    kofListAdd(__kof_t47, 128);
+    (__kof_t48 = __kof_t47);
+    kofListAdd(__kof_t48, 134);
+    (__kof_t49 = __kof_t48);
+    kofListAdd(__kof_t49, 117);
+    (__kof_t50 = __kof_t49);
+    kofListAdd(__kof_t50, 115);
+    (__kof_t51 = __kof_t50);
+    kofListAdd(__kof_t51, 110);
+    (__kof_t52 = __kof_t51);
+    kofListAdd(__kof_t52, 105);
+    (__kof_t53 = __kof_t52);
+    kofListAdd(__kof_t53, 99);
+    ysVerde = __kof_t53;
+    kofUiCanvasSetFill(cv, corAzulArea);
+    kofUiCanvasBeginPath(cv);
+    kofUiCanvasMoveTo(cv, kofListGet(xs, 0), 175);
+    k = 0;
+    while ((k < 7)) {
+        kofUiCanvasLineTo(cv, kofListGet(xs, k), kofListGet(ysAzul, k));
+        k = ((k + 1) | 0);
+    }
+    kofUiCanvasLineTo(cv, kofListGet(xs, 6), 175);
+    kofUiCanvasClosePath(cv);
+    kofUiCanvasFill(cv);
+    kofUiCanvasSetStroke(cv, corGrade);
+    kofUiCanvasSetLineWidth(cv, 1);
+    kofUiCanvasSetFill(cv, corTexto);
+    i = 0;
+    while ((i < 6)) {
+        _scopedVar$y = kofListGet(yLevels, i);
+        kofUiCanvasFillText(cv, kofListGet(yLabels, i), 10, ((_scopedVar$y + 4) | 0));
+        kofUiCanvasBeginPath(cv);
+        kofUiCanvasMoveTo(cv, 42, _scopedVar$y);
+        kofUiCanvasLineTo(cv, 636, _scopedVar$y);
+        kofUiCanvasStroke(cv);
+        i = ((i + 1) | 0);
+    }
+    m = 0;
+    while ((m < 7)) {
+        kofUiCanvasFillText(cv, kofListGet(meses, m), ((kofListGet(xs, m) - 10) | 0), 202);
+        m = ((m + 1) | 0);
+    }
+    kofUiCanvasSetStroke(cv, corAzul);
+    kofUiCanvasSetLineWidth(cv, 2);
+    kofUiCanvasBeginPath(cv);
+    kofUiCanvasMoveTo(cv, kofListGet(xs, 0), kofListGet(ysAzul, 0));
+    a = 1;
+    while ((a < 7)) {
+        kofUiCanvasLineTo(cv, kofListGet(xs, a), kofListGet(ysAzul, a));
+        a = ((a + 1) | 0);
+    }
+    kofUiCanvasStroke(cv);
+    kofUiCanvasSetStroke(cv, corVerde);
+    kofUiCanvasSetLineWidth(cv, 2);
+    kofUiCanvasBeginPath(cv);
+    kofUiCanvasMoveTo(cv, kofListGet(xs, 0), kofListGet(ysVerde, 0));
+    b = 1;
+    while ((b < 7)) {
+        kofUiCanvasLineTo(cv, kofListGet(xs, b), kofListGet(ysVerde, b));
+        b = ((b + 1) | 0);
+    }
+    kofUiCanvasStroke(cv);
+    p = 0;
+    while ((p < 7)) {
+        kofUiCanvasSetFill(cv, corBranco);
+        kofUiCanvasSetStroke(cv, corAzul);
+        kofUiCanvasSetLineWidth(cv, 2);
+        kofUiCanvasBeginPath(cv);
+        kofUiCanvasArc(cv, kofListGet(xs, p), kofListGet(ysAzul, p), 4, 0.0, 6.28318);
+        kofUiCanvasFill(cv);
+        kofUiCanvasStroke(cv);
+        kofUiCanvasSetFill(cv, corBranco);
+        kofUiCanvasSetStroke(cv, corVerde);
+        kofUiCanvasSetLineWidth(cv, 2);
+        kofUiCanvasBeginPath(cv);
+        kofUiCanvasArc(cv, kofListGet(xs, p), kofListGet(ysVerde, p), 4, 0.0, 6.28318);
+        kofUiCanvasFill(cv);
+        kofUiCanvasStroke(cv);
+        p = ((p + 1) | 0);
+    }
+    return;
+}
+
+function desenharGraficoDonut(cv) {
+    let cx;
+    let cy;
+    let raio;
+    let corRoxo;
+    let corAzul;
+    let corVerde;
+    let corLaranja;
+    kofUiCanvasClearRect(cv, 0, 0, 220, 190);
+    cx = 110;
+    cy = 95;
+    raio = 64;
+    corRoxo = -1956841729;
+    corAzul = 627305471;
+    corVerde = 280592895;
+    corLaranja = -174191617;
+    kofUiCanvasSetLineWidth(cv, 20);
+    kofUiCanvasSetStroke(cv, corRoxo);
+    kofUiCanvasBeginPath(cv);
+    kofUiCanvasArc(cv, 110, 95, 64, 2.6, 5.1);
+    kofUiCanvasStroke(cv);
+    kofUiCanvasSetStroke(cv, corAzul);
+    kofUiCanvasBeginPath(cv);
+    kofUiCanvasArc(cv, 110, 95, 64, 5.1, 6.15);
+    kofUiCanvasStroke(cv);
+    kofUiCanvasSetStroke(cv, corVerde);
+    kofUiCanvasBeginPath(cv);
+    kofUiCanvasArc(cv, 110, 95, 64, -0.13, 1.75);
+    kofUiCanvasStroke(cv);
+    kofUiCanvasSetStroke(cv, corLaranja);
+    kofUiCanvasBeginPath(cv);
+    kofUiCanvasArc(cv, 110, 95, 64, 1.75, 2.6);
+    kofUiCanvasStroke(cv);
+    return;
+}
+
+function alternarTela(indice, tituloTopo, vDash, vGado, vRemedios, vPastos, vTratamentos, vSistema) {
+    (UiState.abaAtiva = indice);
+    if ((!indice)) {
+        kofUiWidgetSetClass(vDash, "view-screen");
+        kofUiLabelSetText(tituloTopo, "Dashboard Overview");
+    } else {
+        kofUiWidgetSetClass(vDash, "view-screen hidden");
+    }
+    if ((indice === 1)) {
+        kofUiWidgetSetClass(vGado, "view-screen");
+        kofUiLabelSetText(tituloTopo, "Inventario de Produtos & Rebanho (RF01, RF07)");
+    } else {
+        kofUiWidgetSetClass(vGado, "view-screen hidden");
+    }
+    if ((indice === 2)) {
+        kofUiWidgetSetClass(vRemedios, "view-screen");
+        kofUiLabelSetText(tituloTopo, "Controle de Estoque & Farmacia (RF03, RF06)");
+    } else {
+        kofUiWidgetSetClass(vRemedios, "view-screen hidden");
+    }
+    if ((indice === 3)) {
+        kofUiWidgetSetClass(vPastos, "view-screen");
+        kofUiLabelSetText(tituloTopo, "Fornecedores, Pastos & Piquetes (RF02)");
+    } else {
+        kofUiWidgetSetClass(vPastos, "view-screen hidden");
+    }
+    if ((indice === 4)) {
+        kofUiWidgetSetClass(vTratamentos, "view-screen");
+        kofUiLabelSetText(tituloTopo, "Movimentacoes & Tratamentos Sanitarios (RF05, RF06)");
+    } else {
+        kofUiWidgetSetClass(vTratamentos, "view-screen hidden");
+    }
+    if ((indice === 5)) {
+        kofUiWidgetSetClass(vSistema, "view-screen");
+        kofUiLabelSetText(tituloTopo, "Configuracoes do Sistema & Perfil OAuth2 (RF04, RNF08)");
+    } else {
+        kofUiWidgetSetClass(vSistema, "view-screen hidden");
+    }
+    return;
+}
+
+function sincronizarPastosUi(tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiDashPastos, kpiPastosTotal, kpiPastosProprios, kpiPastosArrendados, kpiPastosCusto) {
+    let res;
+    let lista;
+    let ids;
+    let nomes;
+    let opcoesSelect;
+    let linhas;
+    let proprios;
+    let somaCusto;
+    let i;
+    let _scopedVar$p;
+    let _scopedVar$statusStr;
+    let _scopedVar$fornStr;
+    let _scopedVar$cod;
+    let arrendados;
+    let mediaCusto;
+    let __kof_t0;
+    let __kof_t1;
+    let __kof_t2;
+    let __kof_t3;
+    let __kof_t4;
+    let __kof_t5;
+    let __kof_t6;
+    let __kof_t7;
+    let __kof_t8;
+    let __kof_t9;
+    let __kof_t10;
+    let __kof_t11;
+    let __kof_t12;
+    let __kof_t13;
+    let __kof_t14;
+    let __kof_t15;
+    res = kofHttpGet((kofFormat(UiState.apiBase) + kofFormat("/pastos")));
+    if ((res.startsWith("[") ? 0 : 1)) {
+        return;
+    } else {
+        lista = JSON.parse(res).map((o) => __kof_decode_PastoItem(o));
+        ids = kofListNew();
+        nomes = kofListNew();
+        opcoesSelect = kofListNew();
+        linhas = kofListNew();
+        proprios = 0;
+        somaCusto = 0;
+        i = 0;
+        while ((i < kofListSize(lista))) {
+            _scopedVar$p = kofListGet(lista, i);
+            kofListAdd(ids, _scopedVar$p._id);
+            kofListAdd(nomes, _scopedVar$p._nome);
+            kofListAdd(opcoesSelect, (kofFormat((kofFormat((kofFormat(_scopedVar$p._nome) + kofFormat(" (R$ "))) + kofFormat(_scopedVar$p._valor_cabeca))) + kofFormat("/cab)")));
+            somaCusto = ((somaCusto + _scopedVar$p._valor_cabeca) | 0);
+            _scopedVar$statusStr = "Ativo";
+            _scopedVar$fornStr = "Fazenda Propria";
+            if (_scopedVar$p._dono) {
+                proprios = ((proprios + 1) | 0);
+            } else {
+                _scopedVar$statusStr = "Atenção";
+                _scopedVar$fornStr = "Arrendamento Externo";
+            }
+            _scopedVar$cod = (kofFormat("PST-00") + kofFormat(((i + 1) | 0)));
+            (__kof_t0 = kofListNew());
+            kofListAdd(__kof_t0, _scopedVar$p._nome);
+            (__kof_t1 = __kof_t0);
+            kofListAdd(__kof_t1, _scopedVar$cod);
+            (__kof_t2 = __kof_t1);
+            kofListAdd(__kof_t2, "Area de pastagem / manejo rotacionado");
+            (__kof_t3 = __kof_t2);
+            kofListAdd(__kof_t3, _scopedVar$fornStr);
+            (__kof_t4 = __kof_t3);
+            kofListAdd(__kof_t4, formatarPosse(_scopedVar$p._dono));
+            (__kof_t5 = __kof_t4);
+            kofListAdd(__kof_t5, (kofFormat((kofFormat("R$") + kofFormat(_scopedVar$p._valor_cabeca))) + kofFormat(",00")));
+            (__kof_t6 = __kof_t5);
+            kofListAdd(__kof_t6, _scopedVar$statusStr);
+            (__kof_t7 = __kof_t6);
+            kofListAdd(__kof_t7, "Editar | Excluir");
+            kofListAdd(linhas, __kof_t7);
+            i = ((i + 1) | 0);
+        }
+        (UiState.pastoIds = ids);
+        (UiState.pastoNomes = nomes);
+        if ((!kofListSize(linhas))) {
+            (__kof_t8 = kofListNew());
+            kofListAdd(__kof_t8, "Nenhum pasto cadastrado");
+            (__kof_t9 = __kof_t8);
+            kofListAdd(__kof_t9, "PST-000");
+            (__kof_t10 = __kof_t9);
+            kofListAdd(__kof_t10, "Clique em Popular Demo ou adicione acima");
+            (__kof_t11 = __kof_t10);
+            kofListAdd(__kof_t11, "-");
+            (__kof_t12 = __kof_t11);
+            kofListAdd(__kof_t12, "-");
+            (__kof_t13 = __kof_t12);
+            kofListAdd(__kof_t13, "R$0,00");
+            (__kof_t14 = __kof_t13);
+            kofListAdd(__kof_t14, "Inativo");
+            (__kof_t15 = __kof_t14);
+            kofListAdd(__kof_t15, "-");
+            kofListAdd(linhas, __kof_t15);
+            kofListAdd(opcoesSelect, "Cadastre um pasto primeiro");
+        }
+        kofUiTableSetRows(tabelaPastos, linhas);
+        kofUiSelectSetOptions(selPastoEditar, opcoesSelect);
+        kofUiSelectSetOptions(selGadoPasto, opcoesSelect);
+        kofUiSelectSetOptions(selFiltroPasto, opcoesSelect);
+        arrendados = ((kofListSize(lista) - proprios) | 0);
+        mediaCusto = 0;
+        if ((kofListSize(lista) > 0)) {
+            mediaCusto = ((somaCusto / kofDivZero(kofListSize(lista))) | 0);
+        }
+        kofUiLabelSetText(kpiDashPastos, (kofFormat("") + kofFormat(kofListSize(lista))));
+        kofUiLabelSetText(kpiPastosTotal, (kofFormat("") + kofFormat(kofListSize(lista))));
+        kofUiLabelSetText(kpiPastosProprios, (kofFormat("") + kofFormat(proprios)));
+        kofUiLabelSetText(kpiPastosArrendados, (kofFormat("") + kofFormat(arrendados)));
+        kofUiLabelSetText(kpiPastosCusto, (kofFormat("R$ ") + kofFormat(mediaCusto)));
+    }
+    return;
+}
+
+function popularTabelaGadosUi(lista, tabelaGados) {
+    let linhas;
+    let i;
+    let _scopedVar$g;
+    let _scopedVar$statusBadge;
+    let __kof_t0;
+    let __kof_t1;
+    let __kof_t2;
+    let __kof_t3;
+    let __kof_t4;
+    let __kof_t5;
+    let __kof_t6;
+    let __kof_t7;
+    let __kof_t8;
+    let __kof_t9;
+    let __kof_t10;
+    let __kof_t11;
+    let __kof_t12;
+    let __kof_t13;
+    let __kof_t14;
+    let __kof_t15;
     linhas = kofListNew();
     i = 0;
     while ((i < kofListSize(lista))) {
         _scopedVar$g = kofListGet(lista, i);
+        _scopedVar$statusBadge = "Ativo";
+        if ((!!(((_scopedVar$g._saudeVaca === "DOENTE") ? 1 : 0) || ((_scopedVar$g._saudeVaca === "MORTA") ? 1 : 0)))) {
+            _scopedVar$statusBadge = "Inativo";
+        }
+        if (((_scopedVar$g._saudeVaca === "RECUPERACAO") ? 1 : 0)) {
+            _scopedVar$statusBadge = "Atenção";
+        }
         (__kof_t0 = kofListNew());
-        kofListAdd(__kof_t0, _scopedVar$g._numero_registro);
+        kofListAdd(__kof_t0, _scopedVar$g._nome);
         (__kof_t1 = __kof_t0);
-        kofListAdd(__kof_t1, _scopedVar$g._nome);
+        kofListAdd(__kof_t1, _scopedVar$g._numero_registro);
         (__kof_t2 = __kof_t1);
-        kofListAdd(__kof_t2, nomeDoPastoPorId(_scopedVar$g._pasto_uuid));
+        kofListAdd(__kof_t2, (kofFormat((kofFormat((kofFormat("Nasc: ") + kofFormat(_scopedVar$g._data_nascimento))) + kofFormat(" · Mae: "))) + kofFormat(nomeDoGadoPorId(_scopedVar$g._mae))));
         (__kof_t3 = __kof_t2);
-        kofListAdd(__kof_t3, _scopedVar$g._saudeVaca);
+        kofListAdd(__kof_t3, nomeDoPastoPorId(_scopedVar$g._pasto_uuid));
         (__kof_t4 = __kof_t3);
-        kofListAdd(__kof_t4, _scopedVar$g._sexo);
+        kofListAdd(__kof_t4, formatarLeiteira(_scopedVar$g._vaca_leitera));
         (__kof_t5 = __kof_t4);
-        kofListAdd(__kof_t5, formatarLeiteira(_scopedVar$g._vaca_leitera));
+        kofListAdd(__kof_t5, _scopedVar$g._sexo);
         (__kof_t6 = __kof_t5);
-        kofListAdd(__kof_t6, _scopedVar$g._data_nascimento);
+        kofListAdd(__kof_t6, _scopedVar$statusBadge);
         (__kof_t7 = __kof_t6);
-        kofListAdd(__kof_t7, nomeDoGadoPorId(_scopedVar$g._mae));
-        (__kof_t8 = __kof_t7);
-        kofListAdd(__kof_t8, _scopedVar$g._id);
-        kofListAdd(linhas, __kof_t8);
+        kofListAdd(__kof_t7, "Editar | Excluir");
+        kofListAdd(linhas, __kof_t7);
         i = ((i + 1) | 0);
     }
     if ((!kofListSize(linhas))) {
-        (__kof_t9 = kofListNew());
-        kofListAdd(__kof_t9, "-");
+        (__kof_t8 = kofListNew());
+        kofListAdd(__kof_t8, "Nenhum animal encontrado");
+        (__kof_t9 = __kof_t8);
+        kofListAdd(__kof_t9, "PRD-000");
         (__kof_t10 = __kof_t9);
-        kofListAdd(__kof_t10, "Nenhum animal encontrado para este filtro");
+        kofListAdd(__kof_t10, "Sem registros para o filtro selecionado");
         (__kof_t11 = __kof_t10);
         kofListAdd(__kof_t11, "-");
         (__kof_t12 = __kof_t11);
@@ -2273,20 +3683,16 @@ function popularTabelaGadosUi(lista, tabelaGados) {
         (__kof_t13 = __kof_t12);
         kofListAdd(__kof_t13, "-");
         (__kof_t14 = __kof_t13);
-        kofListAdd(__kof_t14, "-");
+        kofListAdd(__kof_t14, "Inativo");
         (__kof_t15 = __kof_t14);
         kofListAdd(__kof_t15, "-");
-        (__kof_t16 = __kof_t15);
-        kofListAdd(__kof_t16, "-");
-        (__kof_t17 = __kof_t16);
-        kofListAdd(__kof_t17, "-");
-        kofListAdd(linhas, __kof_t17);
+        kofListAdd(linhas, __kof_t15);
     }
     kofUiTableSetRows(tabelaGados, linhas);
     return;
 }
 
-function sincronizarGadosUi(tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiGadosValor, kpiGadosSub) {
+function sincronizarGadosUi(tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiDashProdutos, kpiGadoTotal, kpiGadoAtivos, kpiGadoInativos, kpiGadoAlerta) {
     let res;
     let lista;
     let ids;
@@ -2294,7 +3700,8 @@ function sincronizarGadosUi(tabelaGados, selGadoEditar, selGadoMae, selTratGado,
     let opcoesAnimal;
     let opcoesMae;
     let saudaveis;
-    let leiteiras;
+    let doentes;
+    let recuperacao;
     let i;
     let _scopedVar$g;
     let __kof_t0;
@@ -2310,7 +3717,8 @@ function sincronizarGadosUi(tabelaGados, selGadoEditar, selGadoMae, selTratGado,
         kofListAdd(__kof_t0, "Nenhuma (Matriz Externa)");
         opcoesMae = __kof_t0;
         saudaveis = 0;
-        leiteiras = 0;
+        doentes = 0;
+        recuperacao = 0;
         i = 0;
         while ((i < kofListSize(lista))) {
             _scopedVar$g = kofListGet(lista, i);
@@ -2320,9 +3728,12 @@ function sincronizarGadosUi(tabelaGados, selGadoEditar, selGadoMae, selTratGado,
             kofListAdd(opcoesMae, (kofFormat((kofFormat((kofFormat(_scopedVar$g._nome) + kofFormat(" ("))) + kofFormat(_scopedVar$g._numero_registro))) + kofFormat(")")));
             if (((_scopedVar$g._saudeVaca === "SAUDAVEL") ? 1 : 0)) {
                 saudaveis = ((saudaveis + 1) | 0);
-            }
-            if (_scopedVar$g._vaca_leitera) {
-                leiteiras = ((leiteiras + 1) | 0);
+            } else {
+                if (((_scopedVar$g._saudeVaca === "RECUPERACAO") ? 1 : 0)) {
+                    recuperacao = ((recuperacao + 1) | 0);
+                } else {
+                    doentes = ((doentes + 1) | 0);
+                }
             }
             i = ((i + 1) | 0);
         }
@@ -2335,23 +3746,34 @@ function sincronizarGadosUi(tabelaGados, selGadoEditar, selGadoMae, selTratGado,
         kofUiSelectSetOptions(selGadoEditar, opcoesAnimal);
         kofUiSelectSetOptions(selGadoMae, opcoesMae);
         kofUiSelectSetOptions(selTratGado, opcoesAnimal);
-        kofUiLabelSetText(kpiGadosValor, (kofFormat("") + kofFormat(kofListSize(lista))));
-        kofUiLabelSetText(kpiGadosSub, (kofFormat((kofFormat((kofFormat((kofFormat("") + kofFormat(saudaveis))) + kofFormat(" saudaveis · "))) + kofFormat(leiteiras))) + kofFormat(" leiteiras")));
+        kofUiLabelSetText(kpiDashProdutos, (kofFormat("") + kofFormat(kofListSize(lista))));
+        kofUiLabelSetText(kpiGadoTotal, (kofFormat("") + kofFormat(kofListSize(lista))));
+        kofUiLabelSetText(kpiGadoAtivos, (kofFormat("") + kofFormat(saudaveis)));
+        kofUiLabelSetText(kpiGadoInativos, (kofFormat("") + kofFormat(doentes)));
+        kofUiLabelSetText(kpiGadoAlerta, (kofFormat("") + kofFormat(recuperacao)));
     }
     return;
 }
 
-function sincronizarRemediosUi(tabelaRemedios, selRemedioEstoque, selTratRemedio, kpiRemediosValor, kpiRemediosSub) {
+function sincronizarRemediosUi(tabelaRemedios, tabelaDashboardEstoque, selRemedioEstoque, selTratRemedio, kpiDashBaixo, kpiDashValor, kpiRemTotal, kpiRemAtivos, kpiRemBaixos, kpiRemZerados) {
     let res;
     let lista;
     let ids;
     let nomes;
+    let estoques;
     let opcoesRemedio;
-    let linhas;
-    let totalUnidades;
+    let linhasInv;
+    let linhasDash;
+    let estaveis;
+    let baixos;
+    let zerados;
+    let valorTotalInt;
     let i;
     let _scopedVar$r;
-    let _scopedVar$situacao;
+    let _scopedVar$custoItem;
+    let _scopedVar$statusDash;
+    let _scopedVar$statusInv;
+    let _scopedVar$cod;
     let __kof_t0;
     let __kof_t1;
     let __kof_t2;
@@ -2364,6 +3786,22 @@ function sincronizarRemediosUi(tabelaRemedios, selRemedioEstoque, selTratRemedio
     let __kof_t9;
     let __kof_t10;
     let __kof_t11;
+    let __kof_t12;
+    let __kof_t13;
+    let __kof_t14;
+    let __kof_t15;
+    let __kof_t16;
+    let __kof_t17;
+    let __kof_t18;
+    let __kof_t19;
+    let __kof_t20;
+    let __kof_t21;
+    let __kof_t22;
+    let __kof_t23;
+    let __kof_t24;
+    let __kof_t25;
+    let __kof_t26;
+    let __kof_t27;
     res = kofHttpGet((kofFormat(UiState.apiBase) + kofFormat("/remedios/estoque")));
     if ((res.startsWith("[") ? 0 : 1)) {
         return;
@@ -2371,71 +3809,135 @@ function sincronizarRemediosUi(tabelaRemedios, selRemedioEstoque, selTratRemedio
         lista = JSON.parse(res).map((o) => __kof_decode_RemedioItem(o));
         ids = kofListNew();
         nomes = kofListNew();
+        estoques = kofListNew();
         opcoesRemedio = kofListNew();
-        linhas = kofListNew();
-        totalUnidades = 0;
+        linhasInv = kofListNew();
+        linhasDash = kofListNew();
+        estaveis = 0;
+        baixos = 0;
+        zerados = 0;
+        valorTotalInt = 0;
         i = 0;
         while ((i < kofListSize(lista))) {
             _scopedVar$r = kofListGet(lista, i);
             kofListAdd(ids, _scopedVar$r._id);
             kofListAdd(nomes, _scopedVar$r._nome);
+            kofListAdd(estoques, _scopedVar$r._estoque);
             kofListAdd(opcoesRemedio, (kofFormat((kofFormat((kofFormat(_scopedVar$r._nome) + kofFormat(" (Estoque: "))) + kofFormat(_scopedVar$r._estoque))) + kofFormat(" un.)")));
-            totalUnidades = ((totalUnidades + _scopedVar$r._estoque) | 0);
-            _scopedVar$situacao = "Normal";
-            if ((_scopedVar$r._estoque <= 5)) {
-                _scopedVar$situacao = "Estoque Baixo";
-            }
+            _scopedVar$custoItem = ((kofD2I(_scopedVar$r._valor) * _scopedVar$r._estoque) | 0);
+            valorTotalInt = ((valorTotalInt + _scopedVar$custoItem) | 0);
+            _scopedVar$statusDash = "Estável";
+            _scopedVar$statusInv = "Ativo";
             if ((!_scopedVar$r._estoque)) {
-                _scopedVar$situacao = "Esgotado";
+                zerados = ((zerados + 1) | 0);
+                baixos = ((baixos + 1) | 0);
+                _scopedVar$statusDash = "Crítico";
+                _scopedVar$statusInv = "Inativo";
+            } else {
+                if ((_scopedVar$r._estoque <= 5)) {
+                    baixos = ((baixos + 1) | 0);
+                    _scopedVar$statusDash = "Crítico";
+                    _scopedVar$statusInv = "Inativo";
+                } else {
+                    if ((_scopedVar$r._estoque <= 15)) {
+                        estaveis = ((estaveis + 1) | 0);
+                        _scopedVar$statusDash = "Atenção";
+                        _scopedVar$statusInv = "Ativo";
+                    } else {
+                        estaveis = ((estaveis + 1) | 0);
+                    }
+                }
             }
+            _scopedVar$cod = (kofFormat("PRD-00") + kofFormat(((i + 1) | 0)));
             (__kof_t0 = kofListNew());
-            kofListAdd(__kof_t0, _scopedVar$r._nome);
+            kofListAdd(__kof_t0, (kofFormat((kofFormat((kofFormat(_scopedVar$r._nome) + kofFormat(" (#SKU - "))) + kofFormat(((1000 + ((i * 211) | 0)) | 0)))) + kofFormat(")")));
             (__kof_t1 = __kof_t0);
-            kofListAdd(__kof_t1, formatarAplicacao(_scopedVar$r._aplicacao));
+            kofListAdd(__kof_t1, _scopedVar$cod);
             (__kof_t2 = __kof_t1);
-            kofListAdd(__kof_t2, (kofFormat("R$ ") + kofNumFmt(_scopedVar$r._valor, 0)));
+            kofListAdd(__kof_t2, formatarAplicacao(_scopedVar$r._aplicacao));
             (__kof_t3 = __kof_t2);
-            kofListAdd(__kof_t3, (kofFormat((kofFormat(_scopedVar$r._data_compra) + kofFormat(" ate "))) + kofFormat(_scopedVar$r._data_vencimento)));
+            kofListAdd(__kof_t3, (kofFormat((kofFormat("") + kofFormat(_scopedVar$r._estoque))) + kofFormat(" unidades")));
             (__kof_t4 = __kof_t3);
-            kofListAdd(__kof_t4, (kofFormat((kofFormat((kofFormat((kofFormat("") + kofFormat(_scopedVar$r._estoque))) + kofFormat(" un. ("))) + kofFormat(_scopedVar$situacao))) + kofFormat(")")));
-            (__kof_t5 = __kof_t4);
-            kofListAdd(__kof_t5, _scopedVar$r._id);
-            kofListAdd(linhas, __kof_t5);
+            kofListAdd(__kof_t4, _scopedVar$statusDash);
+            kofListAdd(linhasDash, __kof_t4);
+            (__kof_t5 = kofListNew());
+            kofListAdd(__kof_t5, _scopedVar$r._nome);
+            (__kof_t6 = __kof_t5);
+            kofListAdd(__kof_t6, _scopedVar$cod);
+            (__kof_t7 = __kof_t6);
+            kofListAdd(__kof_t7, (kofFormat((kofFormat((kofFormat("Compra: ") + kofFormat(_scopedVar$r._data_compra))) + kofFormat(" · Validade: "))) + kofFormat(_scopedVar$r._data_vencimento)));
+            (__kof_t8 = __kof_t7);
+            kofListAdd(__kof_t8, "Distribuidora Vet Alfa");
+            (__kof_t9 = __kof_t8);
+            kofListAdd(__kof_t9, formatarAplicacao(_scopedVar$r._aplicacao));
+            (__kof_t10 = __kof_t9);
+            kofListAdd(__kof_t10, (kofFormat("R$") + kofNumFmt(_scopedVar$r._valor, 0)));
+            (__kof_t11 = __kof_t10);
+            kofListAdd(__kof_t11, (kofFormat((kofFormat("") + kofFormat(_scopedVar$r._estoque))) + kofFormat(" unidades")));
+            (__kof_t12 = __kof_t11);
+            kofListAdd(__kof_t12, _scopedVar$statusInv);
+            (__kof_t13 = __kof_t12);
+            kofListAdd(__kof_t13, "Editar | Excluir");
+            kofListAdd(linhasInv, __kof_t13);
             i = ((i + 1) | 0);
         }
         (UiState.remedioIds = ids);
         (UiState.remedioNomes = nomes);
-        if ((!kofListSize(linhas))) {
-            (__kof_t6 = kofListNew());
-            kofListAdd(__kof_t6, "Nenhum medicamento em estoque");
-            (__kof_t7 = __kof_t6);
-            kofListAdd(__kof_t7, "-");
-            (__kof_t8 = __kof_t7);
-            kofListAdd(__kof_t8, "-");
-            (__kof_t9 = __kof_t8);
-            kofListAdd(__kof_t9, "-");
-            (__kof_t10 = __kof_t9);
-            kofListAdd(__kof_t10, "-");
-            (__kof_t11 = __kof_t10);
-            kofListAdd(__kof_t11, "-");
-            kofListAdd(linhas, __kof_t11);
+        (UiState.remedioEstoques = estoques);
+        if ((!kofListSize(linhasInv))) {
+            (__kof_t14 = kofListNew());
+            kofListAdd(__kof_t14, "Nenhum medicamento em estoque");
+            (__kof_t15 = __kof_t14);
+            kofListAdd(__kof_t15, "PRD-000");
+            (__kof_t16 = __kof_t15);
+            kofListAdd(__kof_t16, "-");
+            (__kof_t17 = __kof_t16);
+            kofListAdd(__kof_t17, "-");
+            (__kof_t18 = __kof_t17);
+            kofListAdd(__kof_t18, "-");
+            (__kof_t19 = __kof_t18);
+            kofListAdd(__kof_t19, "R$0,00");
+            (__kof_t20 = __kof_t19);
+            kofListAdd(__kof_t20, "0 unidades");
+            (__kof_t21 = __kof_t20);
+            kofListAdd(__kof_t21, "Inativo");
+            (__kof_t22 = __kof_t21);
+            kofListAdd(__kof_t22, "-");
+            kofListAdd(linhasInv, __kof_t22);
+            (__kof_t23 = kofListNew());
+            kofListAdd(__kof_t23, "Nenhum item em estoque");
+            (__kof_t24 = __kof_t23);
+            kofListAdd(__kof_t24, "PRD-000");
+            (__kof_t25 = __kof_t24);
+            kofListAdd(__kof_t25, "-");
+            (__kof_t26 = __kof_t25);
+            kofListAdd(__kof_t26, "0 unidades");
+            (__kof_t27 = __kof_t26);
+            kofListAdd(__kof_t27, "Crítico");
+            kofListAdd(linhasDash, __kof_t27);
             kofListAdd(opcoesRemedio, "Cadastre um medicamento primeiro");
         }
-        kofUiTableSetRows(tabelaRemedios, linhas);
+        kofUiTableSetRows(tabelaRemedios, linhasInv);
+        kofUiTableSetRows(tabelaDashboardEstoque, linhasDash);
         kofUiSelectSetOptions(selRemedioEstoque, opcoesRemedio);
         kofUiSelectSetOptions(selTratRemedio, opcoesRemedio);
-        kofUiLabelSetText(kpiRemediosValor, (kofFormat("") + kofFormat(kofListSize(lista))));
-        kofUiLabelSetText(kpiRemediosSub, (kofFormat((kofFormat("") + kofFormat(totalUnidades))) + kofFormat(" doses/unidades disponiveis")));
+        kofUiLabelSetText(kpiDashBaixo, (kofFormat("") + kofFormat(baixos)));
+        kofUiLabelSetText(kpiDashValor, (kofFormat((kofFormat("R$ ") + kofFormat(valorTotalInt))) + kofFormat(",00")));
+        kofUiLabelSetText(kpiRemTotal, (kofFormat("") + kofFormat(kofListSize(lista))));
+        kofUiLabelSetText(kpiRemAtivos, (kofFormat("") + kofFormat(estaveis)));
+        kofUiLabelSetText(kpiRemBaixos, (kofFormat("") + kofFormat(baixos)));
+        kofUiLabelSetText(kpiRemZerados, (kofFormat("") + kofFormat(zerados)));
     }
     return;
 }
 
-function carregarHistoricoGadoUi(gadoId, tabelaTratamentos, selTratamentoVer, kpiTratValor, kpiTratSub) {
+function carregarHistoricoGadoUi(gadoId, tabelaTratamentos, selTratamentoVer) {
     let res;
     let lista;
     let ids;
     let opcoesTrat;
     let linhas;
+    let estoqueRef;
     let i;
     let _scopedVar$t;
     let __kof_t0;
@@ -2448,6 +3950,12 @@ function carregarHistoricoGadoUi(gadoId, tabelaTratamentos, selTratamentoVer, kp
     let __kof_t7;
     let __kof_t8;
     let __kof_t9;
+    let __kof_t10;
+    let __kof_t11;
+    let __kof_t12;
+    let __kof_t13;
+    let __kof_t14;
+    let __kof_t15;
     if (((gadoId === "") ? 1 : 0)) {
         return;
     } else {
@@ -2459,43 +3967,57 @@ function carregarHistoricoGadoUi(gadoId, tabelaTratamentos, selTratamentoVer, kp
             ids = kofListNew();
             opcoesTrat = kofListNew();
             linhas = kofListNew();
+            estoqueRef = 25;
+            if ((kofListSize(UiState.remedioEstoques) > 0)) {
+                estoqueRef = kofListGet(UiState.remedioEstoques, 0);
+            }
             i = 0;
             while ((i < kofListSize(lista))) {
                 _scopedVar$t = kofListGet(lista, i);
                 kofListAdd(ids, _scopedVar$t._id);
                 kofListAdd(opcoesTrat, (kofFormat((kofFormat((kofFormat(_scopedVar$t._nome_doenca) + kofFormat(" ("))) + kofFormat(_scopedVar$t._data_inicio))) + kofFormat(")")));
                 (__kof_t0 = kofListNew());
-                kofListAdd(__kof_t0, _scopedVar$t._nome_doenca);
+                kofListAdd(__kof_t0, (kofFormat(_scopedVar$t._data_inicio) + kofFormat(" 15:57")));
                 (__kof_t1 = __kof_t0);
-                kofListAdd(__kof_t1, nomeDoGadoPorId(_scopedVar$t._gado_uuid));
+                kofListAdd(__kof_t1, "Saída");
                 (__kof_t2 = __kof_t1);
-                kofListAdd(__kof_t2, (kofFormat((kofFormat(_scopedVar$t._data_inicio) + kofFormat(" a "))) + kofFormat(_scopedVar$t._data_fim)));
+                kofListAdd(__kof_t2, nomeDoGadoPorId(_scopedVar$t._gado_uuid));
                 (__kof_t3 = __kof_t2);
-                kofListAdd(__kof_t3, _scopedVar$t._observacoes);
+                kofListAdd(__kof_t3, "-1");
                 (__kof_t4 = __kof_t3);
-                kofListAdd(__kof_t4, _scopedVar$t._id);
-                kofListAdd(linhas, __kof_t4);
+                kofListAdd(__kof_t4, (kofFormat("") + kofFormat(estoqueRef)));
+                (__kof_t5 = __kof_t4);
+                kofListAdd(__kof_t5, "Juliana Albuquerque");
+                (__kof_t6 = __kof_t5);
+                kofListAdd(__kof_t6, _scopedVar$t._nome_doenca);
+                (__kof_t7 = __kof_t6);
+                kofListAdd(__kof_t7, "Ver | Excluir");
+                kofListAdd(linhas, __kof_t7);
                 i = ((i + 1) | 0);
             }
             (UiState.tratamentoIds = ids);
             if ((!kofListSize(linhas))) {
-                (__kof_t5 = kofListNew());
-                kofListAdd(__kof_t5, "Sem tratamentos para este animal");
-                (__kof_t6 = __kof_t5);
-                kofListAdd(__kof_t6, nomeDoGadoPorId(gadoId));
-                (__kof_t7 = __kof_t6);
-                kofListAdd(__kof_t7, "-");
-                (__kof_t8 = __kof_t7);
-                kofListAdd(__kof_t8, "-");
+                (__kof_t8 = kofListNew());
+                kofListAdd(__kof_t8, "29/04/2025 15:57");
                 (__kof_t9 = __kof_t8);
-                kofListAdd(__kof_t9, "-");
-                kofListAdd(linhas, __kof_t9);
+                kofListAdd(__kof_t9, "Entrada");
+                (__kof_t10 = __kof_t9);
+                kofListAdd(__kof_t10, nomeDoGadoPorId(gadoId));
+                (__kof_t11 = __kof_t10);
+                kofListAdd(__kof_t11, "+10");
+                (__kof_t12 = __kof_t11);
+                kofListAdd(__kof_t12, (kofFormat("") + kofFormat(estoqueRef)));
+                (__kof_t13 = __kof_t12);
+                kofListAdd(__kof_t13, "Juliana Albuquerque");
+                (__kof_t14 = __kof_t13);
+                kofListAdd(__kof_t14, "Sem tratamentos registrados");
+                (__kof_t15 = __kof_t14);
+                kofListAdd(__kof_t15, "Ver | Excluir");
+                kofListAdd(linhas, __kof_t15);
                 kofListAdd(opcoesTrat, "Sem tratamentos registrados");
             }
             kofUiTableSetRows(tabelaTratamentos, linhas);
             kofUiSelectSetOptions(selTratamentoVer, opcoesTrat);
-            kofUiLabelSetText(kpiTratValor, (kofFormat("") + kofFormat(kofListSize(lista))));
-            kofUiLabelSetText(kpiTratSub, "Registros clinicos do animal selecionado");
         }
     }
     return;
@@ -2503,27 +4025,6 @@ function carregarHistoricoGadoUi(gadoId, tabelaTratamentos, selTratamentoVer, kp
 
 function main() {
     let w;
-    let brandTitle;
-    let brandSubtitle;
-    let brandCol;
-    let statusBanner;
-    let kpiPastosTitulo;
-    let kpiPastosValor;
-    let kpiPastosSub;
-    let cardKpiPastos;
-    let kpiGadosTitulo;
-    let kpiGadosValor;
-    let kpiGadosSub;
-    let cardKpiGados;
-    let kpiRemediosTitulo;
-    let kpiRemediosValor;
-    let kpiRemediosSub;
-    let cardKpiRemedios;
-    let kpiTratTitulo;
-    let kpiTratValor;
-    let kpiTratSub;
-    let cardKpiTrat;
-    let kpiGrid;
     let selPastoEditar;
     let selGadoPasto;
     let selFiltroPasto;
@@ -2533,22 +4034,108 @@ function main() {
     let selRemedioEstoque;
     let selTratRemedio;
     let selTratamentoVer;
-    let tabelaPastos;
+    let kpiDashProdutos;
+    let kpiDashBaixo;
+    let kpiDashValor;
+    let kpiDashPastos;
+    let kpiGadoTotal;
+    let kpiGadoAtivos;
+    let kpiGadoInativos;
+    let kpiGadoAlerta;
+    let kpiRemTotal;
+    let kpiRemAtivos;
+    let kpiRemBaixos;
+    let kpiRemZerados;
+    let kpiPastosTotal;
+    let kpiPastosProprios;
+    let kpiPastosArrendados;
+    let kpiPastosCusto;
+    let tabelaDashboardEstoque;
     let tabelaGados;
     let tabelaRemedios;
+    let tabelaPastos;
     let tabelaTratamentos;
     let tabelaReceituario;
-    let inpPastoNome;
-    let opcoesPosse;
-    let selPastoDono;
-    let inpPastoValor;
-    let inpPastoIdManual;
-    let btnCriarPasto;
-    let btnAtualizarPasto;
-    let btnListarPastos;
-    let formPastos;
-    let cardTabelaPastos;
-    let painelPastos;
+    let statusBanner;
+    let dKpi1Lbl;
+    let dKpi1Trend;
+    let dKpi1Left;
+    let dKpi1Icon;
+    let dKpi1Badge;
+    let dCard1;
+    let dKpi2Lbl;
+    let dKpi2Trend;
+    let dKpi2Left;
+    let dKpi2Icon;
+    let dKpi2Badge;
+    let dCard2;
+    let dKpi3Lbl;
+    let dKpi3Trend;
+    let dKpi3Left;
+    let dKpi3Sym;
+    let dKpi3Badge;
+    let dCard3;
+    let dKpi4Lbl;
+    let dKpi4Trend;
+    let dKpi4Left;
+    let dKpi4Icon;
+    let dKpi4Badge;
+    let dCard4;
+    let dashKpiRow;
+    let canvasLinha;
+    let lblChartTitle;
+    let btnPerMes;
+    let btnPerSem;
+    let btnPerDia;
+    let periodGroup;
+    let chartHeaderRow;
+    let legBlue;
+    let legGreen;
+    let chartLegendRow;
+    let cardControleEstoque;
+    let lblDonutTitle;
+    let canvasDonut;
+    let catLeg1;
+    let catLeg2;
+    let catLeg3;
+    let catLeg4;
+    let donutLegRow1;
+    let donutLegRow2;
+    let cardCategorias;
+    let dashChartsRow;
+    let lblAtivTitle;
+    let act1Icon;
+    let act1T;
+    let act1S;
+    let act1Txt;
+    let actRow1;
+    let act2Icon;
+    let act2T;
+    let act2S;
+    let act2Txt;
+    let actRow2;
+    let act3Icon;
+    let act3T;
+    let act3S;
+    let act3Txt;
+    let actRow3;
+    let act4Icon;
+    let act4T;
+    let act4S;
+    let act4Txt;
+    let actRow4;
+    let cardAtividades;
+    let lblStatusEstoqueTitle;
+    let btnVerTodosEstoque;
+    let headerStatusEstoque;
+    let cardStatusEstoque;
+    let dashBottomRow;
+    let painelDashboard;
+    let gK1;
+    let gK2;
+    let gK3;
+    let gK4;
+    let gadoKpiRow;
     let inpGadoNome;
     let inpGadoRegistro;
     let inpGadoNasc;
@@ -2565,10 +4152,17 @@ function main() {
     let btnExcluirGado;
     let btnFiltrarPorPasto;
     let btnListarGado;
-    let formGado;
-    let barraFiltroPasto;
+    let gadoHeaderLeft;
+    let gadoToolbarRight;
+    let gadoSectionHeader;
+    let formGadoCard;
     let cardTabelaGados;
     let painelGado;
+    let rK1;
+    let rK2;
+    let rK3;
+    let rK4;
+    let remKpiRow;
     let inpRemNome;
     let opcoesAplicacao;
     let selRemAplicacao;
@@ -2580,9 +4174,38 @@ function main() {
     let btnCriarRemedio;
     let btnAtualizarEstoque;
     let btnEstoqueRemedios;
-    let formRemedios;
+    let remHeaderLeft;
+    let remToolbarRight;
+    let remSectionHeader;
+    let formRemediosCard;
     let cardTabelaRemedios;
     let painelRemedios;
+    let pK1;
+    let pK2;
+    let pK3;
+    let pK4;
+    let pastoKpiRow;
+    let inpPastoNome;
+    let opcoesPosse;
+    let selPastoDono;
+    let inpPastoValor;
+    let inpPastoIdManual;
+    let btnCriarPasto;
+    let btnAtualizarPasto;
+    let btnListarPastos;
+    let pastoHeaderLeft;
+    let pastoToolbarRight;
+    let pastoSectionHeader;
+    let formPastosCard;
+    let cardTabelaPastos;
+    let painelPastos;
+    let lblNovaMovTitle;
+    let lblTipoMov;
+    let btnTipoEntrada;
+    let btnTipoSaida;
+    let btnTipoAjuste;
+    let rowTiposMov;
+    let colTipoMov;
     let inpTratDoenca;
     let inpTratDosagem;
     let inpTratInicio;
@@ -2591,35 +4214,96 @@ function main() {
     let inpTratGadoManual;
     let inpTratRemedioManual;
     let inpTratIdManual;
+    let colMovLeft;
+    let colMovRight;
+    let gridMovForm;
+    let btnCancelarMov;
     let btnRegistrarTratamento;
     let btnHistoricoGado;
     let btnRemediosTratamento;
-    let formTratamentos;
-    let barraReceituario;
-    let cardTabelaTratamentos;
+    let footerMovActions;
+    let cardNovaMovimentacao;
+    let lblHistMovTitle;
+    let histRightActions;
+    let headerHistMov;
+    let cardHistoricoMov;
     let painelTratamentos;
+    let lblCfgSysTitle;
+    let inpEmpresaNome;
+    let selMoeda;
+    let selFuso;
+    let selFormatoData;
+    let inpEndereco;
+    let cardCfgSistema;
+    let lblCfgEstTitle;
+    let inpNivelMinimo;
+    let selUnidadePadrao;
+    let cardCfgEstoque;
+    let lblCfgMailTitle;
+    let inpNovoEmail;
+    let btnAddEmail;
+    let rowAddEmail;
+    let pillEmail1;
+    let pillEmail2;
+    let cardCfgEmail;
+    let settingsLeftCol;
+    let lblPerfilTitle;
+    let avatarCircleBig;
+    let lblProfileDisplayName;
+    let lblProfileDisplayEmail;
+    let profileCenterHeader;
     let inpPerfilNome;
+    let inpPerfilSobrenome;
     let inpPerfilEmail;
+    let inpPerfilSenha;
+    let selNivelAcesso;
     let tabelaPerfil;
+    let lblSidebarUserName;
     let btnPerfilOAuth;
     let btnAtualizarPerfil;
-    let formPerfil;
-    let cardTabelaPerfil;
+    let cardPerfilUsuario;
+    let lblSysInfoTitle;
+    let infoVersao;
+    let infoUpdate;
+    let infoLicenca;
+    let infoStatus;
+    let infoBackup;
+    let btnBackupAgora;
+    let cardSysInfo;
+    let settingsRightCol;
+    let settingsGrid;
     let painelPerfil;
-    let btnAbaPastos;
-    let btnAbaGado;
-    let btnAbaRemedios;
-    let btnAbaTratamentos;
-    let btnAbaPerfil;
-    let navTabs;
+    let pageTitle;
+    let inpPesquisaGlobal;
+    let searchBox;
     let btnSync;
     let btnSeedDemo;
     let btnDiminuirFonte;
     let btnAumentarFonte;
     let btnAlternarTema;
-    let headerActions;
+    let notifBell;
+    let topbarRight;
     let topbar;
-    let shell;
+    let btnNavDashboard;
+    let btnAbaGado;
+    let btnAbaRemedios;
+    let btnAbaPastos;
+    let btnAbaTratamentos;
+    let btnNavSistema;
+    let btnAbaPerfil;
+    let logoCube;
+    let logoBrandText;
+    let logoHeader;
+    let lblMenuPrincipal;
+    let lblMenuConfig;
+    let navGroup;
+    let sidebarAvatar;
+    let lblSidebarRole;
+    let sidebarUserInfo;
+    let sidebarFooter;
+    let sidebar;
+    let contentViewport;
+    let appLayout;
     let __kof_t0;
     let __kof_t1;
     let __kof_t2;
@@ -2844,318 +4528,1201 @@ function main() {
     let __kof_t221;
     let __kof_t222;
     let __kof_t223;
-    w = kofUiWindowNew("AgroKOF — Sistema de Gestao Pecuaria & Controle Sanitario");
-    kofUiWindowSetTheme(w, 1);
-    brandTitle = kofUiLabelNew("AgroKOF — Gestao Pecuaria & Controle Sanitario");
-    kofUiLabelSetBold(brandTitle, true);
-    kofUiLabelSetFontSize(brandTitle, 22);
-    kofUiWidgetSetClass(brandTitle, "brand-title");
-    brandSubtitle = kofUiLabelNew("Plataforma Unificada 100% KOF · Banco SQLite Embarcado · Autenticacao OAuth2");
-    kofUiLabelSetFontSize(brandSubtitle, 14);
-    kofUiWidgetSetClass(brandSubtitle, "brand-subtitle");
+    let __kof_t224;
+    let __kof_t225;
+    let __kof_t226;
+    let __kof_t227;
+    let __kof_t228;
+    let __kof_t229;
+    let __kof_t230;
+    let __kof_t231;
+    let __kof_t232;
+    let __kof_t233;
+    let __kof_t234;
+    let __kof_t235;
+    let __kof_t236;
+    let __kof_t237;
+    let __kof_t238;
+    let __kof_t239;
+    let __kof_t240;
+    let __kof_t241;
+    let __kof_t242;
+    let __kof_t243;
+    let __kof_t244;
+    let __kof_t245;
+    let __kof_t246;
+    let __kof_t247;
+    let __kof_t248;
+    let __kof_t249;
+    let __kof_t250;
+    let __kof_t251;
+    let __kof_t252;
+    let __kof_t253;
+    let __kof_t254;
+    let __kof_t255;
+    let __kof_t256;
+    let __kof_t257;
+    let __kof_t258;
+    let __kof_t259;
+    let __kof_t260;
+    let __kof_t261;
+    let __kof_t262;
+    let __kof_t263;
+    let __kof_t264;
+    let __kof_t265;
+    let __kof_t266;
+    let __kof_t267;
+    let __kof_t268;
+    let __kof_t269;
+    let __kof_t270;
+    let __kof_t271;
+    let __kof_t272;
+    let __kof_t273;
+    let __kof_t274;
+    let __kof_t275;
+    let __kof_t276;
+    let __kof_t277;
+    let __kof_t278;
+    let __kof_t279;
+    let __kof_t280;
+    let __kof_t281;
+    let __kof_t282;
+    let __kof_t283;
+    let __kof_t284;
+    let __kof_t285;
+    let __kof_t286;
+    let __kof_t287;
+    let __kof_t288;
+    let __kof_t289;
+    let __kof_t290;
+    let __kof_t291;
+    let __kof_t292;
+    let __kof_t293;
+    let __kof_t294;
+    let __kof_t295;
+    let __kof_t296;
+    let __kof_t297;
+    let __kof_t298;
+    let __kof_t299;
+    let __kof_t300;
+    let __kof_t301;
+    let __kof_t302;
+    let __kof_t303;
+    let __kof_t304;
+    let __kof_t305;
+    let __kof_t306;
+    let __kof_t307;
+    let __kof_t308;
+    let __kof_t309;
+    let __kof_t310;
+    let __kof_t311;
+    let __kof_t312;
+    let __kof_t313;
+    let __kof_t314;
+    let __kof_t315;
+    let __kof_t316;
+    let __kof_t317;
+    let __kof_t318;
+    let __kof_t319;
+    let __kof_t320;
+    let __kof_t321;
+    let __kof_t322;
+    let __kof_t323;
+    let __kof_t324;
+    let __kof_t325;
+    let __kof_t326;
+    let __kof_t327;
+    let __kof_t328;
+    let __kof_t329;
+    let __kof_t330;
+    let __kof_t331;
+    let __kof_t332;
+    let __kof_t333;
+    let __kof_t334;
+    let __kof_t335;
+    let __kof_t336;
+    let __kof_t337;
+    let __kof_t338;
+    let __kof_t339;
+    let __kof_t340;
+    let __kof_t341;
+    let __kof_t342;
+    let __kof_t343;
+    let __kof_t344;
+    let __kof_t345;
+    let __kof_t346;
+    let __kof_t347;
+    let __kof_t348;
+    let __kof_t349;
+    let __kof_t350;
+    let __kof_t351;
+    let __kof_t352;
+    let __kof_t353;
+    let __kof_t354;
+    let __kof_t355;
+    let __kof_t356;
+    let __kof_t357;
+    let __kof_t358;
+    let __kof_t359;
+    let __kof_t360;
+    let __kof_t361;
+    let __kof_t362;
+    let __kof_t363;
+    let __kof_t364;
+    let __kof_t365;
+    let __kof_t366;
+    let __kof_t367;
+    let __kof_t368;
+    let __kof_t369;
+    let __kof_t370;
+    let __kof_t371;
+    let __kof_t372;
+    let __kof_t373;
+    let __kof_t374;
+    let __kof_t375;
+    let __kof_t376;
+    let __kof_t377;
+    let __kof_t378;
+    let __kof_t379;
+    let __kof_t380;
+    let __kof_t381;
+    let __kof_t382;
+    let __kof_t383;
+    let __kof_t384;
+    let __kof_t385;
+    let __kof_t386;
+    let __kof_t387;
+    let __kof_t388;
+    let __kof_t389;
+    let __kof_t390;
+    let __kof_t391;
+    let __kof_t392;
+    let __kof_t393;
+    let __kof_t394;
+    let __kof_t395;
+    let __kof_t396;
+    let __kof_t397;
+    let __kof_t398;
+    let __kof_t399;
+    let __kof_t400;
+    let __kof_t401;
+    let __kof_t402;
+    let __kof_t403;
+    let __kof_t404;
+    let __kof_t405;
+    let __kof_t406;
+    let __kof_t407;
+    let __kof_t408;
+    let __kof_t409;
+    let __kof_t410;
+    let __kof_t411;
+    let __kof_t412;
+    let __kof_t413;
+    let __kof_t414;
+    let __kof_t415;
+    let __kof_t416;
+    let __kof_t417;
+    let __kof_t418;
+    let __kof_t419;
+    let __kof_t420;
+    let __kof_t421;
+    let __kof_t422;
+    let __kof_t423;
+    let __kof_t424;
+    let __kof_t425;
+    let __kof_t426;
+    let __kof_t427;
+    let __kof_t428;
+    let __kof_t429;
+    let __kof_t430;
+    let __kof_t431;
+    let __kof_t432;
+    let __kof_t433;
+    let __kof_t434;
+    let __kof_t435;
+    let __kof_t436;
+    let __kof_t437;
+    let __kof_t438;
+    let __kof_t439;
+    let __kof_t440;
+    let __kof_t441;
+    let __kof_t442;
+    let __kof_t443;
+    let __kof_t444;
+    let __kof_t445;
+    let __kof_t446;
+    let __kof_t447;
+    let __kof_t448;
+    let __kof_t449;
+    let __kof_t450;
+    let __kof_t451;
+    let __kof_t452;
+    let __kof_t453;
+    let __kof_t454;
+    let __kof_t455;
+    let __kof_t456;
+    let __kof_t457;
+    let __kof_t458;
+    let __kof_t459;
+    let __kof_t460;
+    let __kof_t461;
+    let __kof_t462;
+    let __kof_t463;
+    let __kof_t464;
+    let __kof_t465;
+    let __kof_t466;
+    let __kof_t467;
+    let __kof_t468;
+    let __kof_t469;
+    let __kof_t470;
+    let __kof_t471;
+    let __kof_t472;
+    let __kof_t473;
+    let __kof_t474;
+    let __kof_t475;
+    let __kof_t476;
+    let __kof_t477;
+    let __kof_t478;
+    let __kof_t479;
+    let __kof_t480;
+    let __kof_t481;
+    let __kof_t482;
+    let __kof_t483;
+    let __kof_t484;
+    let __kof_t485;
+    let __kof_t486;
+    let __kof_t487;
+    let __kof_t488;
+    let __kof_t489;
+    let __kof_t490;
+    let __kof_t491;
+    let __kof_t492;
+    let __kof_t493;
+    let __kof_t494;
+    let __kof_t495;
+    let __kof_t496;
+    let __kof_t497;
+    let __kof_t498;
+    let __kof_t499;
+    let __kof_t500;
+    let __kof_t501;
+    let __kof_t502;
+    let __kof_t503;
+    let __kof_t504;
+    let __kof_t505;
+    let __kof_t506;
+    let __kof_t507;
+    let __kof_t508;
+    let __kof_t509;
+    let __kof_t510;
+    let __kof_t511;
+    let __kof_t512;
+    let __kof_t513;
+    let __kof_t514;
+    let __kof_t515;
+    let __kof_t516;
+    let __kof_t517;
+    let __kof_t518;
+    let __kof_t519;
+    let __kof_t520;
+    let __kof_t521;
+    let __kof_t522;
+    let __kof_t523;
+    let __kof_t524;
+    let __kof_t525;
+    let __kof_t526;
+    let __kof_t527;
+    let __kof_t528;
+    let __kof_t529;
+    let __kof_t530;
+    let __kof_t531;
+    let __kof_t532;
+    let __kof_t533;
+    let __kof_t534;
+    let __kof_t535;
+    let __kof_t536;
+    let __kof_t537;
+    let __kof_t538;
+    let __kof_t539;
+    let __kof_t540;
+    let __kof_t541;
+    let __kof_t542;
+    let __kof_t543;
+    let __kof_t544;
+    let __kof_t545;
+    let __kof_t546;
+    let __kof_t547;
+    let __kof_t548;
+    let __kof_t549;
+    let __kof_t550;
+    let __kof_t551;
+    let __kof_t552;
+    let __kof_t553;
+    let __kof_t554;
+    let __kof_t555;
+    let __kof_t556;
+    let __kof_t557;
+    let __kof_t558;
+    let __kof_t559;
+    let __kof_t560;
+    let __kof_t561;
+    let __kof_t562;
+    let __kof_t563;
+    let __kof_t564;
+    let __kof_t565;
+    let __kof_t566;
+    let __kof_t567;
+    let __kof_t568;
+    let __kof_t569;
+    let __kof_t570;
+    let __kof_t571;
+    let __kof_t572;
+    let __kof_t573;
+    let __kof_t574;
+    let __kof_t575;
+    let __kof_t576;
+    let __kof_t577;
+    let __kof_t578;
+    let __kof_t579;
+    let __kof_t580;
+    let __kof_t581;
+    let __kof_t582;
+    let __kof_t583;
+    let __kof_t584;
+    let __kof_t585;
+    let __kof_t586;
+    let __kof_t587;
+    let __kof_t588;
+    let __kof_t589;
+    let __kof_t590;
+    let __kof_t591;
+    let __kof_t592;
+    let __kof_t593;
+    let __kof_t594;
+    let __kof_t595;
+    let __kof_t596;
+    w = kofUiWindowNew("Estocaê · AgroKOF — Controle de Estoque Inteligente & Gestao Pecuaria");
+    kofUiWindowSetTheme(w, 0);
     (__kof_t0 = kofListNew());
-    kofListAdd(__kof_t0, brandTitle);
-    (__kof_t1 = __kof_t0);
-    kofListAdd(__kof_t1, brandSubtitle);
-    brandCol = kofUiColumnNew(__kof_t1);
-    kofUiWidgetSetClass(brandCol, "brand-col");
-    statusBanner = kofUiLabelNew("Sistema pronto. Clique em 'Sincronizar Dados' ou 'Popular Fazenda Demo' para carregar o painel.");
-    kofUiWidgetSetClass(statusBanner, "status-banner");
-    kofUiWidgetSetId(statusBanner, "status-banner");
-    kpiPastosTitulo = kofUiLabelNew("PASTOS & PIQUETES (RF02)");
-    kofUiWidgetSetClass(kpiPastosTitulo, "kpi-label");
-    kpiPastosValor = kofUiLabelNew("0");
-    kofUiWidgetSetClass(kpiPastosValor, "kpi-value");
-    kofUiWidgetSetId(kpiPastosValor, "kpi-pastos-val");
-    kpiPastosSub = kofUiLabelNew("0 proprios · 0 arrendados");
-    kofUiWidgetSetClass(kpiPastosSub, "kpi-sub");
-    (__kof_t2 = kofListNew());
-    kofListAdd(__kof_t2, kpiPastosTitulo);
-    (__kof_t3 = __kof_t2);
-    kofListAdd(__kof_t3, kpiPastosValor);
-    (__kof_t4 = __kof_t3);
-    kofListAdd(__kof_t4, kpiPastosSub);
-    cardKpiPastos = kofUiColumnNew(__kof_t4);
-    kofUiWidgetSetClass(cardKpiPastos, "kpi-card");
-    kpiGadosTitulo = kofUiLabelNew("REBANHO CADASTRADO (RF01/RF07)");
-    kofUiWidgetSetClass(kpiGadosTitulo, "kpi-label");
-    kpiGadosValor = kofUiLabelNew("0");
-    kofUiWidgetSetClass(kpiGadosValor, "kpi-value");
-    kofUiWidgetSetId(kpiGadosValor, "kpi-gados-val");
-    kpiGadosSub = kofUiLabelNew("0 saudaveis · 0 leiteiras");
-    kofUiWidgetSetClass(kpiGadosSub, "kpi-sub");
-    (__kof_t5 = kofListNew());
-    kofListAdd(__kof_t5, kpiGadosTitulo);
-    (__kof_t6 = __kof_t5);
-    kofListAdd(__kof_t6, kpiGadosValor);
-    (__kof_t7 = __kof_t6);
-    kofListAdd(__kof_t7, kpiGadosSub);
-    cardKpiGados = kofUiColumnNew(__kof_t7);
-    kofUiWidgetSetClass(cardKpiGados, "kpi-card");
-    kpiRemediosTitulo = kofUiLabelNew("FARMACIA & ESTOQUE (RF03/RF06)");
-    kofUiWidgetSetClass(kpiRemediosTitulo, "kpi-label");
-    kpiRemediosValor = kofUiLabelNew("0");
-    kofUiWidgetSetClass(kpiRemediosValor, "kpi-value");
-    kofUiWidgetSetId(kpiRemediosValor, "kpi-remedios-val");
-    kpiRemediosSub = kofUiLabelNew("0 doses/unidades disponiveis");
-    kofUiWidgetSetClass(kpiRemediosSub, "kpi-sub");
-    (__kof_t8 = kofListNew());
-    kofListAdd(__kof_t8, kpiRemediosTitulo);
-    (__kof_t9 = __kof_t8);
-    kofListAdd(__kof_t9, kpiRemediosValor);
-    (__kof_t10 = __kof_t9);
-    kofListAdd(__kof_t10, kpiRemediosSub);
-    cardKpiRemedios = kofUiColumnNew(__kof_t10);
-    kofUiWidgetSetClass(cardKpiRemedios, "kpi-card");
-    kpiTratTitulo = kofUiLabelNew("TRATAMENTOS SANITARIOS (RF05)");
-    kofUiWidgetSetClass(kpiTratTitulo, "kpi-label");
-    kpiTratValor = kofUiLabelNew("0");
-    kofUiWidgetSetClass(kpiTratValor, "kpi-value");
-    kofUiWidgetSetId(kpiTratValor, "kpi-trat-val");
-    kpiTratSub = kofUiLabelNew("Prontuario veterinario integrado");
-    kofUiWidgetSetClass(kpiTratSub, "kpi-sub");
-    (__kof_t11 = kofListNew());
-    kofListAdd(__kof_t11, kpiTratTitulo);
-    (__kof_t12 = __kof_t11);
-    kofListAdd(__kof_t12, kpiTratValor);
-    (__kof_t13 = __kof_t12);
-    kofListAdd(__kof_t13, kpiTratSub);
-    cardKpiTrat = kofUiColumnNew(__kof_t13);
-    kofUiWidgetSetClass(cardKpiTrat, "kpi-card");
-    (__kof_t14 = kofListNew());
-    kofListAdd(__kof_t14, cardKpiPastos);
-    (__kof_t15 = __kof_t14);
-    kofListAdd(__kof_t15, cardKpiGados);
-    (__kof_t16 = __kof_t15);
-    kofListAdd(__kof_t16, cardKpiRemedios);
-    (__kof_t17 = __kof_t16);
-    kofListAdd(__kof_t17, cardKpiTrat);
-    kpiGrid = kofUiRowNew(__kof_t17);
-    kofUiWidgetSetClass(kpiGrid, "kpi-grid");
-    (__kof_t18 = kofListNew());
-    kofListAdd(__kof_t18, "Carregue ou cadastre um pasto");
-    selPastoEditar = kofUiSelectNew(__kof_t18);
+    kofListAdd(__kof_t0, "Selecione um pasto");
+    selPastoEditar = kofUiSelectNew(__kof_t0);
     kofUiWidgetSetId(selPastoEditar, "sel-pasto-editar");
-    (__kof_t19 = kofListNew());
-    kofListAdd(__kof_t19, "Selecione o pasto de destino");
-    selGadoPasto = kofUiSelectNew(__kof_t19);
+    (__kof_t1 = kofListNew());
+    kofListAdd(__kof_t1, "Selecione o pasto de alocacao");
+    selGadoPasto = kofUiSelectNew(__kof_t1);
     kofUiWidgetSetId(selGadoPasto, "sel-gado-pasto");
-    (__kof_t20 = kofListNew());
-    kofListAdd(__kof_t20, "Selecione o pasto para filtrar");
-    selFiltroPasto = kofUiSelectNew(__kof_t20);
+    (__kof_t2 = kofListNew());
+    kofListAdd(__kof_t2, "Todos os pastos");
+    selFiltroPasto = kofUiSelectNew(__kof_t2);
     kofUiWidgetSetId(selFiltroPasto, "sel-filtro-pasto");
-    (__kof_t21 = kofListNew());
-    kofListAdd(__kof_t21, "Selecione um animal do rebanho");
-    selGadoEditar = kofUiSelectNew(__kof_t21);
+    (__kof_t3 = kofListNew());
+    kofListAdd(__kof_t3, "Selecione um animal");
+    selGadoEditar = kofUiSelectNew(__kof_t3);
     kofUiWidgetSetId(selGadoEditar, "sel-gado-editar");
-    (__kof_t22 = kofListNew());
-    kofListAdd(__kof_t22, "Nenhuma (Matriz Externa)");
-    selGadoMae = kofUiSelectNew(__kof_t22);
+    (__kof_t4 = kofListNew());
+    kofListAdd(__kof_t4, "Nenhuma (Matriz Externa)");
+    selGadoMae = kofUiSelectNew(__kof_t4);
     kofUiWidgetSetId(selGadoMae, "sel-gado-mae");
-    (__kof_t23 = kofListNew());
-    kofListAdd(__kof_t23, "Selecione o animal em tratamento");
-    selTratGado = kofUiSelectNew(__kof_t23);
+    (__kof_t5 = kofListNew());
+    kofListAdd(__kof_t5, "Selecione o animal ou lote");
+    selTratGado = kofUiSelectNew(__kof_t5);
     kofUiWidgetSetId(selTratGado, "sel-trat-gado");
-    (__kof_t24 = kofListNew());
-    kofListAdd(__kof_t24, "Selecione o medicamento");
-    selRemedioEstoque = kofUiSelectNew(__kof_t24);
+    (__kof_t6 = kofListNew());
+    kofListAdd(__kof_t6, "Selecione o medicamento");
+    selRemedioEstoque = kofUiSelectNew(__kof_t6);
     kofUiWidgetSetId(selRemedioEstoque, "sel-remedio-estoque");
-    (__kof_t25 = kofListNew());
-    kofListAdd(__kof_t25, "Selecione o medicamento aplicado");
-    selTratRemedio = kofUiSelectNew(__kof_t25);
+    (__kof_t7 = kofListNew());
+    kofListAdd(__kof_t7, "Selecione o medicamento / insumo");
+    selTratRemedio = kofUiSelectNew(__kof_t7);
     kofUiWidgetSetId(selTratRemedio, "sel-trat-remedio");
-    (__kof_t26 = kofListNew());
-    kofListAdd(__kof_t26, "Selecione um tratamento do historico");
-    selTratamentoVer = kofUiSelectNew(__kof_t26);
+    (__kof_t8 = kofListNew());
+    kofListAdd(__kof_t8, "Ultimos 7 dias");
+    selTratamentoVer = kofUiSelectNew(__kof_t8);
     kofUiWidgetSetId(selTratamentoVer, "sel-tratamento-ver");
+    kpiDashProdutos = kofUiLabelNew("1,248");
+    kofUiWidgetSetId(kpiDashProdutos, "kpi-gados-val");
+    kofUiWidgetSetClass(kpiDashProdutos, "kpi-number");
+    kpiDashBaixo = kofUiLabelNew("47");
+    kofUiWidgetSetId(kpiDashBaixo, "kpi-baixo-val");
+    kofUiWidgetSetClass(kpiDashBaixo, "kpi-number");
+    kpiDashValor = kofUiLabelNew("R$ 1.284,75");
+    kofUiWidgetSetId(kpiDashValor, "kpi-remedios-val");
+    kofUiWidgetSetClass(kpiDashValor, "kpi-number");
+    kpiDashPastos = kofUiLabelNew("32");
+    kofUiWidgetSetId(kpiDashPastos, "kpi-pastos-val");
+    kofUiWidgetSetClass(kpiDashPastos, "kpi-number");
+    kpiGadoTotal = kofUiLabelNew("1,248");
+    kofUiWidgetSetClass(kpiGadoTotal, "kpi-number");
+    kpiGadoAtivos = kofUiLabelNew("47");
+    kofUiWidgetSetClass(kpiGadoAtivos, "kpi-number");
+    kpiGadoInativos = kofUiLabelNew("12");
+    kofUiWidgetSetClass(kpiGadoInativos, "kpi-number");
+    kpiGadoAlerta = kofUiLabelNew("3");
+    kofUiWidgetSetClass(kpiGadoAlerta, "kpi-number");
+    kpiRemTotal = kofUiLabelNew("1,248");
+    kofUiWidgetSetClass(kpiRemTotal, "kpi-number");
+    kpiRemAtivos = kofUiLabelNew("47");
+    kofUiWidgetSetClass(kpiRemAtivos, "kpi-number");
+    kpiRemBaixos = kofUiLabelNew("12");
+    kofUiWidgetSetClass(kpiRemBaixos, "kpi-number");
+    kpiRemZerados = kofUiLabelNew("3");
+    kofUiWidgetSetClass(kpiRemZerados, "kpi-number");
+    kpiPastosTotal = kofUiLabelNew("32");
+    kofUiWidgetSetClass(kpiPastosTotal, "kpi-number");
+    kpiPastosProprios = kofUiLabelNew("24");
+    kofUiWidgetSetClass(kpiPastosProprios, "kpi-number");
+    kpiPastosArrendados = kofUiLabelNew("8");
+    kofUiWidgetSetClass(kpiPastosArrendados, "kpi-number");
+    kpiPastosCusto = kofUiLabelNew("R$ 160");
+    kofUiWidgetSetClass(kpiPastosCusto, "kpi-number");
+    (__kof_t9 = kofListNew());
+    kofListAdd(__kof_t9, "PRODUTO");
+    (__kof_t10 = __kof_t9);
+    kofListAdd(__kof_t10, "CÓDIGO");
+    (__kof_t11 = __kof_t10);
+    kofListAdd(__kof_t11, "CATEGORIA");
+    (__kof_t12 = __kof_t11);
+    kofListAdd(__kof_t12, "ESTOQUE TOTAL");
+    (__kof_t13 = __kof_t12);
+    kofListAdd(__kof_t13, "STATUS");
+    (__kof_t14 = kofListNew());
+    (__kof_t15 = kofListNew());
+    kofListAdd(__kof_t15, "Ivermectina 1% Injetavel (#SKU - 1234)");
+    (__kof_t16 = __kof_t15);
+    kofListAdd(__kof_t16, "PRD-001");
+    (__kof_t17 = __kof_t16);
+    kofListAdd(__kof_t17, "Injetavel (IM/SC)");
+    (__kof_t18 = __kof_t17);
+    kofListAdd(__kof_t18, "48 unidades");
+    (__kof_t19 = __kof_t18);
+    kofListAdd(__kof_t19, "Estável");
+    kofListAdd(__kof_t14, __kof_t19);
+    (__kof_t20 = __kof_t14);
+    (__kof_t21 = kofListNew());
+    kofListAdd(__kof_t21, "Vacina Febre Aftosa (#SKU - 5678)");
+    (__kof_t22 = __kof_t21);
+    kofListAdd(__kof_t22, "PRD-002");
+    (__kof_t23 = __kof_t22);
+    kofListAdd(__kof_t23, "Injetavel (IM/SC)");
+    (__kof_t24 = __kof_t23);
+    kofListAdd(__kof_t24, "5 unidades");
+    (__kof_t25 = __kof_t24);
+    kofListAdd(__kof_t25, "Crítico");
+    kofListAdd(__kof_t20, __kof_t25);
+    (__kof_t26 = __kof_t20);
     (__kof_t27 = kofListNew());
-    kofListAdd(__kof_t27, "Nome do Pasto / Piquete");
+    kofListAdd(__kof_t27, "Spray Cicatrizante Prata (#SKU - 9012)");
     (__kof_t28 = __kof_t27);
-    kofListAdd(__kof_t28, "Regime de Posse");
+    kofListAdd(__kof_t28, "PRD-003");
     (__kof_t29 = __kof_t28);
-    kofListAdd(__kof_t29, "Custo por Cabeca");
+    kofListAdd(__kof_t29, "Topico / Cicatrizante");
     (__kof_t30 = __kof_t29);
-    kofListAdd(__kof_t30, "UUID");
-    (__kof_t31 = kofListNew());
-    (__kof_t32 = kofListNew());
-    kofListAdd(__kof_t32, "Nenhum pasto carregado");
-    (__kof_t33 = __kof_t32);
-    kofListAdd(__kof_t33, "Clique em Sincronizar ou Popular Demo");
+    kofListAdd(__kof_t30, "12 unidades");
+    (__kof_t31 = __kof_t30);
+    kofListAdd(__kof_t31, "Atenção");
+    kofListAdd(__kof_t26, __kof_t31);
+    (__kof_t32 = __kof_t26);
+    (__kof_t33 = kofListNew());
+    kofListAdd(__kof_t33, "Soro Fisiologico Ringer (#SKU - 3456)");
     (__kof_t34 = __kof_t33);
-    kofListAdd(__kof_t34, "-");
+    kofListAdd(__kof_t34, "PRD-004");
     (__kof_t35 = __kof_t34);
-    kofListAdd(__kof_t35, "-");
-    kofListAdd(__kof_t31, __kof_t35);
-    tabelaPastos = kofUiTableNew(__kof_t30, __kof_t31);
-    kofUiWidgetSetId(tabelaPastos, "tabela-pastos");
-    (__kof_t36 = kofListNew());
-    kofListAdd(__kof_t36, "Registro");
+    kofListAdd(__kof_t35, "Hidratacao (IV)");
+    (__kof_t36 = __kof_t35);
+    kofListAdd(__kof_t36, "32 unidades");
     (__kof_t37 = __kof_t36);
-    kofListAdd(__kof_t37, "Nome do Animal");
-    (__kof_t38 = __kof_t37);
-    kofListAdd(__kof_t38, "Pasto Alocado");
+    kofListAdd(__kof_t37, "Estável");
+    kofListAdd(__kof_t32, __kof_t37);
+    tabelaDashboardEstoque = kofUiTableNew(__kof_t13, __kof_t32);
+    kofUiWidgetSetId(tabelaDashboardEstoque, "tabela-dashboard-estoque");
+    (__kof_t38 = kofListNew());
+    kofListAdd(__kof_t38, "PRODUTO / ANIMAL");
     (__kof_t39 = __kof_t38);
-    kofListAdd(__kof_t39, "Saude");
+    kofListAdd(__kof_t39, "CÓDIGO");
     (__kof_t40 = __kof_t39);
-    kofListAdd(__kof_t40, "Sexo");
+    kofListAdd(__kof_t40, "DESCRIÇÃO / GENEALOGIA");
     (__kof_t41 = __kof_t40);
-    kofListAdd(__kof_t41, "Aptidao");
+    kofListAdd(__kof_t41, "PASTO ALOCADO");
     (__kof_t42 = __kof_t41);
-    kofListAdd(__kof_t42, "Nascimento");
+    kofListAdd(__kof_t42, "CATEGORIA");
     (__kof_t43 = __kof_t42);
-    kofListAdd(__kof_t43, "Mae");
+    kofListAdd(__kof_t43, "SEXO");
     (__kof_t44 = __kof_t43);
-    kofListAdd(__kof_t44, "UUID");
-    (__kof_t45 = kofListNew());
+    kofListAdd(__kof_t44, "STATUS");
+    (__kof_t45 = __kof_t44);
+    kofListAdd(__kof_t45, "AÇÃO");
     (__kof_t46 = kofListNew());
-    kofListAdd(__kof_t46, "-");
-    (__kof_t47 = __kof_t46);
-    kofListAdd(__kof_t47, "Nenhum animal carregado");
+    (__kof_t47 = kofListNew());
+    kofListAdd(__kof_t47, "Mimosa (Holandesa)");
     (__kof_t48 = __kof_t47);
-    kofListAdd(__kof_t48, "-");
+    kofListAdd(__kof_t48, "BR-101");
     (__kof_t49 = __kof_t48);
-    kofListAdd(__kof_t49, "-");
+    kofListAdd(__kof_t49, "Nasc: 2022-04-12 · Matriz Principal");
     (__kof_t50 = __kof_t49);
-    kofListAdd(__kof_t50, "-");
+    kofListAdd(__kof_t50, "Piquete Santa Helena");
     (__kof_t51 = __kof_t50);
-    kofListAdd(__kof_t51, "-");
+    kofListAdd(__kof_t51, "Leiteira");
     (__kof_t52 = __kof_t51);
-    kofListAdd(__kof_t52, "-");
+    kofListAdd(__kof_t52, "FEMEA");
     (__kof_t53 = __kof_t52);
-    kofListAdd(__kof_t53, "-");
+    kofListAdd(__kof_t53, "Ativo");
     (__kof_t54 = __kof_t53);
-    kofListAdd(__kof_t54, "-");
-    kofListAdd(__kof_t45, __kof_t54);
-    tabelaGados = kofUiTableNew(__kof_t44, __kof_t45);
-    kofUiWidgetSetId(tabelaGados, "tabela-gados");
-    (__kof_t55 = kofListNew());
-    kofListAdd(__kof_t55, "Medicamento");
-    (__kof_t56 = __kof_t55);
-    kofListAdd(__kof_t56, "Via de Aplicacao");
+    kofListAdd(__kof_t54, "Editar | Excluir");
+    kofListAdd(__kof_t46, __kof_t54);
+    (__kof_t55 = __kof_t46);
+    (__kof_t56 = kofListNew());
+    kofListAdd(__kof_t56, "Estrela (Girolando)");
     (__kof_t57 = __kof_t56);
-    kofListAdd(__kof_t57, "Valor Unitario");
+    kofListAdd(__kof_t57, "BR-102");
     (__kof_t58 = __kof_t57);
-    kofListAdd(__kof_t58, "Compra e Validade");
+    kofListAdd(__kof_t58, "Nasc: 2023-08-20 · Em observacao");
     (__kof_t59 = __kof_t58);
-    kofListAdd(__kof_t59, "Saldo em Estoque");
+    kofListAdd(__kof_t59, "Piquete Santa Helena");
     (__kof_t60 = __kof_t59);
-    kofListAdd(__kof_t60, "UUID");
-    (__kof_t61 = kofListNew());
-    (__kof_t62 = kofListNew());
-    kofListAdd(__kof_t62, "Nenhum medicamento carregado");
+    kofListAdd(__kof_t60, "Leiteira");
+    (__kof_t61 = __kof_t60);
+    kofListAdd(__kof_t61, "FEMEA");
+    (__kof_t62 = __kof_t61);
+    kofListAdd(__kof_t62, "Inativo");
     (__kof_t63 = __kof_t62);
-    kofListAdd(__kof_t63, "-");
-    (__kof_t64 = __kof_t63);
-    kofListAdd(__kof_t64, "-");
-    (__kof_t65 = __kof_t64);
-    kofListAdd(__kof_t65, "-");
+    kofListAdd(__kof_t63, "Editar | Excluir");
+    kofListAdd(__kof_t55, __kof_t63);
+    (__kof_t64 = __kof_t55);
+    (__kof_t65 = kofListNew());
+    kofListAdd(__kof_t65, "Trovão (Nelore)");
     (__kof_t66 = __kof_t65);
-    kofListAdd(__kof_t66, "-");
+    kofListAdd(__kof_t66, "BR-103");
     (__kof_t67 = __kof_t66);
-    kofListAdd(__kof_t67, "-");
-    kofListAdd(__kof_t61, __kof_t67);
-    tabelaRemedios = kofUiTableNew(__kof_t60, __kof_t61);
-    kofUiWidgetSetId(tabelaRemedios, "tabela-remedios");
-    (__kof_t68 = kofListNew());
-    kofListAdd(__kof_t68, "Doenca / Diagnostico");
+    kofListAdd(__kof_t67, "Nasc: 2023-01-10 · Reprodutor");
+    (__kof_t68 = __kof_t67);
+    kofListAdd(__kof_t68, "Pasto da Represa");
     (__kof_t69 = __kof_t68);
-    kofListAdd(__kof_t69, "Animal");
+    kofListAdd(__kof_t69, "Corte / Recria");
     (__kof_t70 = __kof_t69);
-    kofListAdd(__kof_t70, "Periodo de Tratamento");
+    kofListAdd(__kof_t70, "MACHO");
     (__kof_t71 = __kof_t70);
-    kofListAdd(__kof_t71, "Observacoes Veterinarias");
+    kofListAdd(__kof_t71, "Ativo");
     (__kof_t72 = __kof_t71);
-    kofListAdd(__kof_t72, "UUID");
+    kofListAdd(__kof_t72, "Editar | Excluir");
+    kofListAdd(__kof_t64, __kof_t72);
+    tabelaGados = kofUiTableNew(__kof_t45, __kof_t64);
+    kofUiWidgetSetId(tabelaGados, "tabela-gados");
     (__kof_t73 = kofListNew());
-    (__kof_t74 = kofListNew());
-    kofListAdd(__kof_t74, "Selecione um animal e consulte ou registre um tratamento");
+    kofListAdd(__kof_t73, "PRODUTO");
+    (__kof_t74 = __kof_t73);
+    kofListAdd(__kof_t74, "CÓDIGO");
     (__kof_t75 = __kof_t74);
-    kofListAdd(__kof_t75, "-");
+    kofListAdd(__kof_t75, "DESCRIÇÃO / VALIDADE");
     (__kof_t76 = __kof_t75);
-    kofListAdd(__kof_t76, "-");
+    kofListAdd(__kof_t76, "FORNECEDOR");
     (__kof_t77 = __kof_t76);
-    kofListAdd(__kof_t77, "-");
+    kofListAdd(__kof_t77, "CATEGORIA");
     (__kof_t78 = __kof_t77);
-    kofListAdd(__kof_t78, "-");
-    kofListAdd(__kof_t73, __kof_t78);
-    tabelaTratamentos = kofUiTableNew(__kof_t72, __kof_t73);
-    kofUiWidgetSetId(tabelaTratamentos, "tabela-tratamentos");
-    (__kof_t79 = kofListNew());
-    kofListAdd(__kof_t79, "Medicamento Aplicado");
+    kofListAdd(__kof_t78, "VALOR");
+    (__kof_t79 = __kof_t78);
+    kofListAdd(__kof_t79, "ESTOQUE TOTAL");
     (__kof_t80 = __kof_t79);
-    kofListAdd(__kof_t80, "Dosagem Administrada");
+    kofListAdd(__kof_t80, "STATUS");
     (__kof_t81 = __kof_t80);
-    kofListAdd(__kof_t81, "ID Vinculo");
+    kofListAdd(__kof_t81, "AÇÃO");
     (__kof_t82 = kofListNew());
     (__kof_t83 = kofListNew());
-    kofListAdd(__kof_t83, "Selecione um tratamento para ver as dosagens");
+    kofListAdd(__kof_t83, "Ivermectina 1% Ourofino");
     (__kof_t84 = __kof_t83);
-    kofListAdd(__kof_t84, "-");
+    kofListAdd(__kof_t84, "PRD-001");
     (__kof_t85 = __kof_t84);
-    kofListAdd(__kof_t85, "-");
-    kofListAdd(__kof_t82, __kof_t85);
-    tabelaReceituario = kofUiTableNew(__kof_t81, __kof_t82);
-    kofUiWidgetSetId(tabelaReceituario, "tabela-receituario");
-    inpPastoNome = kofUiInputNew("");
-    kofUiInputSetPlaceholder(inpPastoNome, "Ex: Piquete Santa Helena");
-    kofUiWidgetSetId(inpPastoNome, "inp-pasto-nome");
-    (__kof_t86 = kofListNew());
-    kofListAdd(__kof_t86, "Proprio (Fazenda)");
+    kofListAdd(__kof_t85, "Frasco 500mL · Validade: 31/12/2027");
+    (__kof_t86 = __kof_t85);
+    kofListAdd(__kof_t86, "Distribuidora Alfa");
     (__kof_t87 = __kof_t86);
-    kofListAdd(__kof_t87, "Arrendado (Terceiros)");
-    opcoesPosse = __kof_t87;
-    selPastoDono = kofUiSelectNew(opcoesPosse);
-    kofUiWidgetSetId(selPastoDono, "sel-pasto-dono");
-    inpPastoValor = kofUiInputNew("150");
-    kofUiInputSetPlaceholder(inpPastoValor, "Ex: 150");
-    kofUiWidgetSetId(inpPastoValor, "inp-pasto-valor");
-    inpPastoIdManual = kofUiInputNew("");
-    kofUiInputSetPlaceholder(inpPastoIdManual, "Opcional: UUID especifico (ou use o seletor acima)");
-    kofUiWidgetSetId(inpPastoIdManual, "inp-pasto-id");
-    btnCriarPasto = kofUiButtonNewAction("Cadastrar Novo Pasto", new Lambda0(inpPastoNome, selPastoDono, inpPastoValor, tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiPastosValor, kpiPastosSub, statusBanner));
-    kofUiWidgetSetClass(btnCriarPasto, "btn-primary");
-    kofUiWidgetSetId(btnCriarPasto, "btn-criar-pasto");
-    btnAtualizarPasto = kofUiButtonNewAction("Atualizar Pasto Selecionado", new Lambda1(inpPastoIdManual, selPastoEditar, inpPastoNome, selPastoDono, inpPastoValor, tabelaPastos, selGadoPasto, selFiltroPasto, kpiPastosValor, kpiPastosSub, statusBanner));
-    kofUiWidgetSetClass(btnAtualizarPasto, "btn-secondary");
-    kofUiWidgetSetId(btnAtualizarPasto, "btn-atualizar-pasto");
-    btnListarPastos = kofUiButtonNewAction("Recarregar Tabela de Pastos", new Lambda2(tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiPastosValor, kpiPastosSub, statusBanner));
-    kofUiWidgetSetClass(btnListarPastos, "btn-ghost");
-    kofUiWidgetSetId(btnListarPastos, "btn-listar-pastos");
-    (__kof_t88 = kofListNew());
-    kofListAdd(__kof_t88, campoInput("Nome do Pasto ou Piquete *", inpPastoNome));
+    kofListAdd(__kof_t87, "Injetavel (IM/SC)");
+    (__kof_t88 = __kof_t87);
+    kofListAdd(__kof_t88, "R$48,99");
     (__kof_t89 = __kof_t88);
-    (__kof_t90 = kofListNew());
-    kofListAdd(__kof_t90, campoSelect("Regime de Posse *", selPastoDono));
+    kofListAdd(__kof_t89, "48 unidades");
+    (__kof_t90 = __kof_t89);
+    kofListAdd(__kof_t90, "Ativo");
     (__kof_t91 = __kof_t90);
-    kofListAdd(__kof_t91, campoInput("Custo Mensal por Cabeca (R$) *", inpPastoValor));
-    kofListAdd(__kof_t89, kofUiRowNew(__kof_t91));
-    (__kof_t92 = __kof_t89);
-    kofListAdd(__kof_t92, kofUiHrNew());
-    (__kof_t93 = __kof_t92);
-    kofListAdd(__kof_t93, campoSelect("Pasto Selecionado para Edicao", selPastoEditar));
+    kofListAdd(__kof_t91, "Editar | Excluir");
+    kofListAdd(__kof_t82, __kof_t91);
+    (__kof_t92 = __kof_t82);
+    (__kof_t93 = kofListNew());
+    kofListAdd(__kof_t93, "Vacina Febre Aftosa");
     (__kof_t94 = __kof_t93);
-    kofListAdd(__kof_t94, campoInput("UUID Manual (opcional)", inpPastoIdManual));
+    kofListAdd(__kof_t94, "PRD-002");
     (__kof_t95 = __kof_t94);
-    (__kof_t96 = kofListNew());
-    kofListAdd(__kof_t96, btnCriarPasto);
+    kofListAdd(__kof_t95, "Frasco 50 doses · Validade: 01/08/2027");
+    (__kof_t96 = __kof_t95);
+    kofListAdd(__kof_t96, "Distribuidora Alfa");
     (__kof_t97 = __kof_t96);
-    kofListAdd(__kof_t97, btnAtualizarPasto);
+    kofListAdd(__kof_t97, "Injetavel (IM/SC)");
     (__kof_t98 = __kof_t97);
-    kofListAdd(__kof_t98, btnListarPastos);
-    kofListAdd(__kof_t95, kofUiRowNew(__kof_t98));
-    formPastos = kofUiFieldsetNewLegend(__kof_t95, "Cadastro e Edicao de Pastos (RF02)");
-    kofUiWidgetSetClass(formPastos, "panel-card form-card");
-    (__kof_t99 = kofListNew());
-    kofListAdd(__kof_t99, tabelaPastos);
-    cardTabelaPastos = kofUiFieldsetNewLegend(__kof_t99, "Pastos e Piquetes Cadastrados na Fazenda");
-    kofUiWidgetSetClass(cardTabelaPastos, "panel-card table-card");
-    (__kof_t100 = kofListNew());
-    kofListAdd(__kof_t100, formPastos);
+    kofListAdd(__kof_t98, "R$89,90");
+    (__kof_t99 = __kof_t98);
+    kofListAdd(__kof_t99, "5 unidades");
+    (__kof_t100 = __kof_t99);
+    kofListAdd(__kof_t100, "Inativo");
     (__kof_t101 = __kof_t100);
-    kofListAdd(__kof_t101, cardTabelaPastos);
-    painelPastos = kofUiRowNew(__kof_t101);
-    kofUiWidgetSetClass(painelPastos, "tab-panel");
-    kofUiWidgetSetId(painelPastos, "panel-pastos");
+    kofListAdd(__kof_t101, "Editar | Excluir");
+    kofListAdd(__kof_t92, __kof_t101);
+    (__kof_t102 = __kof_t92);
+    (__kof_t103 = kofListNew());
+    kofListAdd(__kof_t103, "Spray Cicatrizante Prata");
+    (__kof_t104 = __kof_t103);
+    kofListAdd(__kof_t104, "PRD-003");
+    (__kof_t105 = __kof_t104);
+    kofListAdd(__kof_t105, "Aerossol 500mL · Validade: 10/02/2028");
+    (__kof_t106 = __kof_t105);
+    kofListAdd(__kof_t106, "Distribuidora Alfa");
+    (__kof_t107 = __kof_t106);
+    kofListAdd(__kof_t107, "Topico / Cicatrizante");
+    (__kof_t108 = __kof_t107);
+    kofListAdd(__kof_t108, "R$32,00");
+    (__kof_t109 = __kof_t108);
+    kofListAdd(__kof_t109, "12 unidades");
+    (__kof_t110 = __kof_t109);
+    kofListAdd(__kof_t110, "Ativo");
+    (__kof_t111 = __kof_t110);
+    kofListAdd(__kof_t111, "Editar | Excluir");
+    kofListAdd(__kof_t102, __kof_t111);
+    (__kof_t112 = __kof_t102);
+    (__kof_t113 = kofListNew());
+    kofListAdd(__kof_t113, "Soro Fisiológico Ringer");
+    (__kof_t114 = __kof_t113);
+    kofListAdd(__kof_t114, "PRD-004");
+    (__kof_t115 = __kof_t114);
+    kofListAdd(__kof_t115, "Bolsa 1000mL · Validade: 05/03/2028");
+    (__kof_t116 = __kof_t115);
+    kofListAdd(__kof_t116, "Distribuidora Alfa");
+    (__kof_t117 = __kof_t116);
+    kofListAdd(__kof_t117, "Hidratacao (IV)");
+    (__kof_t118 = __kof_t117);
+    kofListAdd(__kof_t118, "R$24,50");
+    (__kof_t119 = __kof_t118);
+    kofListAdd(__kof_t119, "32 unidades");
+    (__kof_t120 = __kof_t119);
+    kofListAdd(__kof_t120, "Ativo");
+    (__kof_t121 = __kof_t120);
+    kofListAdd(__kof_t121, "Editar | Excluir");
+    kofListAdd(__kof_t112, __kof_t121);
+    tabelaRemedios = kofUiTableNew(__kof_t81, __kof_t112);
+    kofUiWidgetSetId(tabelaRemedios, "tabela-remedios");
+    (__kof_t122 = kofListNew());
+    kofListAdd(__kof_t122, "PASTO / PIQUETE");
+    (__kof_t123 = __kof_t122);
+    kofListAdd(__kof_t123, "CÓDIGO");
+    (__kof_t124 = __kof_t123);
+    kofListAdd(__kof_t124, "DESCRIÇÃO");
+    (__kof_t125 = __kof_t124);
+    kofListAdd(__kof_t125, "FORNECEDOR / POSSE");
+    (__kof_t126 = __kof_t125);
+    kofListAdd(__kof_t126, "REGIME");
+    (__kof_t127 = __kof_t126);
+    kofListAdd(__kof_t127, "VALOR / CAB.");
+    (__kof_t128 = __kof_t127);
+    kofListAdd(__kof_t128, "STATUS");
+    (__kof_t129 = __kof_t128);
+    kofListAdd(__kof_t129, "AÇÃO");
+    (__kof_t130 = kofListNew());
+    (__kof_t131 = kofListNew());
+    kofListAdd(__kof_t131, "Piquete Santa Helena");
+    (__kof_t132 = __kof_t131);
+    kofListAdd(__kof_t132, "PST-001");
+    (__kof_t133 = __kof_t132);
+    kofListAdd(__kof_t133, "Area de pastagem / manejo rotacionado");
+    (__kof_t134 = __kof_t133);
+    kofListAdd(__kof_t134, "Fazenda Propria");
+    (__kof_t135 = __kof_t134);
+    kofListAdd(__kof_t135, "Ativo (Proprio)");
+    (__kof_t136 = __kof_t135);
+    kofListAdd(__kof_t136, "R$140,00");
+    (__kof_t137 = __kof_t136);
+    kofListAdd(__kof_t137, "Ativo");
+    (__kof_t138 = __kof_t137);
+    kofListAdd(__kof_t138, "Editar | Excluir");
+    kofListAdd(__kof_t130, __kof_t138);
+    (__kof_t139 = __kof_t130);
+    (__kof_t140 = kofListNew());
+    kofListAdd(__kof_t140, "Pasto da Represa");
+    (__kof_t141 = __kof_t140);
+    kofListAdd(__kof_t141, "PST-002");
+    (__kof_t142 = __kof_t141);
+    kofListAdd(__kof_t142, "Area de pastagem / manejo rotacionado");
+    (__kof_t143 = __kof_t142);
+    kofListAdd(__kof_t143, "Arrendamento Externo");
+    (__kof_t144 = __kof_t143);
+    kofListAdd(__kof_t144, "Arrendado");
+    (__kof_t145 = __kof_t144);
+    kofListAdd(__kof_t145, "R$185,00");
+    (__kof_t146 = __kof_t145);
+    kofListAdd(__kof_t146, "Atenção");
+    (__kof_t147 = __kof_t146);
+    kofListAdd(__kof_t147, "Editar | Excluir");
+    kofListAdd(__kof_t139, __kof_t147);
+    tabelaPastos = kofUiTableNew(__kof_t129, __kof_t139);
+    kofUiWidgetSetId(tabelaPastos, "tabela-pastos");
+    (__kof_t148 = kofListNew());
+    kofListAdd(__kof_t148, "DATA/HORA");
+    (__kof_t149 = __kof_t148);
+    kofListAdd(__kof_t149, "TIPO");
+    (__kof_t150 = __kof_t149);
+    kofListAdd(__kof_t150, "PRODUTO / ANIMAL");
+    (__kof_t151 = __kof_t150);
+    kofListAdd(__kof_t151, "QUANTIDADE");
+    (__kof_t152 = __kof_t151);
+    kofListAdd(__kof_t152, "ESTOQUE ATUAL");
+    (__kof_t153 = __kof_t152);
+    kofListAdd(__kof_t153, "RESPONSÁVEL");
+    (__kof_t154 = __kof_t153);
+    kofListAdd(__kof_t154, "MOTIVO");
+    (__kof_t155 = __kof_t154);
+    kofListAdd(__kof_t155, "AÇÕES");
+    (__kof_t156 = kofListNew());
+    (__kof_t157 = kofListNew());
+    kofListAdd(__kof_t157, "29/04/2025 15:57");
+    (__kof_t158 = __kof_t157);
+    kofListAdd(__kof_t158, "Entrada");
+    (__kof_t159 = __kof_t158);
+    kofListAdd(__kof_t159, "Ivermectina 1% Ourofino");
+    (__kof_t160 = __kof_t159);
+    kofListAdd(__kof_t160, "+10");
+    (__kof_t161 = __kof_t160);
+    kofListAdd(__kof_t161, "547");
+    (__kof_t162 = __kof_t161);
+    kofListAdd(__kof_t162, "Juliana Albuquerque");
+    (__kof_t163 = __kof_t162);
+    kofListAdd(__kof_t163, "Compra");
+    (__kof_t164 = __kof_t163);
+    kofListAdd(__kof_t164, "Ver | Excluir");
+    kofListAdd(__kof_t156, __kof_t164);
+    (__kof_t165 = __kof_t156);
+    (__kof_t166 = kofListNew());
+    kofListAdd(__kof_t166, "29/04/2025 15:57");
+    (__kof_t167 = __kof_t166);
+    kofListAdd(__kof_t167, "Saída");
+    (__kof_t168 = __kof_t167);
+    kofListAdd(__kof_t168, "Mimosa [BR-101]");
+    (__kof_t169 = __kof_t168);
+    kofListAdd(__kof_t169, "-10");
+    (__kof_t170 = __kof_t169);
+    kofListAdd(__kof_t170, "547");
+    (__kof_t171 = __kof_t170);
+    kofListAdd(__kof_t171, "Juliana Albuquerque");
+    (__kof_t172 = __kof_t171);
+    kofListAdd(__kof_t172, "Aplicacao Sanitaria");
+    (__kof_t173 = __kof_t172);
+    kofListAdd(__kof_t173, "Ver | Excluir");
+    kofListAdd(__kof_t165, __kof_t173);
+    (__kof_t174 = __kof_t165);
+    (__kof_t175 = kofListNew());
+    kofListAdd(__kof_t175, "29/04/2025 15:57");
+    (__kof_t176 = __kof_t175);
+    kofListAdd(__kof_t176, "Ajuste");
+    (__kof_t177 = __kof_t176);
+    kofListAdd(__kof_t177, "Spray Cicatrizante Prata");
+    (__kof_t178 = __kof_t177);
+    kofListAdd(__kof_t178, "10");
+    (__kof_t179 = __kof_t178);
+    kofListAdd(__kof_t179, "547");
+    (__kof_t180 = __kof_t179);
+    kofListAdd(__kof_t180, "Juliana Albuquerque");
+    (__kof_t181 = __kof_t180);
+    kofListAdd(__kof_t181, "Inventario");
+    (__kof_t182 = __kof_t181);
+    kofListAdd(__kof_t182, "Ver | Excluir");
+    kofListAdd(__kof_t174, __kof_t182);
+    tabelaTratamentos = kofUiTableNew(__kof_t155, __kof_t174);
+    kofUiWidgetSetId(tabelaTratamentos, "tabela-tratamentos");
+    (__kof_t183 = kofListNew());
+    kofListAdd(__kof_t183, "MEDICAMENTO VINCULADO");
+    (__kof_t184 = __kof_t183);
+    kofListAdd(__kof_t184, "DOSAGEM APLICADA");
+    (__kof_t185 = __kof_t184);
+    kofListAdd(__kof_t185, "PROTOCOLO UUID");
+    (__kof_t186 = kofListNew());
+    (__kof_t187 = kofListNew());
+    kofListAdd(__kof_t187, "Ivermectina 1% Ourofino");
+    (__kof_t188 = __kof_t187);
+    kofListAdd(__kof_t188, "10.0 mL / dose");
+    (__kof_t189 = __kof_t188);
+    kofListAdd(__kof_t189, "PROT-KOF-001");
+    kofListAdd(__kof_t186, __kof_t189);
+    tabelaReceituario = kofUiTableNew(__kof_t185, __kof_t186);
+    kofUiWidgetSetId(tabelaReceituario, "tabela-receituario");
+    statusBanner = kofUiLabelNew("Estocaê · AgroKOF ativo — Modulos: 1. Pastos & Piquetes | 2. Rebanho & Filtro | 3. Farmacia & Estoque | 4. Tratamentos Sanitarios | 5. Conta OAuth2");
+    kofUiWidgetSetClass(statusBanner, "status-banner");
+    kofUiWidgetSetId(statusBanner, "status-banner");
+    dKpi1Lbl = kofUiLabelNew("Total de Produtos / Rebanho");
+    kofUiWidgetSetClass(dKpi1Lbl, "kpi-title");
+    dKpi1Trend = kofUiLabelNew("↑ 12.5% vs último mês");
+    kofUiWidgetSetClass(dKpi1Trend, "kpi-trend up");
+    (__kof_t190 = kofListNew());
+    kofListAdd(__kof_t190, dKpi1Lbl);
+    (__kof_t191 = __kof_t190);
+    kofListAdd(__kof_t191, kpiDashProdutos);
+    (__kof_t192 = __kof_t191);
+    kofListAdd(__kof_t192, dKpi1Trend);
+    dKpi1Left = kofUiColumnNew(__kof_t192);
+    kofUiWidgetSetClass(dKpi1Left, "kpi-left");
+    dKpi1Icon = kofUiIconNewSize("star", 20);
+    (__kof_t193 = kofListNew());
+    kofListAdd(__kof_t193, dKpi1Icon);
+    dKpi1Badge = kofUiColumnNew(__kof_t193);
+    kofUiWidgetSetClass(dKpi1Badge, "kpi-icon-circle blue");
+    (__kof_t194 = kofListNew());
+    kofListAdd(__kof_t194, dKpi1Left);
+    (__kof_t195 = __kof_t194);
+    kofListAdd(__kof_t195, dKpi1Badge);
+    dCard1 = kofUiRowNew(__kof_t195);
+    kofUiWidgetSetClass(dCard1, "estocae-kpi-card");
+    dKpi2Lbl = kofUiLabelNew("Estoque Baixo");
+    kofUiWidgetSetClass(dKpi2Lbl, "kpi-title");
+    dKpi2Trend = kofUiLabelNew("↑ 5% vs último mês");
+    kofUiWidgetSetClass(dKpi2Trend, "kpi-trend down");
+    (__kof_t196 = kofListNew());
+    kofListAdd(__kof_t196, dKpi2Lbl);
+    (__kof_t197 = __kof_t196);
+    kofListAdd(__kof_t197, kpiDashBaixo);
+    (__kof_t198 = __kof_t197);
+    kofListAdd(__kof_t198, dKpi2Trend);
+    dKpi2Left = kofUiColumnNew(__kof_t198);
+    kofUiWidgetSetClass(dKpi2Left, "kpi-left");
+    dKpi2Icon = kofUiIconNewSize("close", 20);
+    (__kof_t199 = kofListNew());
+    kofListAdd(__kof_t199, dKpi2Icon);
+    dKpi2Badge = kofUiColumnNew(__kof_t199);
+    kofUiWidgetSetClass(dKpi2Badge, "kpi-icon-circle red");
+    (__kof_t200 = kofListNew());
+    kofListAdd(__kof_t200, dKpi2Left);
+    (__kof_t201 = __kof_t200);
+    kofListAdd(__kof_t201, dKpi2Badge);
+    dCard2 = kofUiRowNew(__kof_t201);
+    kofUiWidgetSetClass(dCard2, "estocae-kpi-card");
+    dKpi3Lbl = kofUiLabelNew("Valor Total");
+    kofUiWidgetSetClass(dKpi3Lbl, "kpi-title");
+    dKpi3Trend = kofUiLabelNew("↑ 8.5% vs último mês");
+    kofUiWidgetSetClass(dKpi3Trend, "kpi-trend up");
+    (__kof_t202 = kofListNew());
+    kofListAdd(__kof_t202, dKpi3Lbl);
+    (__kof_t203 = __kof_t202);
+    kofListAdd(__kof_t203, kpiDashValor);
+    (__kof_t204 = __kof_t203);
+    kofListAdd(__kof_t204, dKpi3Trend);
+    dKpi3Left = kofUiColumnNew(__kof_t204);
+    kofUiWidgetSetClass(dKpi3Left, "kpi-left");
+    dKpi3Sym = kofUiLabelNew("$");
+    kofUiWidgetSetClass(dKpi3Sym, "kpi-currency-sym");
+    (__kof_t205 = kofListNew());
+    kofListAdd(__kof_t205, dKpi3Sym);
+    dKpi3Badge = kofUiColumnNew(__kof_t205);
+    kofUiWidgetSetClass(dKpi3Badge, "kpi-icon-circle green");
+    (__kof_t206 = kofListNew());
+    kofListAdd(__kof_t206, dKpi3Left);
+    (__kof_t207 = __kof_t206);
+    kofListAdd(__kof_t207, dKpi3Badge);
+    dCard3 = kofUiRowNew(__kof_t207);
+    kofUiWidgetSetClass(dCard3, "estocae-kpi-card");
+    dKpi4Lbl = kofUiLabelNew("Fornecedores & Pastos");
+    kofUiWidgetSetClass(dKpi4Lbl, "kpi-title");
+    dKpi4Trend = kofUiLabelNew("↑ 12 novos este mês");
+    kofUiWidgetSetClass(dKpi4Trend, "kpi-trend up");
+    (__kof_t208 = kofListNew());
+    kofListAdd(__kof_t208, dKpi4Lbl);
+    (__kof_t209 = __kof_t208);
+    kofListAdd(__kof_t209, kpiDashPastos);
+    (__kof_t210 = __kof_t209);
+    kofListAdd(__kof_t210, dKpi4Trend);
+    dKpi4Left = kofUiColumnNew(__kof_t210);
+    kofUiWidgetSetClass(dKpi4Left, "kpi-left");
+    dKpi4Icon = kofUiIconNewSize("user", 20);
+    (__kof_t211 = kofListNew());
+    kofListAdd(__kof_t211, dKpi4Icon);
+    dKpi4Badge = kofUiColumnNew(__kof_t211);
+    kofUiWidgetSetClass(dKpi4Badge, "kpi-icon-circle purple");
+    (__kof_t212 = kofListNew());
+    kofListAdd(__kof_t212, dKpi4Left);
+    (__kof_t213 = __kof_t212);
+    kofListAdd(__kof_t213, dKpi4Badge);
+    dCard4 = kofUiRowNew(__kof_t213);
+    kofUiWidgetSetClass(dCard4, "estocae-kpi-card");
+    (__kof_t214 = kofListNew());
+    kofListAdd(__kof_t214, dCard1);
+    (__kof_t215 = __kof_t214);
+    kofListAdd(__kof_t215, dCard2);
+    (__kof_t216 = __kof_t215);
+    kofListAdd(__kof_t216, dCard3);
+    (__kof_t217 = __kof_t216);
+    kofListAdd(__kof_t217, dCard4);
+    dashKpiRow = kofUiRowNew(__kof_t217);
+    kofUiWidgetSetClass(dashKpiRow, "kpi-grid");
+    canvasLinha = kofUiCanvasNew(660, 220);
+    desenharGraficoLinha(canvasLinha, 0);
+    lblChartTitle = kofUiLabelNew("Controle de Estoque");
+    kofUiWidgetSetClass(lblChartTitle, "card-section-title");
+    btnPerMes = kofUiButtonNewAction("Mês", new Lambda9());
+    btnPerSem = kofUiButtonNewAction("Semana", new Lambda10());
+    btnPerDia = kofUiButtonNewAction("Dia", new Lambda11());
+    kofUiWidgetSetClass(btnPerMes, "period-pill active");
+    kofUiWidgetSetClass(btnPerSem, "period-pill");
+    kofUiWidgetSetClass(btnPerDia, "period-pill");
+    kofUiWidgetOn(btnPerMes, "click", new Lambda12(btnPerMes, btnPerSem, btnPerDia, canvasLinha));
+    kofUiWidgetOn(btnPerSem, "click", new Lambda13(btnPerMes, btnPerSem, btnPerDia, canvasLinha));
+    kofUiWidgetOn(btnPerDia, "click", new Lambda14(btnPerMes, btnPerSem, btnPerDia, canvasLinha));
+    (__kof_t218 = kofListNew());
+    kofListAdd(__kof_t218, btnPerMes);
+    (__kof_t219 = __kof_t218);
+    kofListAdd(__kof_t219, btnPerSem);
+    (__kof_t220 = __kof_t219);
+    kofListAdd(__kof_t220, btnPerDia);
+    periodGroup = kofUiRowNew(__kof_t220);
+    kofUiWidgetSetClass(periodGroup, "period-pills-row");
+    (__kof_t221 = kofListNew());
+    kofListAdd(__kof_t221, lblChartTitle);
+    (__kof_t222 = __kof_t221);
+    kofListAdd(__kof_t222, periodGroup);
+    chartHeaderRow = kofUiRowNew(__kof_t222);
+    kofUiWidgetSetClass(chartHeaderRow, "card-header-between");
+    legBlue = kofUiLabelNew("○ Quant. Atual de Estoque");
+    kofUiWidgetSetClass(legBlue, "chart-legend-item blue");
+    legGreen = kofUiLabelNew("○ Estoque Ideal");
+    kofUiWidgetSetClass(legGreen, "chart-legend-item green");
+    (__kof_t223 = kofListNew());
+    kofListAdd(__kof_t223, legBlue);
+    (__kof_t224 = __kof_t223);
+    kofListAdd(__kof_t224, legGreen);
+    chartLegendRow = kofUiRowNew(__kof_t224);
+    kofUiWidgetSetClass(chartLegendRow, "chart-legend-row");
+    (__kof_t225 = kofListNew());
+    kofListAdd(__kof_t225, chartHeaderRow);
+    (__kof_t226 = __kof_t225);
+    kofListAdd(__kof_t226, chartLegendRow);
+    (__kof_t227 = __kof_t226);
+    kofListAdd(__kof_t227, canvasLinha);
+    cardControleEstoque = kofUiColumnNew(__kof_t227);
+    kofUiWidgetSetClass(cardControleEstoque, "estocae-card chart-main-card");
+    lblDonutTitle = kofUiLabelNew("Categorias");
+    kofUiWidgetSetClass(lblDonutTitle, "card-section-title");
+    canvasDonut = kofUiCanvasNew(220, 190);
+    desenharGraficoDonut(canvasDonut);
+    catLeg1 = kofUiLabelNew("● Bovinos Leite (40%)");
+    kofUiWidgetSetClass(catLeg1, "donut-leg purple");
+    catLeg2 = kofUiLabelNew("● Injetáveis (40%)");
+    kofUiWidgetSetClass(catLeg2, "donut-leg green");
+    catLeg3 = kofUiLabelNew("● Tópico / Cura (20%)");
+    kofUiWidgetSetClass(catLeg3, "donut-leg orange");
+    catLeg4 = kofUiLabelNew("● Pastos / Manejo (20%)");
+    kofUiWidgetSetClass(catLeg4, "donut-leg blue");
+    (__kof_t228 = kofListNew());
+    kofListAdd(__kof_t228, catLeg1);
+    (__kof_t229 = __kof_t228);
+    kofListAdd(__kof_t229, catLeg2);
+    donutLegRow1 = kofUiRowNew(__kof_t229);
+    kofUiWidgetSetClass(donutLegRow1, "donut-leg-row");
+    (__kof_t230 = kofListNew());
+    kofListAdd(__kof_t230, catLeg3);
+    (__kof_t231 = __kof_t230);
+    kofListAdd(__kof_t231, catLeg4);
+    donutLegRow2 = kofUiRowNew(__kof_t231);
+    kofUiWidgetSetClass(donutLegRow2, "donut-leg-row");
+    (__kof_t232 = kofListNew());
+    kofListAdd(__kof_t232, lblDonutTitle);
+    (__kof_t233 = __kof_t232);
+    kofListAdd(__kof_t233, canvasDonut);
+    (__kof_t234 = __kof_t233);
+    kofListAdd(__kof_t234, donutLegRow1);
+    (__kof_t235 = __kof_t234);
+    kofListAdd(__kof_t235, donutLegRow2);
+    cardCategorias = kofUiColumnNew(__kof_t235);
+    kofUiWidgetSetClass(cardCategorias, "estocae-card chart-side-card");
+    (__kof_t236 = kofListNew());
+    kofListAdd(__kof_t236, cardControleEstoque);
+    (__kof_t237 = __kof_t236);
+    kofListAdd(__kof_t237, cardCategorias);
+    dashChartsRow = kofUiRowNew(__kof_t237);
+    kofUiWidgetSetClass(dashChartsRow, "dash-charts-grid");
+    lblAtivTitle = kofUiLabelNew("Atividades recentes");
+    kofUiWidgetSetClass(lblAtivTitle, "card-section-title");
+    (__kof_t238 = kofListNew());
+    kofListAdd(__kof_t238, kofUiIconNewSize("user", 16));
+    act1Icon = kofUiColumnNew(__kof_t238);
+    kofUiWidgetSetClass(act1Icon, "activity-avatar blue");
+    act1T = kofUiLabelNew("Novo fornecedor / pasto");
+    kofUiWidgetSetClass(act1T, "activity-title");
+    act1S = kofUiLabelNew("Piquete Santa Helena - 2 horas atrás");
+    kofUiWidgetSetClass(act1S, "activity-sub");
+    (__kof_t239 = kofListNew());
+    kofListAdd(__kof_t239, act1T);
+    (__kof_t240 = __kof_t239);
+    kofListAdd(__kof_t240, act1S);
+    act1Txt = kofUiColumnNew(__kof_t240);
+    kofUiWidgetSetClass(act1Txt, "activity-text");
+    (__kof_t241 = kofListNew());
+    kofListAdd(__kof_t241, act1Icon);
+    (__kof_t242 = __kof_t241);
+    kofListAdd(__kof_t242, act1Txt);
+    actRow1 = kofUiRowNew(__kof_t242);
+    kofUiWidgetSetClass(actRow1, "activity-item");
+    (__kof_t243 = kofListNew());
+    kofListAdd(__kof_t243, kofUiIconNewSize("check", 16));
+    act2Icon = kofUiColumnNew(__kof_t243);
+    kofUiWidgetSetClass(act2Icon, "activity-avatar green");
+    act2T = kofUiLabelNew("Compra realizada");
+    kofUiWidgetSetClass(act2T, "activity-title");
+    act2S = kofUiLabelNew("Lote #456 Ivermectina - 4 horas atrás");
+    kofUiWidgetSetClass(act2S, "activity-sub");
+    (__kof_t244 = kofListNew());
+    kofListAdd(__kof_t244, act2T);
+    (__kof_t245 = __kof_t244);
+    kofListAdd(__kof_t245, act2S);
+    act2Txt = kofUiColumnNew(__kof_t245);
+    kofUiWidgetSetClass(act2Txt, "activity-text");
+    (__kof_t246 = kofListNew());
+    kofListAdd(__kof_t246, act2Icon);
+    (__kof_t247 = __kof_t246);
+    kofListAdd(__kof_t247, act2Txt);
+    actRow2 = kofUiRowNew(__kof_t247);
+    kofUiWidgetSetClass(actRow2, "activity-item");
+    (__kof_t248 = kofListNew());
+    kofListAdd(__kof_t248, kofUiIconNewSize("mail", 16));
+    act3Icon = kofUiColumnNew(__kof_t248);
+    kofUiWidgetSetClass(act3Icon, "activity-avatar purple");
+    act3T = kofUiLabelNew("Novo tratamento registrado");
+    kofUiWidgetSetClass(act3T, "activity-title");
+    act3S = kofUiLabelNew("Animal Mimosa [BR-101] - 6 horas atrás");
+    kofUiWidgetSetClass(act3S, "activity-sub");
+    (__kof_t249 = kofListNew());
+    kofListAdd(__kof_t249, act3T);
+    (__kof_t250 = __kof_t249);
+    kofListAdd(__kof_t250, act3S);
+    act3Txt = kofUiColumnNew(__kof_t250);
+    kofUiWidgetSetClass(act3Txt, "activity-text");
+    (__kof_t251 = kofListNew());
+    kofListAdd(__kof_t251, act3Icon);
+    (__kof_t252 = __kof_t251);
+    kofListAdd(__kof_t252, act3Txt);
+    actRow3 = kofUiRowNew(__kof_t252);
+    kofUiWidgetSetClass(actRow3, "activity-item");
+    (__kof_t253 = kofListNew());
+    kofListAdd(__kof_t253, kofUiIconNewSize("clock", 16));
+    act4Icon = kofUiColumnNew(__kof_t253);
+    kofUiWidgetSetClass(act4Icon, "activity-avatar orange");
+    act4T = kofUiLabelNew("Atualização do sistema");
+    kofUiWidgetSetClass(act4T, "activity-title");
+    act4S = kofUiLabelNew("Versão 2.3.5 KOF - 1 dia atrás");
+    kofUiWidgetSetClass(act4S, "activity-sub");
+    (__kof_t254 = kofListNew());
+    kofListAdd(__kof_t254, act4T);
+    (__kof_t255 = __kof_t254);
+    kofListAdd(__kof_t255, act4S);
+    act4Txt = kofUiColumnNew(__kof_t255);
+    kofUiWidgetSetClass(act4Txt, "activity-text");
+    (__kof_t256 = kofListNew());
+    kofListAdd(__kof_t256, act4Icon);
+    (__kof_t257 = __kof_t256);
+    kofListAdd(__kof_t257, act4Txt);
+    actRow4 = kofUiRowNew(__kof_t257);
+    kofUiWidgetSetClass(actRow4, "activity-item");
+    (__kof_t258 = kofListNew());
+    kofListAdd(__kof_t258, lblAtivTitle);
+    (__kof_t259 = __kof_t258);
+    kofListAdd(__kof_t259, actRow1);
+    (__kof_t260 = __kof_t259);
+    kofListAdd(__kof_t260, actRow2);
+    (__kof_t261 = __kof_t260);
+    kofListAdd(__kof_t261, actRow3);
+    (__kof_t262 = __kof_t261);
+    kofListAdd(__kof_t262, actRow4);
+    cardAtividades = kofUiColumnNew(__kof_t262);
+    kofUiWidgetSetClass(cardAtividades, "estocae-card activities-card");
+    lblStatusEstoqueTitle = kofUiLabelNew("Status do Estoque");
+    kofUiWidgetSetClass(lblStatusEstoqueTitle, "card-section-title");
+    btnVerTodosEstoque = kofUiButtonNewAction("Ver todos", new Lambda15());
+    kofUiWidgetSetClass(btnVerTodosEstoque, "link-btn-blue");
+    (__kof_t263 = kofListNew());
+    kofListAdd(__kof_t263, lblStatusEstoqueTitle);
+    (__kof_t264 = __kof_t263);
+    kofListAdd(__kof_t264, btnVerTodosEstoque);
+    headerStatusEstoque = kofUiRowNew(__kof_t264);
+    kofUiWidgetSetClass(headerStatusEstoque, "card-header-between");
+    (__kof_t265 = kofListNew());
+    kofListAdd(__kof_t265, headerStatusEstoque);
+    (__kof_t266 = __kof_t265);
+    kofListAdd(__kof_t266, tabelaDashboardEstoque);
+    cardStatusEstoque = kofUiColumnNew(__kof_t266);
+    kofUiWidgetSetClass(cardStatusEstoque, "estocae-card status-table-card");
+    (__kof_t267 = kofListNew());
+    kofListAdd(__kof_t267, cardAtividades);
+    (__kof_t268 = __kof_t267);
+    kofListAdd(__kof_t268, cardStatusEstoque);
+    dashBottomRow = kofUiRowNew(__kof_t268);
+    kofUiWidgetSetClass(dashBottomRow, "dash-bottom-grid");
+    (__kof_t269 = kofListNew());
+    kofListAdd(__kof_t269, dashKpiRow);
+    (__kof_t270 = __kof_t269);
+    kofListAdd(__kof_t270, dashChartsRow);
+    (__kof_t271 = __kof_t270);
+    kofListAdd(__kof_t271, dashBottomRow);
+    painelDashboard = kofUiColumnNew(__kof_t271);
+    kofUiWidgetSetClass(painelDashboard, "view-screen");
+    kofUiWidgetSetId(painelDashboard, "panel-dashboard");
+    (__kof_t272 = kofListNew());
+    (__kof_t273 = kofListNew());
+    kofListAdd(__kof_t273, kofUiLabelNew("Total de Animais"));
+    (__kof_t274 = __kof_t273);
+    kofListAdd(__kof_t274, kpiGadoTotal);
+    kofListAdd(__kof_t272, kofUiColumnNew(__kof_t274));
+    (__kof_t275 = __kof_t272);
+    (__kof_t276 = kofListNew());
+    kofListAdd(__kof_t276, kofUiIconNewSize("star", 20));
+    kofListAdd(__kof_t275, kofUiColumnNew(__kof_t276));
+    gK1 = kofUiRowNew(__kof_t275);
+    kofUiWidgetSetClass(gK1, "estocae-kpi-card compact-kpi blue-kpi");
+    (__kof_t277 = kofListNew());
+    (__kof_t278 = kofListNew());
+    kofListAdd(__kof_t278, kofUiLabelNew("Animais Saudáveis"));
+    (__kof_t279 = __kof_t278);
+    kofListAdd(__kof_t279, kpiGadoAtivos);
+    kofListAdd(__kof_t277, kofUiColumnNew(__kof_t279));
+    (__kof_t280 = __kof_t277);
+    (__kof_t281 = kofListNew());
+    kofListAdd(__kof_t281, kofUiIconNewSize("check", 20));
+    kofListAdd(__kof_t280, kofUiColumnNew(__kof_t281));
+    gK2 = kofUiRowNew(__kof_t280);
+    kofUiWidgetSetClass(gK2, "estocae-kpi-card compact-kpi green-kpi");
+    (__kof_t282 = kofListNew());
+    (__kof_t283 = kofListNew());
+    kofListAdd(__kof_t283, kofUiLabelNew("Animais Doentes / Baixa"));
+    (__kof_t284 = __kof_t283);
+    kofListAdd(__kof_t284, kpiGadoInativos);
+    kofListAdd(__kof_t282, kofUiColumnNew(__kof_t284));
+    (__kof_t285 = __kof_t282);
+    (__kof_t286 = kofListNew());
+    kofListAdd(__kof_t286, kofUiIconNewSize("close", 20));
+    kofListAdd(__kof_t285, kofUiColumnNew(__kof_t286));
+    gK3 = kofUiRowNew(__kof_t285);
+    kofUiWidgetSetClass(gK3, "estocae-kpi-card compact-kpi red-kpi");
+    (__kof_t287 = kofListNew());
+    (__kof_t288 = kofListNew());
+    kofListAdd(__kof_t288, kofUiLabelNew("Em Recuperação"));
+    (__kof_t289 = __kof_t288);
+    kofListAdd(__kof_t289, kpiGadoAlerta);
+    kofListAdd(__kof_t287, kofUiColumnNew(__kof_t289));
+    (__kof_t290 = __kof_t287);
+    (__kof_t291 = kofListNew());
+    kofListAdd(__kof_t291, kofUiIconNewSize("clock", 20));
+    kofListAdd(__kof_t290, kofUiColumnNew(__kof_t291));
+    gK4 = kofUiRowNew(__kof_t290);
+    kofUiWidgetSetClass(gK4, "estocae-kpi-card compact-kpi amber-kpi");
+    (__kof_t292 = kofListNew());
+    kofListAdd(__kof_t292, gK1);
+    (__kof_t293 = __kof_t292);
+    kofListAdd(__kof_t293, gK2);
+    (__kof_t294 = __kof_t293);
+    kofListAdd(__kof_t294, gK3);
+    (__kof_t295 = __kof_t294);
+    kofListAdd(__kof_t295, gK4);
+    gadoKpiRow = kofUiRowNew(__kof_t295);
+    kofUiWidgetSetClass(gadoKpiRow, "kpi-grid");
     inpGadoNome = kofUiInputNew("");
     kofUiInputSetPlaceholder(inpGadoNome, "Ex: Mimosa");
     kofUiWidgetSetId(inpGadoNome, "inp-gado-nome");
@@ -3165,129 +5732,199 @@ function main() {
     inpGadoNasc = kofUiInputNew("2024-03-15");
     kofUiInputSetPlaceholder(inpGadoNasc, "AAAA-MM-DD");
     kofUiWidgetSetId(inpGadoNasc, "inp-gado-nasc");
-    (__kof_t102 = kofListNew());
-    kofListAdd(__kof_t102, "SAUDAVEL");
-    (__kof_t103 = __kof_t102);
-    kofListAdd(__kof_t103, "RECUPERACAO");
-    (__kof_t104 = __kof_t103);
-    kofListAdd(__kof_t104, "DOENTE");
-    (__kof_t105 = __kof_t104);
-    kofListAdd(__kof_t105, "MORTA");
-    opcoesSaude = __kof_t105;
+    (__kof_t296 = kofListNew());
+    kofListAdd(__kof_t296, "SAUDAVEL");
+    (__kof_t297 = __kof_t296);
+    kofListAdd(__kof_t297, "RECUPERACAO");
+    (__kof_t298 = __kof_t297);
+    kofListAdd(__kof_t298, "DOENTE");
+    (__kof_t299 = __kof_t298);
+    kofListAdd(__kof_t299, "MORTA");
+    opcoesSaude = __kof_t299;
     selGadoSaude = kofUiSelectNew(opcoesSaude);
     kofUiWidgetSetId(selGadoSaude, "sel-gado-saude");
-    (__kof_t106 = kofListNew());
-    kofListAdd(__kof_t106, "FEMEA");
-    (__kof_t107 = __kof_t106);
-    kofListAdd(__kof_t107, "MACHO");
-    opcoesSexo = __kof_t107;
+    (__kof_t300 = kofListNew());
+    kofListAdd(__kof_t300, "FEMEA");
+    (__kof_t301 = __kof_t300);
+    kofListAdd(__kof_t301, "MACHO");
+    opcoesSexo = __kof_t301;
     selGadoSexo = kofUiSelectNew(opcoesSexo);
     kofUiWidgetSetId(selGadoSexo, "sel-gado-sexo");
-    (__kof_t108 = kofListNew());
-    kofListAdd(__kof_t108, "Leiteira (Producao de Leite)");
-    (__kof_t109 = __kof_t108);
-    kofListAdd(__kof_t109, "Corte / Recria");
-    opcoesAptidao = __kof_t109;
+    (__kof_t302 = kofListNew());
+    kofListAdd(__kof_t302, "Leiteira (Producao de Leite)");
+    (__kof_t303 = __kof_t302);
+    kofListAdd(__kof_t303, "Corte / Recria");
+    opcoesAptidao = __kof_t303;
     selGadoLeiteira = kofUiSelectNew(opcoesAptidao);
     kofUiWidgetSetId(selGadoLeiteira, "sel-gado-leiteira");
     inpGadoIdManual = kofUiInputNew("");
-    kofUiInputSetPlaceholder(inpGadoIdManual, "Opcional: UUID do animal (ou use o seletor acima)");
+    kofUiInputSetPlaceholder(inpGadoIdManual, "UUID do animal (opcional)");
     kofUiWidgetSetId(inpGadoIdManual, "inp-gado-id");
     inpGadoPastoManual = kofUiInputNew("");
-    kofUiInputSetPlaceholder(inpGadoPastoManual, "Opcional: UUID do pasto (ou use o seletor de pasto)");
+    kofUiInputSetPlaceholder(inpGadoPastoManual, "UUID do pasto (opcional)");
     kofUiWidgetSetId(inpGadoPastoManual, "inp-gado-pasto-manual");
-    btnCriarGado = kofUiButtonNewAction("Cadastrar Animal", new Lambda3(inpGadoNome, inpGadoRegistro, inpGadoPastoManual, selGadoPasto, selGadoMae, opcoesSaude, selGadoSaude, opcoesSexo, selGadoSexo, selGadoLeiteira, inpGadoNasc, tabelaGados, selGadoEditar, selTratGado, kpiGadosValor, kpiGadosSub, statusBanner));
-    kofUiWidgetSetClass(btnCriarGado, "btn-primary");
+    btnCriarGado = kofUiButtonNewAction("+ Adicionar Animal", new Lambda16(inpGadoNome, inpGadoRegistro, inpGadoPastoManual, selGadoPasto, selGadoMae, opcoesSaude, selGadoSaude, opcoesSexo, selGadoSexo, selGadoLeiteira, inpGadoNasc, tabelaGados, selGadoEditar, selTratGado, kpiDashProdutos, kpiGadoTotal, kpiGadoAtivos, kpiGadoInativos, kpiGadoAlerta, act3S, statusBanner));
+    kofUiWidgetSetClass(btnCriarGado, "btn-navy");
     kofUiWidgetSetId(btnCriarGado, "btn-criar-gado");
-    btnAtualizarGado = kofUiButtonNewAction("Atualizar Animal Selecionado", new Lambda4(inpGadoIdManual, selGadoEditar, inpGadoNome, inpGadoRegistro, inpGadoPastoManual, selGadoPasto, selGadoMae, opcoesSaude, selGadoSaude, opcoesSexo, selGadoSexo, selGadoLeiteira, inpGadoNasc, tabelaGados, selTratGado, kpiGadosValor, kpiGadosSub, statusBanner));
-    kofUiWidgetSetClass(btnAtualizarGado, "btn-secondary");
+    btnAtualizarGado = kofUiButtonNewAction("Salvar Edição", new Lambda17(inpGadoIdManual, selGadoEditar, inpGadoNome, inpGadoRegistro, inpGadoPastoManual, selGadoPasto, selGadoMae, opcoesSaude, selGadoSaude, opcoesSexo, selGadoSexo, selGadoLeiteira, inpGadoNasc, tabelaGados, selTratGado, kpiDashProdutos, kpiGadoTotal, kpiGadoAtivos, kpiGadoInativos, kpiGadoAlerta, statusBanner));
+    kofUiWidgetSetClass(btnAtualizarGado, "btn-outline");
     kofUiWidgetSetId(btnAtualizarGado, "btn-atualizar-gado");
-    btnExcluirGado = kofUiButtonNewAction("Remover Animal", new Lambda5(inpGadoIdManual, selGadoEditar, tabelaGados, selGadoMae, selTratGado, kpiGadosValor, kpiGadosSub, statusBanner));
-    kofUiWidgetSetClass(btnExcluirGado, "btn-danger");
+    btnExcluirGado = kofUiButtonNewAction("Excluir Animal", new Lambda18(inpGadoIdManual, selGadoEditar, tabelaGados, selGadoMae, selTratGado, kpiDashProdutos, kpiGadoTotal, kpiGadoAtivos, kpiGadoInativos, kpiGadoAlerta, statusBanner));
+    kofUiWidgetSetClass(btnExcluirGado, "btn-danger-soft");
     kofUiWidgetSetId(btnExcluirGado, "btn-excluir-gado");
-    btnFiltrarPorPasto = kofUiButtonNewAction("Filtrar por Pasto (RF07)", new Lambda6(inpGadoPastoManual, selFiltroPasto, tabelaGados, statusBanner));
-    kofUiWidgetSetClass(btnFiltrarPorPasto, "btn-secondary");
+    btnFiltrarPorPasto = kofUiButtonNewAction("↑ Filtrar Pasto (RF07)", new Lambda19(inpGadoPastoManual, selFiltroPasto, tabelaGados, statusBanner));
+    kofUiWidgetSetClass(btnFiltrarPorPasto, "btn-outline");
     kofUiWidgetSetId(btnFiltrarPorPasto, "btn-filtrar-pasto");
-    btnListarGado = kofUiButtonNewAction("Mostrar Todo o Rebanho", new Lambda7(tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiGadosValor, kpiGadosSub, statusBanner));
-    kofUiWidgetSetClass(btnListarGado, "btn-ghost");
+    btnListarGado = kofUiButtonNewAction("↓ Exportar / Ver Todos", new Lambda20(tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiDashProdutos, kpiGadoTotal, kpiGadoAtivos, kpiGadoInativos, kpiGadoAlerta, statusBanner));
+    kofUiWidgetSetClass(btnListarGado, "btn-outline");
     kofUiWidgetSetId(btnListarGado, "btn-listar-gado");
-    (__kof_t110 = kofListNew());
-    (__kof_t111 = kofListNew());
-    kofListAdd(__kof_t111, campoInput("Nome do Animal *", inpGadoNome));
-    (__kof_t112 = __kof_t111);
-    kofListAdd(__kof_t112, campoInput("Numero de Registro / Brinco *", inpGadoRegistro));
-    kofListAdd(__kof_t110, kofUiRowNew(__kof_t112));
-    (__kof_t113 = __kof_t110);
-    (__kof_t114 = kofListNew());
-    kofListAdd(__kof_t114, campoSelect("Pasto de Alocacao (RF07) *", selGadoPasto));
-    (__kof_t115 = __kof_t114);
-    kofListAdd(__kof_t115, campoInput("Data de Nascimento *", inpGadoNasc));
-    kofListAdd(__kof_t113, kofUiRowNew(__kof_t115));
-    (__kof_t116 = __kof_t113);
-    (__kof_t117 = kofListNew());
-    kofListAdd(__kof_t117, campoSelect("Estado Sanitario *", selGadoSaude));
-    (__kof_t118 = __kof_t117);
-    kofListAdd(__kof_t118, campoSelect("Sexo *", selGadoSexo));
-    (__kof_t119 = __kof_t118);
-    kofListAdd(__kof_t119, campoSelect("Aptidao *", selGadoLeiteira));
-    kofListAdd(__kof_t116, kofUiRowNew(__kof_t119));
-    (__kof_t120 = __kof_t116);
-    kofListAdd(__kof_t120, campoSelect("Matriz / Mae (Genealogia)", selGadoMae));
-    (__kof_t121 = __kof_t120);
-    kofListAdd(__kof_t121, kofUiHrNew());
-    (__kof_t122 = __kof_t121);
-    kofListAdd(__kof_t122, campoSelect("Selecionar Animal para Edicao ou Exclusao", selGadoEditar));
-    (__kof_t123 = __kof_t122);
-    (__kof_t124 = kofListNew());
-    kofListAdd(__kof_t124, campoInput("UUID Animal (opcional)", inpGadoIdManual));
-    (__kof_t125 = __kof_t124);
-    kofListAdd(__kof_t125, campoInput("UUID Pasto (opcional)", inpGadoPastoManual));
-    kofListAdd(__kof_t123, kofUiRowNew(__kof_t125));
-    (__kof_t126 = __kof_t123);
-    (__kof_t127 = kofListNew());
-    kofListAdd(__kof_t127, btnCriarGado);
-    (__kof_t128 = __kof_t127);
-    kofListAdd(__kof_t128, btnAtualizarGado);
-    (__kof_t129 = __kof_t128);
-    kofListAdd(__kof_t129, btnExcluirGado);
-    kofListAdd(__kof_t126, kofUiRowNew(__kof_t129));
-    formGado = kofUiFieldsetNewLegend(__kof_t126, "Ficha Zootecnica do Animal (RF01)");
-    kofUiWidgetSetClass(formGado, "panel-card form-card");
-    (__kof_t130 = kofListNew());
-    kofListAdd(__kof_t130, campoSelect("Filtrar Animais por Pasto / Piquete (RF07)", selFiltroPasto));
-    (__kof_t131 = __kof_t130);
-    kofListAdd(__kof_t131, btnFiltrarPorPasto);
-    (__kof_t132 = __kof_t131);
-    kofListAdd(__kof_t132, btnListarGado);
-    barraFiltroPasto = kofUiRowNew(__kof_t132);
-    kofUiWidgetSetClass(barraFiltroPasto, "filter-bar");
-    (__kof_t133 = kofListNew());
-    kofListAdd(__kof_t133, barraFiltroPasto);
-    (__kof_t134 = __kof_t133);
-    kofListAdd(__kof_t134, tabelaGados);
-    cardTabelaGados = kofUiFieldsetNewLegend(__kof_t134, "Relacao de Animais do Rebanho & Alocacao por Pasto (RF01, RF07)");
-    kofUiWidgetSetClass(cardTabelaGados, "panel-card table-card");
-    (__kof_t135 = kofListNew());
-    kofListAdd(__kof_t135, formGado);
-    (__kof_t136 = __kof_t135);
-    kofListAdd(__kof_t136, cardTabelaGados);
-    painelGado = kofUiRowNew(__kof_t136);
-    kofUiWidgetSetClass(painelGado, "tab-panel hidden");
+    (__kof_t304 = kofListNew());
+    kofListAdd(__kof_t304, kofUiLabelNew("Inventário de produtos & rebanho"));
+    (__kof_t305 = __kof_t304);
+    kofListAdd(__kof_t305, kofUiLabelNew("Gerencie seus animais cadastrados, genealogia e alocação por pasto (RF01, RF07)"));
+    gadoHeaderLeft = kofUiColumnNew(__kof_t305);
+    kofUiWidgetSetClass(gadoHeaderLeft, "inventory-title-col");
+    (__kof_t306 = kofListNew());
+    kofListAdd(__kof_t306, selFiltroPasto);
+    (__kof_t307 = __kof_t306);
+    kofListAdd(__kof_t307, btnFiltrarPorPasto);
+    (__kof_t308 = __kof_t307);
+    kofListAdd(__kof_t308, btnListarGado);
+    (__kof_t309 = __kof_t308);
+    kofListAdd(__kof_t309, btnCriarGado);
+    gadoToolbarRight = kofUiRowNew(__kof_t309);
+    kofUiWidgetSetClass(gadoToolbarRight, "inventory-actions-row");
+    (__kof_t310 = kofListNew());
+    kofListAdd(__kof_t310, gadoHeaderLeft);
+    (__kof_t311 = __kof_t310);
+    kofListAdd(__kof_t311, gadoToolbarRight);
+    gadoSectionHeader = kofUiRowNew(__kof_t311);
+    kofUiWidgetSetClass(gadoSectionHeader, "inventory-header-bar");
+    (__kof_t312 = kofListNew());
+    kofListAdd(__kof_t312, kofUiLabelNew("⊕ Ficha Zootécnica — Cadastro e Edição Rápida (RF01)"));
+    (__kof_t313 = __kof_t312);
+    (__kof_t314 = kofListNew());
+    kofListAdd(__kof_t314, campoInput("Nome do Animal *", inpGadoNome));
+    (__kof_t315 = __kof_t314);
+    kofListAdd(__kof_t315, campoInput("Código / Brinco *", inpGadoRegistro));
+    (__kof_t316 = __kof_t315);
+    kofListAdd(__kof_t316, campoSelect("Pasto de Alocação (RF07) *", selGadoPasto));
+    (__kof_t317 = __kof_t316);
+    kofListAdd(__kof_t317, campoInput("Data de Nascimento *", inpGadoNasc));
+    kofListAdd(__kof_t313, kofUiRowNew(__kof_t317));
+    (__kof_t318 = __kof_t313);
+    (__kof_t319 = kofListNew());
+    kofListAdd(__kof_t319, campoSelect("Estado Sanitário *", selGadoSaude));
+    (__kof_t320 = __kof_t319);
+    kofListAdd(__kof_t320, campoSelect("Sexo *", selGadoSexo));
+    (__kof_t321 = __kof_t320);
+    kofListAdd(__kof_t321, campoSelect("Categoria / Aptidão *", selGadoLeiteira));
+    (__kof_t322 = __kof_t321);
+    kofListAdd(__kof_t322, campoSelect("Matriz / Mãe", selGadoMae));
+    kofListAdd(__kof_t318, kofUiRowNew(__kof_t322));
+    (__kof_t323 = __kof_t318);
+    (__kof_t324 = kofListNew());
+    kofListAdd(__kof_t324, campoSelect("Animal Selecionado (Edição/Exclusão)", selGadoEditar));
+    (__kof_t325 = __kof_t324);
+    kofListAdd(__kof_t325, campoInput("UUID Animal (opcional)", inpGadoIdManual));
+    (__kof_t326 = __kof_t325);
+    kofListAdd(__kof_t326, campoInput("UUID Pasto (opcional)", inpGadoPastoManual));
+    (__kof_t327 = __kof_t326);
+    kofListAdd(__kof_t327, btnAtualizarGado);
+    (__kof_t328 = __kof_t327);
+    kofListAdd(__kof_t328, btnExcluirGado);
+    kofListAdd(__kof_t323, kofUiRowNew(__kof_t328));
+    formGadoCard = kofUiColumnNew(__kof_t323);
+    kofUiWidgetSetClass(formGadoCard, "estocae-card form-inline-card");
+    (__kof_t329 = kofListNew());
+    kofListAdd(__kof_t329, tabelaGados);
+    (__kof_t330 = __kof_t329);
+    kofListAdd(__kof_t330, criarPaginacaoEstocae());
+    cardTabelaGados = kofUiColumnNew(__kof_t330);
+    kofUiWidgetSetClass(cardTabelaGados, "estocae-card inventory-table-card");
+    (__kof_t331 = kofListNew());
+    kofListAdd(__kof_t331, gadoKpiRow);
+    (__kof_t332 = __kof_t331);
+    kofListAdd(__kof_t332, gadoSectionHeader);
+    (__kof_t333 = __kof_t332);
+    kofListAdd(__kof_t333, formGadoCard);
+    (__kof_t334 = __kof_t333);
+    kofListAdd(__kof_t334, cardTabelaGados);
+    painelGado = kofUiColumnNew(__kof_t334);
+    kofUiWidgetSetClass(painelGado, "view-screen hidden");
     kofUiWidgetSetId(painelGado, "panel-gado");
+    (__kof_t335 = kofListNew());
+    (__kof_t336 = kofListNew());
+    kofListAdd(__kof_t336, kofUiLabelNew("Total de Produtos"));
+    (__kof_t337 = __kof_t336);
+    kofListAdd(__kof_t337, kpiRemTotal);
+    kofListAdd(__kof_t335, kofUiColumnNew(__kof_t337));
+    (__kof_t338 = __kof_t335);
+    (__kof_t339 = kofListNew());
+    kofListAdd(__kof_t339, kofUiIconNewSize("star", 20));
+    kofListAdd(__kof_t338, kofUiColumnNew(__kof_t339));
+    rK1 = kofUiRowNew(__kof_t338);
+    kofUiWidgetSetClass(rK1, "estocae-kpi-card compact-kpi blue-kpi");
+    (__kof_t340 = kofListNew());
+    (__kof_t341 = kofListNew());
+    kofListAdd(__kof_t341, kofUiLabelNew("Produtos Ativos"));
+    (__kof_t342 = __kof_t341);
+    kofListAdd(__kof_t342, kpiRemAtivos);
+    kofListAdd(__kof_t340, kofUiColumnNew(__kof_t342));
+    (__kof_t343 = __kof_t340);
+    (__kof_t344 = kofListNew());
+    kofListAdd(__kof_t344, kofUiIconNewSize("check", 20));
+    kofListAdd(__kof_t343, kofUiColumnNew(__kof_t344));
+    rK2 = kofUiRowNew(__kof_t343);
+    kofUiWidgetSetClass(rK2, "estocae-kpi-card compact-kpi green-kpi");
+    (__kof_t345 = kofListNew());
+    (__kof_t346 = kofListNew());
+    kofListAdd(__kof_t346, kofUiLabelNew("Estoque Crítico / Baixo"));
+    (__kof_t347 = __kof_t346);
+    kofListAdd(__kof_t347, kpiRemBaixos);
+    kofListAdd(__kof_t345, kofUiColumnNew(__kof_t347));
+    (__kof_t348 = __kof_t345);
+    (__kof_t349 = kofListNew());
+    kofListAdd(__kof_t349, kofUiIconNewSize("close", 20));
+    kofListAdd(__kof_t348, kofUiColumnNew(__kof_t349));
+    rK3 = kofUiRowNew(__kof_t348);
+    kofUiWidgetSetClass(rK3, "estocae-kpi-card compact-kpi red-kpi");
+    (__kof_t350 = kofListNew());
+    (__kof_t351 = kofListNew());
+    kofListAdd(__kof_t351, kofUiLabelNew("Fora de Estoque"));
+    (__kof_t352 = __kof_t351);
+    kofListAdd(__kof_t352, kpiRemZerados);
+    kofListAdd(__kof_t350, kofUiColumnNew(__kof_t352));
+    (__kof_t353 = __kof_t350);
+    (__kof_t354 = kofListNew());
+    kofListAdd(__kof_t354, kofUiIconNewSize("clock", 20));
+    kofListAdd(__kof_t353, kofUiColumnNew(__kof_t354));
+    rK4 = kofUiRowNew(__kof_t353);
+    kofUiWidgetSetClass(rK4, "estocae-kpi-card compact-kpi amber-kpi");
+    (__kof_t355 = kofListNew());
+    kofListAdd(__kof_t355, rK1);
+    (__kof_t356 = __kof_t355);
+    kofListAdd(__kof_t356, rK2);
+    (__kof_t357 = __kof_t356);
+    kofListAdd(__kof_t357, rK3);
+    (__kof_t358 = __kof_t357);
+    kofListAdd(__kof_t358, rK4);
+    remKpiRow = kofUiRowNew(__kof_t358);
+    kofUiWidgetSetClass(remKpiRow, "kpi-grid");
     inpRemNome = kofUiInputNew("");
     kofUiInputSetPlaceholder(inpRemNome, "Ex: Ivermectina 1% Injetavel");
     kofUiWidgetSetId(inpRemNome, "inp-rem-nome");
-    (__kof_t137 = kofListNew());
-    kofListAdd(__kof_t137, "INJECAO");
-    (__kof_t138 = __kof_t137);
-    kofListAdd(__kof_t138, "CURA_FERIDAS");
-    (__kof_t139 = __kof_t138);
-    kofListAdd(__kof_t139, "SORO_FISIOLOGICO");
-    opcoesAplicacao = __kof_t139;
+    (__kof_t359 = kofListNew());
+    kofListAdd(__kof_t359, "INJECAO");
+    (__kof_t360 = __kof_t359);
+    kofListAdd(__kof_t360, "CURA_FERIDAS");
+    (__kof_t361 = __kof_t360);
+    kofListAdd(__kof_t361, "SORO_FISIOLOGICO");
+    opcoesAplicacao = __kof_t361;
     selRemAplicacao = kofUiSelectNew(opcoesAplicacao);
     kofUiWidgetSetId(selRemAplicacao, "sel-rem-aplicacao");
-    inpRemValor = kofUiInputNew("48.50");
-    kofUiInputSetPlaceholder(inpRemValor, "Ex: 48.50");
+    inpRemValor = kofUiInputNew("48.99");
+    kofUiInputSetPlaceholder(inpRemValor, "Ex: 48.99");
     kofUiWidgetSetId(inpRemValor, "inp-rem-valor");
     inpRemEstoque = kofUiInputNew("25");
     kofUiInputSetPlaceholder(inpRemEstoque, "Ex: 25");
@@ -3299,294 +5936,783 @@ function main() {
     kofUiInputSetPlaceholder(inpRemVenc, "AAAA-MM-DD");
     kofUiWidgetSetId(inpRemVenc, "inp-rem-venc");
     inpRemIdManual = kofUiInputNew("");
-    kofUiInputSetPlaceholder(inpRemIdManual, "Opcional: UUID do remedio (ou use o seletor acima)");
+    kofUiInputSetPlaceholder(inpRemIdManual, "UUID medicamento (opcional)");
     kofUiWidgetSetId(inpRemIdManual, "inp-rem-id");
-    btnCriarRemedio = kofUiButtonNewAction("Cadastrar Medicamento", new Lambda8(inpRemNome, opcoesAplicacao, selRemAplicacao, inpRemValor, inpRemEstoque, inpRemCompra, inpRemVenc, tabelaRemedios, selRemedioEstoque, selTratRemedio, kpiRemediosValor, kpiRemediosSub, statusBanner));
-    kofUiWidgetSetClass(btnCriarRemedio, "btn-primary");
+    btnCriarRemedio = kofUiButtonNewAction("+ Adicionar Produto", new Lambda21(inpRemNome, opcoesAplicacao, selRemAplicacao, inpRemValor, inpRemEstoque, inpRemCompra, inpRemVenc, tabelaRemedios, tabelaDashboardEstoque, selRemedioEstoque, selTratRemedio, kpiDashBaixo, kpiDashValor, kpiRemTotal, kpiRemAtivos, kpiRemBaixos, kpiRemZerados, act2S, statusBanner));
+    kofUiWidgetSetClass(btnCriarRemedio, "btn-navy");
     kofUiWidgetSetId(btnCriarRemedio, "btn-criar-remedio");
-    btnAtualizarEstoque = kofUiButtonNewAction("Atualizar Quantidade em Estoque", new Lambda9(inpRemIdManual, selRemedioEstoque, inpRemEstoque, tabelaRemedios, selTratRemedio, kpiRemediosValor, kpiRemediosSub, statusBanner));
-    kofUiWidgetSetClass(btnAtualizarEstoque, "btn-secondary");
+    btnAtualizarEstoque = kofUiButtonNewAction("↑ Ajustar Saldo (RF06)", new Lambda22(inpRemIdManual, selRemedioEstoque, inpRemEstoque, tabelaRemedios, tabelaDashboardEstoque, selTratRemedio, kpiDashBaixo, kpiDashValor, kpiRemTotal, kpiRemAtivos, kpiRemBaixos, kpiRemZerados, statusBanner));
+    kofUiWidgetSetClass(btnAtualizarEstoque, "btn-outline");
     kofUiWidgetSetId(btnAtualizarEstoque, "btn-atualizar-estoque");
-    btnEstoqueRemedios = kofUiButtonNewAction("Atualizar Inventario", new Lambda10(tabelaRemedios, selRemedioEstoque, selTratRemedio, kpiRemediosValor, kpiRemediosSub, statusBanner));
-    kofUiWidgetSetClass(btnEstoqueRemedios, "btn-ghost");
+    btnEstoqueRemedios = kofUiButtonNewAction("↓ Exportar Inventário", new Lambda23(tabelaRemedios, tabelaDashboardEstoque, selRemedioEstoque, selTratRemedio, kpiDashBaixo, kpiDashValor, kpiRemTotal, kpiRemAtivos, kpiRemBaixos, kpiRemZerados, statusBanner));
+    kofUiWidgetSetClass(btnEstoqueRemedios, "btn-outline");
     kofUiWidgetSetId(btnEstoqueRemedios, "btn-listar-estoque");
-    (__kof_t140 = kofListNew());
-    kofListAdd(__kof_t140, campoInput("Nome Comercial / Principio Ativo *", inpRemNome));
-    (__kof_t141 = __kof_t140);
-    (__kof_t142 = kofListNew());
-    kofListAdd(__kof_t142, campoSelect("Via de Aplicacao *", selRemAplicacao));
-    (__kof_t143 = __kof_t142);
-    kofListAdd(__kof_t143, campoInput("Custo Unitario (R$) *", inpRemValor));
-    (__kof_t144 = __kof_t143);
-    kofListAdd(__kof_t144, campoInput("Qtd. em Estoque *", inpRemEstoque));
-    kofListAdd(__kof_t141, kofUiRowNew(__kof_t144));
-    (__kof_t145 = __kof_t141);
-    (__kof_t146 = kofListNew());
-    kofListAdd(__kof_t146, campoInput("Data da Compra *", inpRemCompra));
-    (__kof_t147 = __kof_t146);
-    kofListAdd(__kof_t147, campoInput("Data de Vencimento *", inpRemVenc));
-    kofListAdd(__kof_t145, kofUiRowNew(__kof_t147));
-    (__kof_t148 = __kof_t145);
-    kofListAdd(__kof_t148, kofUiHrNew());
-    (__kof_t149 = __kof_t148);
-    kofListAdd(__kof_t149, campoSelect("Selecionar Medicamento para Ajuste de Estoque (RF06)", selRemedioEstoque));
-    (__kof_t150 = __kof_t149);
-    kofListAdd(__kof_t150, campoInput("UUID Medicamento (opcional)", inpRemIdManual));
-    (__kof_t151 = __kof_t150);
-    (__kof_t152 = kofListNew());
-    kofListAdd(__kof_t152, btnCriarRemedio);
-    (__kof_t153 = __kof_t152);
-    kofListAdd(__kof_t153, btnAtualizarEstoque);
-    (__kof_t154 = __kof_t153);
-    kofListAdd(__kof_t154, btnEstoqueRemedios);
-    kofListAdd(__kof_t151, kofUiRowNew(__kof_t154));
-    formRemedios = kofUiFieldsetNewLegend(__kof_t151, "Cadastro de Medicamentos & Ajuste de Estoque (RF03, RF06)");
-    kofUiWidgetSetClass(formRemedios, "panel-card form-card");
-    (__kof_t155 = kofListNew());
-    kofListAdd(__kof_t155, tabelaRemedios);
-    cardTabelaRemedios = kofUiFieldsetNewLegend(__kof_t155, "Inventario de Medicamentos e Controle de Validade (RF06)");
-    kofUiWidgetSetClass(cardTabelaRemedios, "panel-card table-card");
-    (__kof_t156 = kofListNew());
-    kofListAdd(__kof_t156, formRemedios);
-    (__kof_t157 = __kof_t156);
-    kofListAdd(__kof_t157, cardTabelaRemedios);
-    painelRemedios = kofUiRowNew(__kof_t157);
-    kofUiWidgetSetClass(painelRemedios, "tab-panel hidden");
+    (__kof_t362 = kofListNew());
+    kofListAdd(__kof_t362, kofUiLabelNew("Inventário de produtos"));
+    (__kof_t363 = __kof_t362);
+    kofListAdd(__kof_t363, kofUiLabelNew("Gerencie seus itens de estoque, medicamentos veterinários e níveis de inventário (RF03, RF06)"));
+    remHeaderLeft = kofUiColumnNew(__kof_t363);
+    kofUiWidgetSetClass(remHeaderLeft, "inventory-title-col");
+    (__kof_t364 = kofListNew());
+    kofListAdd(__kof_t364, btnAtualizarEstoque);
+    (__kof_t365 = __kof_t364);
+    kofListAdd(__kof_t365, btnEstoqueRemedios);
+    (__kof_t366 = __kof_t365);
+    kofListAdd(__kof_t366, btnCriarRemedio);
+    remToolbarRight = kofUiRowNew(__kof_t366);
+    kofUiWidgetSetClass(remToolbarRight, "inventory-actions-row");
+    (__kof_t367 = kofListNew());
+    kofListAdd(__kof_t367, remHeaderLeft);
+    (__kof_t368 = __kof_t367);
+    kofListAdd(__kof_t368, remToolbarRight);
+    remSectionHeader = kofUiRowNew(__kof_t368);
+    kofUiWidgetSetClass(remSectionHeader, "inventory-header-bar");
+    (__kof_t369 = kofListNew());
+    kofListAdd(__kof_t369, kofUiLabelNew("⊕ Cadastro de Produto / Medicamento e Ajuste de Estoque (RF03, RF06)"));
+    (__kof_t370 = __kof_t369);
+    (__kof_t371 = kofListNew());
+    kofListAdd(__kof_t371, campoInput("Nome do Produto / Medicamento *", inpRemNome));
+    (__kof_t372 = __kof_t371);
+    kofListAdd(__kof_t372, campoSelect("Categoria / Via de Aplicação *", selRemAplicacao));
+    (__kof_t373 = __kof_t372);
+    kofListAdd(__kof_t373, campoInput("Valor Unitário (R$) *", inpRemValor));
+    (__kof_t374 = __kof_t373);
+    kofListAdd(__kof_t374, campoInput("Quantidade em Estoque *", inpRemEstoque));
+    kofListAdd(__kof_t370, kofUiRowNew(__kof_t374));
+    (__kof_t375 = __kof_t370);
+    (__kof_t376 = kofListNew());
+    kofListAdd(__kof_t376, campoInput("Data de Compra *", inpRemCompra));
+    (__kof_t377 = __kof_t376);
+    kofListAdd(__kof_t377, campoInput("Data de Vencimento *", inpRemVenc));
+    (__kof_t378 = __kof_t377);
+    kofListAdd(__kof_t378, campoSelect("Produto para Ajuste de Saldo (RF06)", selRemedioEstoque));
+    (__kof_t379 = __kof_t378);
+    kofListAdd(__kof_t379, campoInput("UUID Produto (opcional)", inpRemIdManual));
+    kofListAdd(__kof_t375, kofUiRowNew(__kof_t379));
+    formRemediosCard = kofUiColumnNew(__kof_t375);
+    kofUiWidgetSetClass(formRemediosCard, "estocae-card form-inline-card");
+    (__kof_t380 = kofListNew());
+    kofListAdd(__kof_t380, tabelaRemedios);
+    (__kof_t381 = __kof_t380);
+    kofListAdd(__kof_t381, criarPaginacaoEstocae());
+    cardTabelaRemedios = kofUiColumnNew(__kof_t381);
+    kofUiWidgetSetClass(cardTabelaRemedios, "estocae-card inventory-table-card");
+    (__kof_t382 = kofListNew());
+    kofListAdd(__kof_t382, remKpiRow);
+    (__kof_t383 = __kof_t382);
+    kofListAdd(__kof_t383, remSectionHeader);
+    (__kof_t384 = __kof_t383);
+    kofListAdd(__kof_t384, formRemediosCard);
+    (__kof_t385 = __kof_t384);
+    kofListAdd(__kof_t385, cardTabelaRemedios);
+    painelRemedios = kofUiColumnNew(__kof_t385);
+    kofUiWidgetSetClass(painelRemedios, "view-screen hidden");
     kofUiWidgetSetId(painelRemedios, "panel-remedios");
+    (__kof_t386 = kofListNew());
+    (__kof_t387 = kofListNew());
+    kofListAdd(__kof_t387, kofUiLabelNew("Total de Pastos"));
+    (__kof_t388 = __kof_t387);
+    kofListAdd(__kof_t388, kpiPastosTotal);
+    kofListAdd(__kof_t386, kofUiColumnNew(__kof_t388));
+    (__kof_t389 = __kof_t386);
+    (__kof_t390 = kofListNew());
+    kofListAdd(__kof_t390, kofUiIconNewSize("star", 20));
+    kofListAdd(__kof_t389, kofUiColumnNew(__kof_t390));
+    pK1 = kofUiRowNew(__kof_t389);
+    kofUiWidgetSetClass(pK1, "estocae-kpi-card compact-kpi blue-kpi");
+    (__kof_t391 = kofListNew());
+    (__kof_t392 = kofListNew());
+    kofListAdd(__kof_t392, kofUiLabelNew("Pastos Próprios"));
+    (__kof_t393 = __kof_t392);
+    kofListAdd(__kof_t393, kpiPastosProprios);
+    kofListAdd(__kof_t391, kofUiColumnNew(__kof_t393));
+    (__kof_t394 = __kof_t391);
+    (__kof_t395 = kofListNew());
+    kofListAdd(__kof_t395, kofUiIconNewSize("check", 20));
+    kofListAdd(__kof_t394, kofUiColumnNew(__kof_t395));
+    pK2 = kofUiRowNew(__kof_t394);
+    kofUiWidgetSetClass(pK2, "estocae-kpi-card compact-kpi green-kpi");
+    (__kof_t396 = kofListNew());
+    (__kof_t397 = kofListNew());
+    kofListAdd(__kof_t397, kofUiLabelNew("Pastos Arrendados"));
+    (__kof_t398 = __kof_t397);
+    kofListAdd(__kof_t398, kpiPastosArrendados);
+    kofListAdd(__kof_t396, kofUiColumnNew(__kof_t398));
+    (__kof_t399 = __kof_t396);
+    (__kof_t400 = kofListNew());
+    kofListAdd(__kof_t400, kofUiIconNewSize("close", 20));
+    kofListAdd(__kof_t399, kofUiColumnNew(__kof_t400));
+    pK3 = kofUiRowNew(__kof_t399);
+    kofUiWidgetSetClass(pK3, "estocae-kpi-card compact-kpi red-kpi");
+    (__kof_t401 = kofListNew());
+    (__kof_t402 = kofListNew());
+    kofListAdd(__kof_t402, kofUiLabelNew("Custo Médio / Cab."));
+    (__kof_t403 = __kof_t402);
+    kofListAdd(__kof_t403, kpiPastosCusto);
+    kofListAdd(__kof_t401, kofUiColumnNew(__kof_t403));
+    (__kof_t404 = __kof_t401);
+    (__kof_t405 = kofListNew());
+    kofListAdd(__kof_t405, kofUiIconNewSize("clock", 20));
+    kofListAdd(__kof_t404, kofUiColumnNew(__kof_t405));
+    pK4 = kofUiRowNew(__kof_t404);
+    kofUiWidgetSetClass(pK4, "estocae-kpi-card compact-kpi amber-kpi");
+    (__kof_t406 = kofListNew());
+    kofListAdd(__kof_t406, pK1);
+    (__kof_t407 = __kof_t406);
+    kofListAdd(__kof_t407, pK2);
+    (__kof_t408 = __kof_t407);
+    kofListAdd(__kof_t408, pK3);
+    (__kof_t409 = __kof_t408);
+    kofListAdd(__kof_t409, pK4);
+    pastoKpiRow = kofUiRowNew(__kof_t409);
+    kofUiWidgetSetClass(pastoKpiRow, "kpi-grid");
+    inpPastoNome = kofUiInputNew("");
+    kofUiInputSetPlaceholder(inpPastoNome, "Ex: Piquete Santa Helena");
+    kofUiWidgetSetId(inpPastoNome, "inp-pasto-nome");
+    (__kof_t410 = kofListNew());
+    kofListAdd(__kof_t410, "Proprio (Fazenda)");
+    (__kof_t411 = __kof_t410);
+    kofListAdd(__kof_t411, "Arrendado (Terceiros)");
+    opcoesPosse = __kof_t411;
+    selPastoDono = kofUiSelectNew(opcoesPosse);
+    kofUiWidgetSetId(selPastoDono, "sel-pasto-dono");
+    inpPastoValor = kofUiInputNew("150");
+    kofUiInputSetPlaceholder(inpPastoValor, "Ex: 150");
+    kofUiWidgetSetId(inpPastoValor, "inp-pasto-valor");
+    inpPastoIdManual = kofUiInputNew("");
+    kofUiInputSetPlaceholder(inpPastoIdManual, "UUID do pasto (opcional)");
+    kofUiWidgetSetId(inpPastoIdManual, "inp-pasto-id");
+    btnCriarPasto = kofUiButtonNewAction("+ Adicionar Pasto", new Lambda24(inpPastoNome, selPastoDono, inpPastoValor, tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiDashPastos, kpiPastosTotal, kpiPastosProprios, kpiPastosArrendados, kpiPastosCusto, act1S, statusBanner));
+    kofUiWidgetSetClass(btnCriarPasto, "btn-navy");
+    kofUiWidgetSetId(btnCriarPasto, "btn-criar-pasto");
+    btnAtualizarPasto = kofUiButtonNewAction("↑ Atualizar Selecionado", new Lambda25(inpPastoIdManual, selPastoEditar, inpPastoNome, selPastoDono, inpPastoValor, tabelaPastos, selGadoPasto, selFiltroPasto, kpiDashPastos, kpiPastosTotal, kpiPastosProprios, kpiPastosArrendados, kpiPastosCusto, statusBanner));
+    kofUiWidgetSetClass(btnAtualizarPasto, "btn-outline");
+    kofUiWidgetSetId(btnAtualizarPasto, "btn-atualizar-pasto");
+    btnListarPastos = kofUiButtonNewAction("↓ Exportar / Sincronizar", new Lambda26(tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiDashPastos, kpiPastosTotal, kpiPastosProprios, kpiPastosArrendados, kpiPastosCusto, statusBanner));
+    kofUiWidgetSetClass(btnListarPastos, "btn-outline");
+    kofUiWidgetSetId(btnListarPastos, "btn-listar-pastos");
+    (__kof_t412 = kofListNew());
+    kofListAdd(__kof_t412, kofUiLabelNew("Inventário de pastos & fornecedores"));
+    (__kof_t413 = __kof_t412);
+    kofListAdd(__kof_t413, kofUiLabelNew("Gerencie piquetes próprios, áreas arrendadas e custos mensais por cabeça (RF02)"));
+    pastoHeaderLeft = kofUiColumnNew(__kof_t413);
+    kofUiWidgetSetClass(pastoHeaderLeft, "inventory-title-col");
+    (__kof_t414 = kofListNew());
+    kofListAdd(__kof_t414, btnAtualizarPasto);
+    (__kof_t415 = __kof_t414);
+    kofListAdd(__kof_t415, btnListarPastos);
+    (__kof_t416 = __kof_t415);
+    kofListAdd(__kof_t416, btnCriarPasto);
+    pastoToolbarRight = kofUiRowNew(__kof_t416);
+    kofUiWidgetSetClass(pastoToolbarRight, "inventory-actions-row");
+    (__kof_t417 = kofListNew());
+    kofListAdd(__kof_t417, pastoHeaderLeft);
+    (__kof_t418 = __kof_t417);
+    kofListAdd(__kof_t418, pastoToolbarRight);
+    pastoSectionHeader = kofUiRowNew(__kof_t418);
+    kofUiWidgetSetClass(pastoSectionHeader, "inventory-header-bar");
+    (__kof_t419 = kofListNew());
+    kofListAdd(__kof_t419, kofUiLabelNew("⊕ Cadastro e Edição de Pasto / Piquete (RF02)"));
+    (__kof_t420 = __kof_t419);
+    (__kof_t421 = kofListNew());
+    kofListAdd(__kof_t421, campoInput("Nome do Pasto ou Piquete *", inpPastoNome));
+    (__kof_t422 = __kof_t421);
+    kofListAdd(__kof_t422, campoSelect("Regime de Posse / Fornecedor *", selPastoDono));
+    (__kof_t423 = __kof_t422);
+    kofListAdd(__kof_t423, campoInput("Custo Mensal por Cabeça (R$) *", inpPastoValor));
+    (__kof_t424 = __kof_t423);
+    kofListAdd(__kof_t424, campoSelect("Pasto para Edição", selPastoEditar));
+    (__kof_t425 = __kof_t424);
+    kofListAdd(__kof_t425, campoInput("UUID Manual (opcional)", inpPastoIdManual));
+    kofListAdd(__kof_t420, kofUiRowNew(__kof_t425));
+    formPastosCard = kofUiColumnNew(__kof_t420);
+    kofUiWidgetSetClass(formPastosCard, "estocae-card form-inline-card");
+    (__kof_t426 = kofListNew());
+    kofListAdd(__kof_t426, tabelaPastos);
+    (__kof_t427 = __kof_t426);
+    kofListAdd(__kof_t427, criarPaginacaoEstocae());
+    cardTabelaPastos = kofUiColumnNew(__kof_t427);
+    kofUiWidgetSetClass(cardTabelaPastos, "estocae-card inventory-table-card");
+    (__kof_t428 = kofListNew());
+    kofListAdd(__kof_t428, pastoKpiRow);
+    (__kof_t429 = __kof_t428);
+    kofListAdd(__kof_t429, pastoSectionHeader);
+    (__kof_t430 = __kof_t429);
+    kofListAdd(__kof_t430, formPastosCard);
+    (__kof_t431 = __kof_t430);
+    kofListAdd(__kof_t431, cardTabelaPastos);
+    painelPastos = kofUiColumnNew(__kof_t431);
+    kofUiWidgetSetClass(painelPastos, "view-screen hidden");
+    kofUiWidgetSetId(painelPastos, "panel-pastos");
+    lblNovaMovTitle = kofUiLabelNew("⊕ Nova Movimentação");
+    kofUiWidgetSetClass(lblNovaMovTitle, "orange-section-heading");
+    lblTipoMov = kofUiLabelNew("Tipo de Movimentação *");
+    kofUiWidgetSetClass(lblTipoMov, "field-label");
+    btnTipoEntrada = kofUiButtonNewAction("↓ Entrada", new Lambda27());
+    btnTipoSaida = kofUiButtonNewAction("↑ Saída", new Lambda28());
+    btnTipoAjuste = kofUiButtonNewAction("⇅ Ajuste", new Lambda29());
+    kofUiWidgetSetClass(btnTipoEntrada, "mov-type-btn active");
+    kofUiWidgetSetClass(btnTipoSaida, "mov-type-btn");
+    kofUiWidgetSetClass(btnTipoAjuste, "mov-type-btn");
+    kofUiWidgetOn(btnTipoEntrada, "click", new Lambda30(btnTipoEntrada, btnTipoSaida, btnTipoAjuste));
+    kofUiWidgetOn(btnTipoSaida, "click", new Lambda31(btnTipoEntrada, btnTipoSaida, btnTipoAjuste));
+    kofUiWidgetOn(btnTipoAjuste, "click", new Lambda32(btnTipoEntrada, btnTipoSaida, btnTipoAjuste));
+    (__kof_t432 = kofListNew());
+    kofListAdd(__kof_t432, btnTipoEntrada);
+    (__kof_t433 = __kof_t432);
+    kofListAdd(__kof_t433, btnTipoSaida);
+    (__kof_t434 = __kof_t433);
+    kofListAdd(__kof_t434, btnTipoAjuste);
+    rowTiposMov = kofUiRowNew(__kof_t434);
+    kofUiWidgetSetClass(rowTiposMov, "mov-type-row");
+    (__kof_t435 = kofListNew());
+    kofListAdd(__kof_t435, lblTipoMov);
+    (__kof_t436 = __kof_t435);
+    kofListAdd(__kof_t436, rowTiposMov);
+    colTipoMov = kofUiColumnNew(__kof_t436);
+    kofUiWidgetSetClass(colTipoMov, "mov-left-top");
     inpTratDoenca = kofUiInputNew("");
-    kofUiInputSetPlaceholder(inpTratDoenca, "Ex: Mastite Clinica / Controle Endo-Ectoparasitas");
+    kofUiInputSetPlaceholder(inpTratDoenca, "Ex: Controle Preventivo de Parasitas / Mastite");
     kofUiWidgetSetId(inpTratDoenca, "inp-trat-doenca");
     inpTratDosagem = kofUiInputNew("10.0");
-    kofUiInputSetPlaceholder(inpTratDosagem, "Ex: 10.0");
+    kofUiInputSetPlaceholder(inpTratDosagem, "Busque ou informe a quantidade / dose (mL)");
     kofUiWidgetSetId(inpTratDosagem, "inp-trat-dosagem");
     inpTratInicio = kofUiInputNew("2026-10-17");
-    kofUiInputSetPlaceholder(inpTratInicio, "AAAA-MM-DD");
+    kofUiInputSetPlaceholder(inpTratInicio, "29/04/2025 15:25");
     kofUiWidgetSetId(inpTratInicio, "inp-trat-inicio");
     inpTratFim = kofUiInputNew("2026-10-24");
     kofUiInputSetPlaceholder(inpTratFim, "AAAA-MM-DD");
     kofUiWidgetSetId(inpTratFim, "inp-trat-fim");
     taTratObs = kofUiTextareaNew("");
-    kofUiTextareaSetPlaceholder(taTratObs, "Descreva a posologia, evolucao clinica, periodo de carencia de leite/abate e recomendacoes veterinarias...");
+    kofUiTextareaSetPlaceholder(taTratObs, "Adicione observações relevantes sobre posologia, carência e evolução clínica");
     kofUiWidgetSetId(taTratObs, "ta-trat-obs");
     inpTratGadoManual = kofUiInputNew("");
-    kofUiInputSetPlaceholder(inpTratGadoManual, "Opcional: UUID do animal");
+    kofUiInputSetPlaceholder(inpTratGadoManual, "UUID Animal (opcional)");
     kofUiWidgetSetId(inpTratGadoManual, "inp-trat-gado-manual");
     inpTratRemedioManual = kofUiInputNew("");
-    kofUiInputSetPlaceholder(inpTratRemedioManual, "Opcional: UUID do medicamento");
+    kofUiInputSetPlaceholder(inpTratRemedioManual, "UUID Medicamento (opcional)");
     kofUiWidgetSetId(inpTratRemedioManual, "inp-trat-remedio-manual");
     inpTratIdManual = kofUiInputNew("");
-    kofUiInputSetPlaceholder(inpTratIdManual, "Opcional: UUID do tratamento");
+    kofUiInputSetPlaceholder(inpTratIdManual, "UUID Tratamento (opcional)");
     kofUiWidgetSetId(inpTratIdManual, "inp-trat-id-manual");
-    btnRegistrarTratamento = kofUiButtonNewAction("Registrar Tratamento + Baixar Estoque", new Lambda11(inpTratDoenca, inpTratGadoManual, selTratGado, inpTratRemedioManual, selTratRemedio, inpTratDosagem, taTratObs, inpTratInicio, inpTratFim, tabelaRemedios, selRemedioEstoque, kpiRemediosValor, kpiRemediosSub, tabelaTratamentos, selTratamentoVer, kpiTratValor, kpiTratSub, statusBanner));
-    kofUiWidgetSetClass(btnRegistrarTratamento, "btn-primary");
+    (__kof_t437 = kofListNew());
+    kofListAdd(__kof_t437, colTipoMov);
+    (__kof_t438 = __kof_t437);
+    kofListAdd(__kof_t438, campoSelect("Produto / Medicamento Aplicado (RF06) *", selTratRemedio));
+    (__kof_t439 = __kof_t438);
+    kofListAdd(__kof_t439, campoSelect("Animal em Tratamento (RF05) *", selTratGado));
+    (__kof_t440 = __kof_t439);
+    kofListAdd(__kof_t440, campoInput("Quantidade / Dosagem (mL) *", inpTratDosagem));
+    colMovLeft = kofUiColumnNew(__kof_t440);
+    kofUiWidgetSetClass(colMovLeft, "mov-form-col");
+    (__kof_t441 = kofListNew());
+    kofListAdd(__kof_t441, campoInput("Motivo / Diagnóstico Clínico *", inpTratDoenca));
+    (__kof_t442 = __kof_t441);
+    (__kof_t443 = kofListNew());
+    kofListAdd(__kof_t443, campoInput("Data de Início *", inpTratInicio));
+    (__kof_t444 = __kof_t443);
+    kofListAdd(__kof_t444, campoInput("Previsão de Alta *", inpTratFim));
+    kofListAdd(__kof_t442, kofUiRowNew(__kof_t444));
+    (__kof_t445 = __kof_t442);
+    kofListAdd(__kof_t445, campoTextarea("Observações", taTratObs));
+    (__kof_t446 = __kof_t445);
+    (__kof_t447 = kofListNew());
+    kofListAdd(__kof_t447, campoInput("UUID Animal (opc.)", inpTratGadoManual));
+    (__kof_t448 = __kof_t447);
+    kofListAdd(__kof_t448, campoInput("UUID Remédio (opc.)", inpTratRemedioManual));
+    (__kof_t449 = __kof_t448);
+    kofListAdd(__kof_t449, campoInput("UUID Tratamento (opc.)", inpTratIdManual));
+    kofListAdd(__kof_t446, kofUiRowNew(__kof_t449));
+    colMovRight = kofUiColumnNew(__kof_t446);
+    kofUiWidgetSetClass(colMovRight, "mov-form-col");
+    (__kof_t450 = kofListNew());
+    kofListAdd(__kof_t450, colMovLeft);
+    (__kof_t451 = __kof_t450);
+    kofListAdd(__kof_t451, colMovRight);
+    gridMovForm = kofUiRowNew(__kof_t451);
+    kofUiWidgetSetClass(gridMovForm, "mov-form-grid");
+    btnCancelarMov = kofUiButtonNewAction("× Cancelar", new Lambda33(inpTratDoenca, taTratObs, statusBanner));
+    kofUiWidgetSetClass(btnCancelarMov, "btn-outline");
+    btnRegistrarTratamento = kofUiButtonNewAction("Salvar produto", new Lambda34(inpTratDoenca, inpTratGadoManual, selTratGado, inpTratRemedioManual, selTratRemedio, inpTratDosagem, taTratObs, inpTratInicio, inpTratFim, tabelaRemedios, tabelaDashboardEstoque, selRemedioEstoque, kpiDashBaixo, kpiDashValor, kpiRemTotal, kpiRemAtivos, kpiRemBaixos, kpiRemZerados, tabelaTratamentos, selTratamentoVer, statusBanner));
+    kofUiWidgetSetClass(btnRegistrarTratamento, "btn-navy");
     kofUiWidgetSetId(btnRegistrarTratamento, "btn-registrar-tratamento");
-    btnHistoricoGado = kofUiButtonNewAction("Consultar Historico do Animal", new Lambda12(inpTratGadoManual, selTratGado, tabelaTratamentos, selTratamentoVer, kpiTratValor, kpiTratSub, statusBanner));
-    kofUiWidgetSetClass(btnHistoricoGado, "btn-secondary");
+    btnHistoricoGado = kofUiButtonNewAction("Consultar Histórico do Animal", new Lambda35(inpTratGadoManual, selTratGado, tabelaTratamentos, selTratamentoVer, statusBanner));
+    kofUiWidgetSetClass(btnHistoricoGado, "btn-outline");
     kofUiWidgetSetId(btnHistoricoGado, "btn-historico-gado");
-    btnRemediosTratamento = kofUiButtonNewAction("Ver Receituario e Dosagens", new Lambda13(inpTratIdManual, selTratamentoVer, tabelaReceituario, statusBanner));
-    kofUiWidgetSetClass(btnRemediosTratamento, "btn-ghost");
+    btnRemediosTratamento = kofUiButtonNewAction("Exportar / Ver Receituário", new Lambda36(inpTratIdManual, selTratamentoVer, tabelaReceituario, statusBanner));
+    kofUiWidgetSetClass(btnRemediosTratamento, "btn-outline");
     kofUiWidgetSetId(btnRemediosTratamento, "btn-remedios-tratamento");
-    (__kof_t158 = kofListNew());
-    (__kof_t159 = kofListNew());
-    kofListAdd(__kof_t159, campoSelect("Animal em Tratamento *", selTratGado));
-    (__kof_t160 = __kof_t159);
-    kofListAdd(__kof_t160, campoSelect("Medicamento Aplicado (Baixa Estoque) *", selTratRemedio));
-    kofListAdd(__kof_t158, kofUiRowNew(__kof_t160));
-    (__kof_t161 = __kof_t158);
-    (__kof_t162 = kofListNew());
-    kofListAdd(__kof_t162, campoInput("Diagnostico / Nome da Doenca *", inpTratDoenca));
-    (__kof_t163 = __kof_t162);
-    kofListAdd(__kof_t163, campoInput("Dosagem Aplicada (mL / mg) *", inpTratDosagem));
-    kofListAdd(__kof_t161, kofUiRowNew(__kof_t163));
-    (__kof_t164 = __kof_t161);
-    (__kof_t165 = kofListNew());
-    kofListAdd(__kof_t165, campoInput("Data de Inicio *", inpTratInicio));
-    (__kof_t166 = __kof_t165);
-    kofListAdd(__kof_t166, campoInput("Previsao de Alta *", inpTratFim));
-    kofListAdd(__kof_t164, kofUiRowNew(__kof_t166));
-    (__kof_t167 = __kof_t164);
-    kofListAdd(__kof_t167, campoTextarea("Evolucao Clinica e Observacoes Veterinarias", taTratObs));
-    (__kof_t168 = __kof_t167);
-    kofListAdd(__kof_t168, kofUiHrNew());
-    (__kof_t169 = __kof_t168);
-    (__kof_t170 = kofListNew());
-    kofListAdd(__kof_t170, campoInput("UUID Animal (opcional)", inpTratGadoManual));
-    (__kof_t171 = __kof_t170);
-    kofListAdd(__kof_t171, campoInput("UUID Medicamento (opcional)", inpTratRemedioManual));
-    (__kof_t172 = __kof_t171);
-    kofListAdd(__kof_t172, campoInput("UUID Tratamento (opcional)", inpTratIdManual));
-    kofListAdd(__kof_t169, kofUiRowNew(__kof_t172));
-    (__kof_t173 = __kof_t169);
-    (__kof_t174 = kofListNew());
-    kofListAdd(__kof_t174, btnRegistrarTratamento);
-    (__kof_t175 = __kof_t174);
-    kofListAdd(__kof_t175, btnHistoricoGado);
-    kofListAdd(__kof_t173, kofUiRowNew(__kof_t175));
-    formTratamentos = kofUiFieldsetNewLegend(__kof_t173, "Prescricao Veterinaria & Baixa Automatica de Estoque (RF05, RF06)");
-    kofUiWidgetSetClass(formTratamentos, "panel-card form-card");
-    (__kof_t176 = kofListNew());
-    kofListAdd(__kof_t176, campoSelect("Tratamento Selecionado para Receituario", selTratamentoVer));
-    (__kof_t177 = __kof_t176);
-    kofListAdd(__kof_t177, btnRemediosTratamento);
-    barraReceituario = kofUiRowNew(__kof_t177);
-    kofUiWidgetSetClass(barraReceituario, "filter-bar");
-    (__kof_t178 = kofListNew());
-    kofListAdd(__kof_t178, tabelaTratamentos);
-    (__kof_t179 = __kof_t178);
-    kofListAdd(__kof_t179, kofUiHrNew());
-    (__kof_t180 = __kof_t179);
-    kofListAdd(__kof_t180, barraReceituario);
-    (__kof_t181 = __kof_t180);
-    kofListAdd(__kof_t181, tabelaReceituario);
-    cardTabelaTratamentos = kofUiFieldsetNewLegend(__kof_t181, "Prontuario Sanitario do Animal & Dosagens Aplicadas (RF05)");
-    kofUiWidgetSetClass(cardTabelaTratamentos, "panel-card table-card");
-    (__kof_t182 = kofListNew());
-    kofListAdd(__kof_t182, formTratamentos);
-    (__kof_t183 = __kof_t182);
-    kofListAdd(__kof_t183, cardTabelaTratamentos);
-    painelTratamentos = kofUiRowNew(__kof_t183);
-    kofUiWidgetSetClass(painelTratamentos, "tab-panel hidden");
+    (__kof_t452 = kofListNew());
+    kofListAdd(__kof_t452, btnHistoricoGado);
+    (__kof_t453 = __kof_t452);
+    kofListAdd(__kof_t453, btnCancelarMov);
+    (__kof_t454 = __kof_t453);
+    kofListAdd(__kof_t454, btnRegistrarTratamento);
+    footerMovActions = kofUiRowNew(__kof_t454);
+    kofUiWidgetSetClass(footerMovActions, "mov-footer-actions");
+    (__kof_t455 = kofListNew());
+    kofListAdd(__kof_t455, lblNovaMovTitle);
+    (__kof_t456 = __kof_t455);
+    kofListAdd(__kof_t456, gridMovForm);
+    (__kof_t457 = __kof_t456);
+    kofListAdd(__kof_t457, kofUiHrNew());
+    (__kof_t458 = __kof_t457);
+    kofListAdd(__kof_t458, footerMovActions);
+    cardNovaMovimentacao = kofUiColumnNew(__kof_t458);
+    kofUiWidgetSetClass(cardNovaMovimentacao, "estocae-card mov-top-card");
+    lblHistMovTitle = kofUiLabelNew("↺ Histórico de Movimentações");
+    kofUiWidgetSetClass(lblHistMovTitle, "orange-section-heading");
+    (__kof_t459 = kofListNew());
+    kofListAdd(__kof_t459, selTratamentoVer);
+    (__kof_t460 = __kof_t459);
+    kofListAdd(__kof_t460, btnRemediosTratamento);
+    histRightActions = kofUiRowNew(__kof_t460);
+    kofUiWidgetSetClass(histRightActions, "inventory-actions-row");
+    (__kof_t461 = kofListNew());
+    kofListAdd(__kof_t461, lblHistMovTitle);
+    (__kof_t462 = __kof_t461);
+    kofListAdd(__kof_t462, histRightActions);
+    headerHistMov = kofUiRowNew(__kof_t462);
+    kofUiWidgetSetClass(headerHistMov, "card-header-between");
+    (__kof_t463 = kofListNew());
+    kofListAdd(__kof_t463, headerHistMov);
+    (__kof_t464 = __kof_t463);
+    kofListAdd(__kof_t464, tabelaTratamentos);
+    (__kof_t465 = __kof_t464);
+    kofListAdd(__kof_t465, tabelaReceituario);
+    (__kof_t466 = __kof_t465);
+    kofListAdd(__kof_t466, criarPaginacaoEstocae());
+    cardHistoricoMov = kofUiColumnNew(__kof_t466);
+    kofUiWidgetSetClass(cardHistoricoMov, "estocae-card mov-history-card");
+    (__kof_t467 = kofListNew());
+    kofListAdd(__kof_t467, cardNovaMovimentacao);
+    (__kof_t468 = __kof_t467);
+    kofListAdd(__kof_t468, cardHistoricoMov);
+    painelTratamentos = kofUiColumnNew(__kof_t468);
+    kofUiWidgetSetClass(painelTratamentos, "view-screen hidden");
     kofUiWidgetSetId(painelTratamentos, "panel-tratamentos");
-    inpPerfilNome = kofUiInputNew("");
-    kofUiInputSetPlaceholder(inpPerfilNome, "Ex: Guilherme Silva (Gestor Agropecuario)");
+    lblCfgSysTitle = kofUiLabelNew("⚙ Configurações do Sistema");
+    kofUiWidgetSetClass(lblCfgSysTitle, "orange-section-heading");
+    inpEmpresaNome = kofUiInputNew("AgroKOF · Fazenda Santa Helena");
+    (__kof_t469 = kofListNew());
+    kofListAdd(__kof_t469, "Real Brasileiro (R$)");
+    (__kof_t470 = __kof_t469);
+    kofListAdd(__kof_t470, "Dólar Americano (US$)");
+    (__kof_t471 = __kof_t470);
+    kofListAdd(__kof_t471, "Euro (€)");
+    selMoeda = kofUiSelectNew(__kof_t471);
+    (__kof_t472 = kofListNew());
+    kofListAdd(__kof_t472, "(UTC-03:00) Brasília");
+    (__kof_t473 = __kof_t472);
+    kofListAdd(__kof_t473, "(UTC-04:00) Cuiabá / Manaus");
+    selFuso = kofUiSelectNew(__kof_t473);
+    (__kof_t474 = kofListNew());
+    kofListAdd(__kof_t474, "DD/MM/YYYY");
+    (__kof_t475 = __kof_t474);
+    kofListAdd(__kof_t475, "YYYY-MM-DD");
+    selFormatoData = kofUiSelectNew(__kof_t475);
+    inpEndereco = kofUiInputNew("Rodovia BR-163, Km 42 - Zona Rural / PE");
+    (__kof_t476 = kofListNew());
+    kofListAdd(__kof_t476, lblCfgSysTitle);
+    (__kof_t477 = __kof_t476);
+    (__kof_t478 = kofListNew());
+    kofListAdd(__kof_t478, campoInput("Nome da Empresa", inpEmpresaNome));
+    (__kof_t479 = __kof_t478);
+    kofListAdd(__kof_t479, campoSelect("Moeda Padrão", selMoeda));
+    kofListAdd(__kof_t477, kofUiRowNew(__kof_t479));
+    (__kof_t480 = __kof_t477);
+    (__kof_t481 = kofListNew());
+    kofListAdd(__kof_t481, campoSelect("Fuso Horário", selFuso));
+    (__kof_t482 = __kof_t481);
+    kofListAdd(__kof_t482, campoSelect("Formato de Data", selFormatoData));
+    kofListAdd(__kof_t480, kofUiRowNew(__kof_t482));
+    (__kof_t483 = __kof_t480);
+    kofListAdd(__kof_t483, campoInput("Endereço / Localização", inpEndereco));
+    cardCfgSistema = kofUiColumnNew(__kof_t483);
+    kofUiWidgetSetClass(cardCfgSistema, "estocae-card settings-block-card");
+    lblCfgEstTitle = kofUiLabelNew("📦 Configurações do Estoque");
+    kofUiWidgetSetClass(lblCfgEstTitle, "orange-section-heading");
+    inpNivelMinimo = kofUiInputNew("5");
+    (__kof_t484 = kofListNew());
+    kofListAdd(__kof_t484, "Unidades");
+    (__kof_t485 = __kof_t484);
+    kofListAdd(__kof_t485, "Frascos (50 mL)");
+    (__kof_t486 = __kof_t485);
+    kofListAdd(__kof_t486, "Doses (mL)");
+    selUnidadePadrao = kofUiSelectNew(__kof_t486);
+    (__kof_t487 = kofListNew());
+    kofListAdd(__kof_t487, lblCfgEstTitle);
+    (__kof_t488 = __kof_t487);
+    kofListAdd(__kof_t488, criarSwitchRow("Alertas de Estoque Baixo", "Ativar notificações quando produtos atingirem níveis mínimos", true));
+    (__kof_t489 = __kof_t488);
+    (__kof_t490 = kofListNew());
+    kofListAdd(__kof_t490, campoInput("Nível Mínimo Padrão", inpNivelMinimo));
+    (__kof_t491 = __kof_t490);
+    kofListAdd(__kof_t491, campoSelect("Unidade de Medida Padrão", selUnidadePadrao));
+    kofListAdd(__kof_t489, kofUiRowNew(__kof_t491));
+    (__kof_t492 = __kof_t489);
+    kofListAdd(__kof_t492, criarSwitchRow("Permitir Estoque Negativo", "Permitir baixas mesmo quando não há estoque disponível", false));
+    (__kof_t493 = __kof_t492);
+    kofListAdd(__kof_t493, criarSwitchRow("Ativar Validade de Produtos", "Controlar data de validade dos medicamentos veterinários", false));
+    (__kof_t494 = __kof_t493);
+    kofListAdd(__kof_t494, criarSwitchRow("Ativar Controle de Lotes", "Rastrear produtos e animais por números de lote ou registro", true));
+    cardCfgEstoque = kofUiColumnNew(__kof_t494);
+    kofUiWidgetSetClass(cardCfgEstoque, "estocae-card settings-block-card");
+    lblCfgMailTitle = kofUiLabelNew("✉ Notificações por E-mail");
+    kofUiWidgetSetClass(lblCfgMailTitle, "orange-section-heading");
+    inpNovoEmail = kofUiInputNew("");
+    kofUiInputSetPlaceholder(inpNovoEmail, "Adicionar e-mail");
+    btnAddEmail = kofUiButtonNewAction("+", new Lambda37(statusBanner, inpNovoEmail));
+    kofUiWidgetSetClass(btnAddEmail, "btn-orange-square");
+    (__kof_t495 = kofListNew());
+    kofListAdd(__kof_t495, inpNovoEmail);
+    (__kof_t496 = __kof_t495);
+    kofListAdd(__kof_t496, btnAddEmail);
+    rowAddEmail = kofUiRowNew(__kof_t496);
+    kofUiWidgetSetClass(rowAddEmail, "email-add-row");
+    (__kof_t497 = kofListNew());
+    kofListAdd(__kof_t497, kofUiLabelNew("estoque@empresa.com"));
+    (__kof_t498 = __kof_t497);
+    kofListAdd(__kof_t498, kofUiLabelNew("×"));
+    pillEmail1 = kofUiRowNew(__kof_t498);
+    kofUiWidgetSetClass(pillEmail1, "email-chip-row");
+    (__kof_t499 = kofListNew());
+    kofListAdd(__kof_t499, kofUiLabelNew("veterinario@fazendakof.com"));
+    (__kof_t500 = __kof_t499);
+    kofListAdd(__kof_t500, kofUiLabelNew("×"));
+    pillEmail2 = kofUiRowNew(__kof_t500);
+    kofUiWidgetSetClass(pillEmail2, "email-chip-row");
+    (__kof_t501 = kofListNew());
+    kofListAdd(__kof_t501, lblCfgMailTitle);
+    (__kof_t502 = __kof_t501);
+    kofListAdd(__kof_t502, criarSwitchRow("Notificar Estoque Baixo", "Enviar e-mail quando os produtos atingirem níveis mínimos", true));
+    (__kof_t503 = __kof_t502);
+    kofListAdd(__kof_t503, kofUiLabelNew("E-mails para Notificação"));
+    (__kof_t504 = __kof_t503);
+    kofListAdd(__kof_t504, rowAddEmail);
+    (__kof_t505 = __kof_t504);
+    kofListAdd(__kof_t505, pillEmail1);
+    (__kof_t506 = __kof_t505);
+    kofListAdd(__kof_t506, pillEmail2);
+    (__kof_t507 = __kof_t506);
+    kofListAdd(__kof_t507, criarSwitchRow("Notificar Movimentações Críticas", "Enviar e-mail para grandes movimentações de estoque", false));
+    cardCfgEmail = kofUiColumnNew(__kof_t507);
+    kofUiWidgetSetClass(cardCfgEmail, "estocae-card settings-block-card");
+    (__kof_t508 = kofListNew());
+    kofListAdd(__kof_t508, cardCfgSistema);
+    (__kof_t509 = __kof_t508);
+    kofListAdd(__kof_t509, cardCfgEstoque);
+    (__kof_t510 = __kof_t509);
+    kofListAdd(__kof_t510, cardCfgEmail);
+    settingsLeftCol = kofUiColumnNew(__kof_t510);
+    kofUiWidgetSetClass(settingsLeftCol, "settings-col-left");
+    lblPerfilTitle = kofUiLabelNew("👤 Perfil do Usuário");
+    kofUiWidgetSetClass(lblPerfilTitle, "orange-section-heading");
+    avatarCircleBig = kofUiLabelNew("JA");
+    kofUiWidgetSetClass(avatarCircleBig, "profile-avatar-large");
+    lblProfileDisplayName = kofUiLabelNew("Juliana Albuquerque");
+    kofUiWidgetSetClass(lblProfileDisplayName, "profile-display-name");
+    lblProfileDisplayEmail = kofUiLabelNew("juliana@email.com");
+    kofUiWidgetSetClass(lblProfileDisplayEmail, "profile-display-email");
+    (__kof_t511 = kofListNew());
+    kofListAdd(__kof_t511, avatarCircleBig);
+    (__kof_t512 = __kof_t511);
+    kofListAdd(__kof_t512, lblProfileDisplayName);
+    (__kof_t513 = __kof_t512);
+    kofListAdd(__kof_t513, lblProfileDisplayEmail);
+    profileCenterHeader = kofUiColumnNew(__kof_t513);
+    kofUiWidgetSetClass(profileCenterHeader, "profile-header-center");
+    inpPerfilNome = kofUiInputNew("Juliana");
+    kofUiInputSetPlaceholder(inpPerfilNome, "Nome");
     kofUiWidgetSetId(inpPerfilNome, "inp-perfil-nome");
-    inpPerfilEmail = kofUiInputNew("");
-    kofUiInputSetPlaceholder(inpPerfilEmail, "Ex: gestor@fazendakof.com.br");
+    inpPerfilSobrenome = kofUiInputNew("Albuquerque");
+    kofUiInputSetPlaceholder(inpPerfilSobrenome, "Sobrenome");
+    inpPerfilEmail = kofUiInputNew("juliana@email.com");
+    kofUiInputSetPlaceholder(inpPerfilEmail, "E-mail OAuth2");
     kofUiWidgetSetId(inpPerfilEmail, "inp-perfil-email");
-    (__kof_t184 = kofListNew());
-    kofListAdd(__kof_t184, "Propriedade");
-    (__kof_t185 = __kof_t184);
-    kofListAdd(__kof_t185, "Valor na Sessao OAuth2");
-    (__kof_t186 = kofListNew());
-    (__kof_t187 = kofListNew());
-    kofListAdd(__kof_t187, "Provedores Suportados (RNF08)");
-    (__kof_t188 = __kof_t187);
-    kofListAdd(__kof_t188, "Google OAuth2 / GitHub OAuth2");
-    kofListAdd(__kof_t186, __kof_t188);
-    (__kof_t189 = __kof_t186);
-    (__kof_t190 = kofListNew());
-    kofListAdd(__kof_t190, "Politica de Privacidade (RNF09)");
-    (__kof_t191 = __kof_t190);
-    kofListAdd(__kof_t191, "Coleta estrita de ID, Nome, E-mail e Provedor");
-    kofListAdd(__kof_t189, __kof_t191);
-    (__kof_t192 = __kof_t189);
-    (__kof_t193 = kofListNew());
-    kofListAdd(__kof_t193, "Status da Sessao Atual");
-    (__kof_t194 = __kof_t193);
-    kofListAdd(__kof_t194, "Clique em 'Consultar Sessao OAuth2' para verificar");
-    kofListAdd(__kof_t192, __kof_t194);
-    tabelaPerfil = kofUiTableNew(__kof_t185, __kof_t192);
+    inpPerfilSenha = kofUiInputNew("••••••••");
+    (__kof_t514 = kofListNew());
+    kofListAdd(__kof_t514, "Administrador");
+    (__kof_t515 = __kof_t514);
+    kofListAdd(__kof_t515, "Gestor Agropecuário");
+    (__kof_t516 = __kof_t515);
+    kofListAdd(__kof_t516, "Veterinário");
+    selNivelAcesso = kofUiSelectNew(__kof_t516);
+    (__kof_t517 = kofListNew());
+    kofListAdd(__kof_t517, "Propriedade OAuth2");
+    (__kof_t518 = __kof_t517);
+    kofListAdd(__kof_t518, "Status / Valor");
+    (__kof_t519 = kofListNew());
+    (__kof_t520 = kofListNew());
+    kofListAdd(__kof_t520, "Provedores Suportados (RNF08)");
+    (__kof_t521 = __kof_t520);
+    kofListAdd(__kof_t521, "Google OAuth2 / GitHub OAuth2");
+    kofListAdd(__kof_t519, __kof_t521);
+    (__kof_t522 = __kof_t519);
+    (__kof_t523 = kofListNew());
+    kofListAdd(__kof_t523, "Política de Privacidade (RNF09)");
+    (__kof_t524 = __kof_t523);
+    kofListAdd(__kof_t524, "Coleta mínima: ID, Nome e E-mail");
+    kofListAdd(__kof_t522, __kof_t524);
+    (__kof_t525 = __kof_t522);
+    (__kof_t526 = kofListNew());
+    kofListAdd(__kof_t526, "Sessão Atual");
+    (__kof_t527 = __kof_t526);
+    kofListAdd(__kof_t527, "Autenticado / Pronto para sincronizar");
+    kofListAdd(__kof_t525, __kof_t527);
+    tabelaPerfil = kofUiTableNew(__kof_t518, __kof_t525);
     kofUiWidgetSetId(tabelaPerfil, "tabela-perfil");
-    btnPerfilOAuth = kofUiButtonNewAction("Consultar Sessao OAuth2", new Lambda14(tabelaPerfil, statusBanner));
-    kofUiWidgetSetClass(btnPerfilOAuth, "btn-secondary");
+    lblSidebarUserName = kofUiLabelNew("Juliana Albuquerque");
+    kofUiWidgetSetClass(lblSidebarUserName, "sidebar-user-name");
+    btnPerfilOAuth = kofUiButtonNewAction("Consultar Sessão OAuth2", new Lambda38(tabelaPerfil, statusBanner));
+    kofUiWidgetSetClass(btnPerfilOAuth, "btn-outline");
     kofUiWidgetSetId(btnPerfilOAuth, "btn-consultar-perfil");
-    btnAtualizarPerfil = kofUiButtonNewAction("Salvar Dados do Perfil", new Lambda15(inpPerfilNome, inpPerfilEmail, tabelaPerfil, statusBanner));
-    kofUiWidgetSetClass(btnAtualizarPerfil, "btn-primary");
+    btnAtualizarPerfil = kofUiButtonNewAction("Salvar Dados do Perfil", new Lambda39(inpPerfilNome, inpPerfilSobrenome, inpPerfilEmail, lblProfileDisplayName, lblProfileDisplayEmail, lblSidebarUserName, tabelaPerfil, statusBanner));
+    kofUiWidgetSetClass(btnAtualizarPerfil, "btn-navy");
     kofUiWidgetSetId(btnAtualizarPerfil, "btn-salvar-perfil");
-    (__kof_t195 = kofListNew());
-    kofListAdd(__kof_t195, campoInput("Nome Completo do Produtor / Gestor", inpPerfilNome));
-    (__kof_t196 = __kof_t195);
-    kofListAdd(__kof_t196, campoInput("E-mail Institucional (Vinculado ao OAuth2)", inpPerfilEmail));
-    (__kof_t197 = __kof_t196);
-    (__kof_t198 = kofListNew());
-    kofListAdd(__kof_t198, btnPerfilOAuth);
-    (__kof_t199 = __kof_t198);
-    kofListAdd(__kof_t199, btnAtualizarPerfil);
-    kofListAdd(__kof_t197, kofUiRowNew(__kof_t199));
-    formPerfil = kofUiFieldsetNewLegend(__kof_t197, "Dados da Conta OAuth2 — Google / GitHub (RF04, RNF08, RNF09)");
-    kofUiWidgetSetClass(formPerfil, "panel-card form-card");
-    (__kof_t200 = kofListNew());
-    kofListAdd(__kof_t200, tabelaPerfil);
-    cardTabelaPerfil = kofUiFieldsetNewLegend(__kof_t200, "Auditoria de Seguranca e Privacidade (RNF08, RNF09)");
-    kofUiWidgetSetClass(cardTabelaPerfil, "panel-card table-card");
-    (__kof_t201 = kofListNew());
-    kofListAdd(__kof_t201, formPerfil);
-    (__kof_t202 = __kof_t201);
-    kofListAdd(__kof_t202, cardTabelaPerfil);
-    painelPerfil = kofUiRowNew(__kof_t202);
-    kofUiWidgetSetClass(painelPerfil, "tab-panel hidden");
+    (__kof_t528 = kofListNew());
+    kofListAdd(__kof_t528, lblPerfilTitle);
+    (__kof_t529 = __kof_t528);
+    kofListAdd(__kof_t529, profileCenterHeader);
+    (__kof_t530 = __kof_t529);
+    (__kof_t531 = kofListNew());
+    kofListAdd(__kof_t531, campoInput("Nome", inpPerfilNome));
+    (__kof_t532 = __kof_t531);
+    kofListAdd(__kof_t532, campoInput("Sobrenome", inpPerfilSobrenome));
+    kofListAdd(__kof_t530, kofUiRowNew(__kof_t532));
+    (__kof_t533 = __kof_t530);
+    kofListAdd(__kof_t533, campoInput("E-mail", inpPerfilEmail));
+    (__kof_t534 = __kof_t533);
+    kofListAdd(__kof_t534, campoInput("Senha / Token OAuth2", inpPerfilSenha));
+    (__kof_t535 = __kof_t534);
+    kofListAdd(__kof_t535, campoSelect("Nível de Acesso", selNivelAcesso));
+    (__kof_t536 = __kof_t535);
+    (__kof_t537 = kofListNew());
+    kofListAdd(__kof_t537, btnPerfilOAuth);
+    (__kof_t538 = __kof_t537);
+    kofListAdd(__kof_t538, btnAtualizarPerfil);
+    kofListAdd(__kof_t536, kofUiRowNew(__kof_t538));
+    (__kof_t539 = __kof_t536);
+    kofListAdd(__kof_t539, tabelaPerfil);
+    cardPerfilUsuario = kofUiColumnNew(__kof_t539);
+    kofUiWidgetSetClass(cardPerfilUsuario, "estocae-card settings-block-card");
+    lblSysInfoTitle = kofUiLabelNew("ℹ Informações do Sistema");
+    kofUiWidgetSetClass(lblSysInfoTitle, "orange-section-heading");
+    infoVersao = kofUiLabelNew("Estocaê · AgroKOF v1.0.0");
+    kofUiWidgetSetClass(infoVersao, "sys-info-box");
+    infoUpdate = kofUiLabelNew("17/10/2026");
+    kofUiWidgetSetClass(infoUpdate, "sys-info-box");
+    infoLicenca = kofUiLabelNew("Licença Empresarial (Válida até 29/05/2027)");
+    kofUiWidgetSetClass(infoLicenca, "sys-info-box");
+    infoStatus = kofUiLabelNew("✔ Sistema Atualizado");
+    kofUiWidgetSetClass(infoStatus, "sys-info-box status-ok");
+    infoBackup = kofUiLabelNew("17/10/2026 18:30");
+    kofUiWidgetSetClass(infoBackup, "sys-info-box");
+    btnBackupAgora = kofUiButtonNewAction("💾 Fazer Backup Agora", new Lambda40(tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiDashPastos, kpiPastosTotal, kpiPastosProprios, kpiPastosArrendados, kpiPastosCusto, tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiDashProdutos, kpiGadoTotal, kpiGadoAtivos, kpiGadoInativos, kpiGadoAlerta, tabelaRemedios, tabelaDashboardEstoque, selRemedioEstoque, selTratRemedio, kpiDashBaixo, kpiDashValor, kpiRemTotal, kpiRemAtivos, kpiRemBaixos, kpiRemZerados, statusBanner));
+    kofUiWidgetSetClass(btnBackupAgora, "btn-navy full-width");
+    (__kof_t540 = kofListNew());
+    kofListAdd(__kof_t540, lblSysInfoTitle);
+    (__kof_t541 = __kof_t540);
+    kofListAdd(__kof_t541, kofUiLabelNew("Versão"));
+    (__kof_t542 = __kof_t541);
+    kofListAdd(__kof_t542, infoVersao);
+    (__kof_t543 = __kof_t542);
+    kofListAdd(__kof_t543, kofUiLabelNew("Última Atualização"));
+    (__kof_t544 = __kof_t543);
+    kofListAdd(__kof_t544, infoUpdate);
+    (__kof_t545 = __kof_t544);
+    kofListAdd(__kof_t545, kofUiLabelNew("Licença"));
+    (__kof_t546 = __kof_t545);
+    kofListAdd(__kof_t546, infoLicenca);
+    (__kof_t547 = __kof_t546);
+    kofListAdd(__kof_t547, kofUiLabelNew("Status"));
+    (__kof_t548 = __kof_t547);
+    kofListAdd(__kof_t548, infoStatus);
+    (__kof_t549 = __kof_t548);
+    kofListAdd(__kof_t549, kofUiLabelNew("Último Backup"));
+    (__kof_t550 = __kof_t549);
+    kofListAdd(__kof_t550, infoBackup);
+    (__kof_t551 = __kof_t550);
+    kofListAdd(__kof_t551, btnBackupAgora);
+    cardSysInfo = kofUiColumnNew(__kof_t551);
+    kofUiWidgetSetClass(cardSysInfo, "estocae-card settings-block-card");
+    (__kof_t552 = kofListNew());
+    kofListAdd(__kof_t552, cardPerfilUsuario);
+    (__kof_t553 = __kof_t552);
+    kofListAdd(__kof_t553, cardSysInfo);
+    settingsRightCol = kofUiColumnNew(__kof_t553);
+    kofUiWidgetSetClass(settingsRightCol, "settings-col-right");
+    (__kof_t554 = kofListNew());
+    kofListAdd(__kof_t554, settingsLeftCol);
+    (__kof_t555 = __kof_t554);
+    kofListAdd(__kof_t555, settingsRightCol);
+    settingsGrid = kofUiRowNew(__kof_t555);
+    kofUiWidgetSetClass(settingsGrid, "settings-two-col-grid");
+    (__kof_t556 = kofListNew());
+    kofListAdd(__kof_t556, settingsGrid);
+    painelPerfil = kofUiColumnNew(__kof_t556);
+    kofUiWidgetSetClass(painelPerfil, "view-screen hidden");
     kofUiWidgetSetId(painelPerfil, "panel-perfil");
-    btnAbaPastos = kofUiButtonNewAction("1. Pastos & Piquetes", new Lambda16(painelPastos, painelGado, painelRemedios, painelTratamentos, painelPerfil));
-    btnAbaGado = kofUiButtonNewAction("2. Rebanho & Filtro", new Lambda17(painelPastos, painelGado, painelRemedios, painelTratamentos, painelPerfil));
-    btnAbaRemedios = kofUiButtonNewAction("3. Farmacia & Estoque", new Lambda18(painelPastos, painelGado, painelRemedios, painelTratamentos, painelPerfil));
-    btnAbaTratamentos = kofUiButtonNewAction("4. Tratamentos Sanitarios", new Lambda19(painelPastos, painelGado, painelRemedios, painelTratamentos, painelPerfil));
-    btnAbaPerfil = kofUiButtonNewAction("5. Conta OAuth2", new Lambda20(painelPastos, painelGado, painelRemedios, painelTratamentos, painelPerfil));
-    kofUiWidgetSetClass(btnAbaPastos, "tab-btn active");
-    kofUiWidgetSetClass(btnAbaGado, "tab-btn");
-    kofUiWidgetSetClass(btnAbaRemedios, "tab-btn");
-    kofUiWidgetSetClass(btnAbaTratamentos, "tab-btn");
-    kofUiWidgetSetClass(btnAbaPerfil, "tab-btn");
+    pageTitle = kofUiLabelNew("Dashboard Overview");
+    kofUiLabelSetBold(pageTitle, true);
+    kofUiLabelSetFontSize(pageTitle, 20);
+    kofUiWidgetSetClass(pageTitle, "topbar-page-title");
+    inpPesquisaGlobal = kofUiInputNew("");
+    kofUiInputSetPlaceholder(inpPesquisaGlobal, "Pesquisar em produtos, rebanho ou movimentações...");
+    kofUiWidgetSetId(inpPesquisaGlobal, "inp-pesquisa-global");
+    kofUiWidgetSetClass(inpPesquisaGlobal, "topbar-search-input");
+    (__kof_t557 = kofListNew());
+    kofListAdd(__kof_t557, kofUiIconNewSize("search", 16));
+    (__kof_t558 = __kof_t557);
+    kofListAdd(__kof_t558, inpPesquisaGlobal);
+    searchBox = kofUiRowNew(__kof_t558);
+    kofUiWidgetSetClass(searchBox, "topbar-search-box");
+    btnSync = kofUiButtonNewAction("Sincronizar", new Lambda41(tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiDashPastos, kpiPastosTotal, kpiPastosProprios, kpiPastosArrendados, kpiPastosCusto, tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiDashProdutos, kpiGadoTotal, kpiGadoAtivos, kpiGadoInativos, kpiGadoAlerta, tabelaRemedios, tabelaDashboardEstoque, selRemedioEstoque, selTratRemedio, kpiDashBaixo, kpiDashValor, kpiRemTotal, kpiRemAtivos, kpiRemBaixos, kpiRemZerados, tabelaTratamentos, selTratamentoVer, canvasLinha, canvasDonut, statusBanner));
+    kofUiWidgetSetClass(btnSync, "btn-top-chip");
+    kofUiWidgetSetId(btnSync, "btn-sync");
+    btnSeedDemo = kofUiButtonNewAction("Popular Demo", new Lambda42(tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiDashPastos, kpiPastosTotal, kpiPastosProprios, kpiPastosArrendados, kpiPastosCusto, tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiDashProdutos, kpiGadoTotal, kpiGadoAtivos, kpiGadoInativos, kpiGadoAlerta, tabelaRemedios, tabelaDashboardEstoque, selRemedioEstoque, selTratRemedio, kpiDashBaixo, kpiDashValor, kpiRemTotal, kpiRemAtivos, kpiRemBaixos, kpiRemZerados, tabelaTratamentos, selTratamentoVer, canvasLinha, canvasDonut, statusBanner));
+    kofUiWidgetSetClass(btnSeedDemo, "btn-top-chip primary-chip");
+    kofUiWidgetSetId(btnSeedDemo, "btn-seed-demo");
+    btnDiminuirFonte = kofUiButtonNewAction("A-", new Lambda43(pageTitle, statusBanner));
+    kofUiWidgetSetClass(btnDiminuirFonte, "btn-top-chip");
+    kofUiWidgetSetId(btnDiminuirFonte, "btn-font-dec");
+    btnAumentarFonte = kofUiButtonNewAction("A+", new Lambda44(pageTitle, statusBanner));
+    kofUiWidgetSetClass(btnAumentarFonte, "btn-top-chip");
+    kofUiWidgetSetId(btnAumentarFonte, "btn-font-inc");
+    btnAlternarTema = kofUiButtonNewAction("Tema", new Lambda45(w, statusBanner));
+    kofUiWidgetSetClass(btnAlternarTema, "btn-top-chip");
+    kofUiWidgetSetId(btnAlternarTema, "btn-theme-toggle");
+    (__kof_t559 = kofListNew());
+    kofListAdd(__kof_t559, kofUiIconNewSize("mail", 18));
+    notifBell = kofUiColumnNew(__kof_t559);
+    kofUiWidgetSetClass(notifBell, "topbar-bell-btn");
+    (__kof_t560 = kofListNew());
+    kofListAdd(__kof_t560, searchBox);
+    (__kof_t561 = __kof_t560);
+    kofListAdd(__kof_t561, btnSeedDemo);
+    (__kof_t562 = __kof_t561);
+    kofListAdd(__kof_t562, btnSync);
+    (__kof_t563 = __kof_t562);
+    kofListAdd(__kof_t563, btnDiminuirFonte);
+    (__kof_t564 = __kof_t563);
+    kofListAdd(__kof_t564, btnAumentarFonte);
+    (__kof_t565 = __kof_t564);
+    kofListAdd(__kof_t565, btnAlternarTema);
+    (__kof_t566 = __kof_t565);
+    kofListAdd(__kof_t566, notifBell);
+    topbarRight = kofUiRowNew(__kof_t566);
+    kofUiWidgetSetClass(topbarRight, "topbar-right");
+    (__kof_t567 = kofListNew());
+    kofListAdd(__kof_t567, pageTitle);
+    (__kof_t568 = __kof_t567);
+    kofListAdd(__kof_t568, topbarRight);
+    topbar = kofUiRowNew(__kof_t568);
+    kofUiWidgetSetClass(topbar, "estocae-topbar");
+    btnNavDashboard = kofUiButtonNewAction("🏠   Dashboard", new Lambda46(pageTitle, painelDashboard, painelGado, painelRemedios, painelPastos, painelTratamentos, painelPerfil));
+    btnAbaGado = kofUiButtonNewAction("📦   Produtos", new Lambda47(pageTitle, painelDashboard, painelGado, painelRemedios, painelPastos, painelTratamentos, painelPerfil));
+    btnAbaRemedios = kofUiButtonNewAction("🏢   Estoque", new Lambda48(pageTitle, painelDashboard, painelGado, painelRemedios, painelPastos, painelTratamentos, painelPerfil));
+    btnAbaPastos = kofUiButtonNewAction("🚚   Fornecedores", new Lambda49(pageTitle, painelDashboard, painelGado, painelRemedios, painelPastos, painelTratamentos, painelPerfil));
+    btnAbaTratamentos = kofUiButtonNewAction("💲   Movimentações", new Lambda50(pageTitle, painelDashboard, painelGado, painelRemedios, painelPastos, painelTratamentos, painelPerfil));
+    btnNavSistema = kofUiButtonNewAction("⚙   Sistema", new Lambda51(pageTitle, painelDashboard, painelGado, painelRemedios, painelPastos, painelTratamentos, painelPerfil));
+    btnAbaPerfil = kofUiButtonNewAction("👥   Usuários", new Lambda52(pageTitle, painelDashboard, painelGado, painelRemedios, painelPastos, painelTratamentos, painelPerfil));
+    kofUiWidgetOn(btnVerTodosEstoque, "click", new Lambda53(pageTitle, painelDashboard, painelGado, painelRemedios, painelPastos, painelTratamentos, painelPerfil));
+    kofUiWidgetSetClass(btnNavDashboard, "tab-btn sidebar-link active");
+    kofUiWidgetSetClass(btnAbaGado, "tab-btn sidebar-link");
+    kofUiWidgetSetClass(btnAbaRemedios, "tab-btn sidebar-link");
+    kofUiWidgetSetClass(btnAbaPastos, "tab-btn sidebar-link");
+    kofUiWidgetSetClass(btnAbaTratamentos, "tab-btn sidebar-link");
+    kofUiWidgetSetClass(btnNavSistema, "tab-btn sidebar-link");
+    kofUiWidgetSetClass(btnAbaPerfil, "tab-btn sidebar-link");
+    kofUiWidgetSetId(btnNavDashboard, "tab-dashboard");
     kofUiWidgetSetId(btnAbaPastos, "tab-pastos");
     kofUiWidgetSetId(btnAbaGado, "tab-gado");
     kofUiWidgetSetId(btnAbaRemedios, "tab-remedios");
     kofUiWidgetSetId(btnAbaTratamentos, "tab-tratamentos");
+    kofUiWidgetSetId(btnNavSistema, "tab-sistema");
     kofUiWidgetSetId(btnAbaPerfil, "tab-perfil");
-    (__kof_t203 = kofListNew());
-    kofListAdd(__kof_t203, btnAbaPastos);
-    (__kof_t204 = __kof_t203);
-    kofListAdd(__kof_t204, btnAbaGado);
-    (__kof_t205 = __kof_t204);
-    kofListAdd(__kof_t205, btnAbaRemedios);
-    (__kof_t206 = __kof_t205);
-    kofListAdd(__kof_t206, btnAbaTratamentos);
-    (__kof_t207 = __kof_t206);
-    kofListAdd(__kof_t207, btnAbaPerfil);
-    navTabs = kofUiRowNew(__kof_t207);
-    kofUiWidgetSetClass(navTabs, "tabs-bar");
-    btnSync = kofUiButtonNewAction("Sincronizar Dados", new Lambda21(tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiPastosValor, kpiPastosSub, tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiGadosValor, kpiGadosSub, tabelaRemedios, selRemedioEstoque, selTratRemedio, kpiRemediosValor, kpiRemediosSub, tabelaTratamentos, selTratamentoVer, kpiTratValor, kpiTratSub, statusBanner));
-    kofUiWidgetSetClass(btnSync, "btn-secondary");
-    kofUiWidgetSetId(btnSync, "btn-sync");
-    btnSeedDemo = kofUiButtonNewAction("Popular Fazenda Demo", new Lambda22(tabelaPastos, selPastoEditar, selGadoPasto, selFiltroPasto, kpiPastosValor, kpiPastosSub, tabelaGados, selGadoEditar, selGadoMae, selTratGado, kpiGadosValor, kpiGadosSub, tabelaRemedios, selRemedioEstoque, selTratRemedio, kpiRemediosValor, kpiRemediosSub, tabelaTratamentos, selTratamentoVer, kpiTratValor, kpiTratSub, statusBanner));
-    kofUiWidgetSetClass(btnSeedDemo, "btn-primary");
-    kofUiWidgetSetId(btnSeedDemo, "btn-seed-demo");
-    btnDiminuirFonte = kofUiButtonNewAction("A-", new Lambda23(brandTitle, brandSubtitle, statusBanner));
-    kofUiWidgetSetClass(btnDiminuirFonte, "btn-icon");
-    kofUiWidgetSetId(btnDiminuirFonte, "btn-font-dec");
-    btnAumentarFonte = kofUiButtonNewAction("A+", new Lambda24(brandTitle, brandSubtitle, statusBanner));
-    kofUiWidgetSetClass(btnAumentarFonte, "btn-icon");
-    kofUiWidgetSetId(btnAumentarFonte, "btn-font-inc");
-    btnAlternarTema = kofUiButtonNewAction("Tema Claro / Escuro", new Lambda25(w, statusBanner));
-    kofUiWidgetSetClass(btnAlternarTema, "btn-icon");
-    kofUiWidgetSetId(btnAlternarTema, "btn-theme-toggle");
-    (__kof_t208 = kofListNew());
-    kofListAdd(__kof_t208, btnSeedDemo);
-    (__kof_t209 = __kof_t208);
-    kofListAdd(__kof_t209, btnSync);
-    (__kof_t210 = __kof_t209);
-    kofListAdd(__kof_t210, btnDiminuirFonte);
-    (__kof_t211 = __kof_t210);
-    kofListAdd(__kof_t211, btnAumentarFonte);
-    (__kof_t212 = __kof_t211);
-    kofListAdd(__kof_t212, btnAlternarTema);
-    headerActions = kofUiRowNew(__kof_t212);
-    kofUiWidgetSetClass(headerActions, "header-actions");
-    (__kof_t213 = kofListNew());
-    kofListAdd(__kof_t213, brandCol);
-    (__kof_t214 = __kof_t213);
-    kofListAdd(__kof_t214, headerActions);
-    topbar = kofUiRowNew(__kof_t214);
-    kofUiWidgetSetClass(topbar, "app-topbar");
-    (__kof_t215 = kofListNew());
-    kofListAdd(__kof_t215, topbar);
-    (__kof_t216 = __kof_t215);
-    kofListAdd(__kof_t216, kpiGrid);
-    (__kof_t217 = __kof_t216);
-    kofListAdd(__kof_t217, statusBanner);
-    (__kof_t218 = __kof_t217);
-    kofListAdd(__kof_t218, navTabs);
-    (__kof_t219 = __kof_t218);
-    kofListAdd(__kof_t219, painelPastos);
-    (__kof_t220 = __kof_t219);
-    kofListAdd(__kof_t220, painelGado);
-    (__kof_t221 = __kof_t220);
-    kofListAdd(__kof_t221, painelRemedios);
-    (__kof_t222 = __kof_t221);
-    kofListAdd(__kof_t222, painelTratamentos);
-    (__kof_t223 = __kof_t222);
-    kofListAdd(__kof_t223, painelPerfil);
-    shell = kofUiColumnNew(__kof_t223);
-    kofUiWidgetSetClass(shell, "app-shell");
-    kofUiWindowBind(w, shell);
+    logoCube = kofUiLabelNew("❖");
+    kofUiWidgetSetClass(logoCube, "estocae-logo-cube");
+    logoBrandText = kofUiLabelNew("Estocaê");
+    kofUiWidgetSetClass(logoBrandText, "estocae-logo-text");
+    (__kof_t569 = kofListNew());
+    kofListAdd(__kof_t569, logoCube);
+    (__kof_t570 = __kof_t569);
+    kofListAdd(__kof_t570, logoBrandText);
+    logoHeader = kofUiRowNew(__kof_t570);
+    kofUiWidgetSetClass(logoHeader, "estocae-sidebar-brand");
+    lblMenuPrincipal = kofUiLabelNew("MENU PRINCIPAL");
+    kofUiWidgetSetClass(lblMenuPrincipal, "sidebar-section-label");
+    lblMenuConfig = kofUiLabelNew("CONFIGURAÇÕES");
+    kofUiWidgetSetClass(lblMenuConfig, "sidebar-section-label");
+    (__kof_t571 = kofListNew());
+    kofListAdd(__kof_t571, lblMenuPrincipal);
+    (__kof_t572 = __kof_t571);
+    kofListAdd(__kof_t572, btnNavDashboard);
+    (__kof_t573 = __kof_t572);
+    kofListAdd(__kof_t573, btnAbaGado);
+    (__kof_t574 = __kof_t573);
+    kofListAdd(__kof_t574, btnAbaRemedios);
+    (__kof_t575 = __kof_t574);
+    kofListAdd(__kof_t575, btnAbaPastos);
+    (__kof_t576 = __kof_t575);
+    kofListAdd(__kof_t576, btnAbaTratamentos);
+    (__kof_t577 = __kof_t576);
+    kofListAdd(__kof_t577, lblMenuConfig);
+    (__kof_t578 = __kof_t577);
+    kofListAdd(__kof_t578, btnNavSistema);
+    (__kof_t579 = __kof_t578);
+    kofListAdd(__kof_t579, btnAbaPerfil);
+    navGroup = kofUiColumnNew(__kof_t579);
+    kofUiWidgetSetClass(navGroup, "sidebar-nav-list");
+    sidebarAvatar = kofUiLabelNew("JA");
+    kofUiWidgetSetClass(sidebarAvatar, "sidebar-user-avatar");
+    lblSidebarRole = kofUiLabelNew("Admin · AgroKOF");
+    kofUiWidgetSetClass(lblSidebarRole, "sidebar-user-role");
+    (__kof_t580 = kofListNew());
+    kofListAdd(__kof_t580, lblSidebarUserName);
+    (__kof_t581 = __kof_t580);
+    kofListAdd(__kof_t581, lblSidebarRole);
+    sidebarUserInfo = kofUiColumnNew(__kof_t581);
+    kofUiWidgetSetClass(sidebarUserInfo, "sidebar-user-info");
+    (__kof_t582 = kofListNew());
+    kofListAdd(__kof_t582, sidebarAvatar);
+    (__kof_t583 = __kof_t582);
+    kofListAdd(__kof_t583, sidebarUserInfo);
+    sidebarFooter = kofUiRowNew(__kof_t583);
+    kofUiWidgetSetClass(sidebarFooter, "sidebar-user-footer");
+    (__kof_t584 = kofListNew());
+    kofListAdd(__kof_t584, logoHeader);
+    (__kof_t585 = __kof_t584);
+    kofListAdd(__kof_t585, navGroup);
+    (__kof_t586 = __kof_t585);
+    kofListAdd(__kof_t586, sidebarFooter);
+    sidebar = kofUiColumnNew(__kof_t586);
+    kofUiWidgetSetClass(sidebar, "estocae-sidebar");
+    (__kof_t587 = kofListNew());
+    kofListAdd(__kof_t587, topbar);
+    (__kof_t588 = __kof_t587);
+    kofListAdd(__kof_t588, statusBanner);
+    (__kof_t589 = __kof_t588);
+    kofListAdd(__kof_t589, painelDashboard);
+    (__kof_t590 = __kof_t589);
+    kofListAdd(__kof_t590, painelGado);
+    (__kof_t591 = __kof_t590);
+    kofListAdd(__kof_t591, painelRemedios);
+    (__kof_t592 = __kof_t591);
+    kofListAdd(__kof_t592, painelPastos);
+    (__kof_t593 = __kof_t592);
+    kofListAdd(__kof_t593, painelTratamentos);
+    (__kof_t594 = __kof_t593);
+    kofListAdd(__kof_t594, painelPerfil);
+    contentViewport = kofUiColumnNew(__kof_t594);
+    kofUiWidgetSetClass(contentViewport, "estocae-main-area");
+    (__kof_t595 = kofListNew());
+    kofListAdd(__kof_t595, sidebar);
+    (__kof_t596 = __kof_t595);
+    kofListAdd(__kof_t596, contentViewport);
+    appLayout = kofUiRowNew(__kof_t596);
+    kofUiWidgetSetClass(appLayout, "estocae-app-shell");
+    kofUiWindowBind(w, appLayout);
     kofUiWindowShow(w);
     return;
 }

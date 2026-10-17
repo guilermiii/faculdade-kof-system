@@ -1,0 +1,119 @@
+package handlers
+
+import models.*
+
+// ============================================================================
+// Registro Compartilhado de Rotas HTTP (usado por app.kf e pelos testes E2E)
+// ============================================================================
+
+registrarRotas(kof.web.App app, String conn, String oauthProvider) {
+    app.get("/") {
+        return "{\"service\":\"kof-gado-api\",\"status\":\"OK\"}"
+    }
+
+    // Healthcheck da API
+    app.get("/health") {
+        return "{\"status\":\"UP\",\"service\":\"kof-gado-api\"}"
+    }
+
+    // ------------------------------------------------------------------------
+    // RF04 - Gestao do Perfil do Usuario (OAuth2 - RNF08/RNF09)
+    // ------------------------------------------------------------------------
+    app.get("/perfil") {
+        if (!auth.authenticated()) {
+            return status(401, "{\"error\":\"Autenticacao OAuth2 obrigatoria (Google/GitHub)\"}")
+        }
+        return obterOuCriarPerfil(conn, auth.user(), oauthProvider)
+    }
+
+    app.put("/perfil") {
+        if (!auth.authenticated()) {
+            return status(401, "{\"error\":\"Autenticacao OAuth2 obrigatoria (Google/GitHub)\"}")
+        }
+        return atualizarPerfil(conn, auth.user(), oauthProvider, body())
+    }
+
+    // ------------------------------------------------------------------------
+    // RF02 - Cadastrar, Editar e Consultar Pastos
+    // ------------------------------------------------------------------------
+    app.get("/pastos") {
+        return listarPastos(conn)
+    }
+
+    app.get("/pastos/:id") {
+        return buscarPastoPorId(conn, param("id"))
+    }
+
+    app.post("/pastos") {
+        return status(201, criarPasto(conn, body()))
+    }
+
+    app.put("/pastos/:id") {
+        return atualizarPasto(conn, param("id"), body())
+    }
+
+    // ------------------------------------------------------------------------
+    // RF01 - Cadastrar e Gerenciar Gado (CRUD) + RF07 - Filtragem por Pasto
+    // ------------------------------------------------------------------------
+    app.get("/gados") {
+        return listarGados(conn)
+    }
+
+    app.get("/gados/:id") {
+        return buscarGadoPorId(conn, param("id"))
+    }
+
+    app.get("/pastos/:pastoId/gados") {
+        return filtrarGadoPorPasto(conn, param("pastoId"))
+    }
+
+    app.post("/gados") {
+        return status(201, criarGado(conn, body()))
+    }
+
+    app.put("/gados/:id") {
+        return atualizarGado(conn, param("id"), body())
+    }
+
+    app.delete("/gados/:id") {
+        var removido = removerGado(conn, param("id"))
+        if (!removido) {
+            return null
+        }
+        return "{\"deleted\":true}"
+    }
+
+    // ------------------------------------------------------------------------
+    // RF03 - Medicamentos + RF06 - Consulta e Controle de Estoque
+    // ------------------------------------------------------------------------
+    app.get("/remedios") {
+        return listarRemedios(conn)
+    }
+
+    app.get("/remedios/estoque") {
+        return consultarEstoqueRemedios(conn)
+    }
+
+    app.post("/remedios") {
+        return status(201, criarRemedio(conn, body()))
+    }
+
+    app.put("/remedios/:id/estoque") {
+        return atualizarEstoqueRemedio(conn, param("id"), body())
+    }
+
+    // ------------------------------------------------------------------------
+    // RF05 - Manter Historico de Tratamentos por Animal
+    // ------------------------------------------------------------------------
+    app.get("/gados/:gadoId/tratamentos") {
+        return listarTratamentosPorGado(conn, param("gadoId"))
+    }
+
+    app.get("/tratamentos/:id/remedios") {
+        return listarRemediosDoTratamento(conn, param("id"))
+    }
+
+    app.post("/tratamentos") {
+        return status(201, registrarTratamento(conn, body()))
+    }
+}

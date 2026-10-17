@@ -1,0 +1,82 @@
+package handlers
+
+import models.*
+
+// ============================================================================
+// Handlers de Tratamentos (RF05 - Manter Historico de Tratamentos por Animal)
+// ============================================================================
+
+String listarTratamentosPorGado(String conn, String gadoUuid) {
+    var historico = orm.where<Tratamento>(conn, "gado_uuid", gadoUuid)
+    return json.encode(historico)
+}
+
+String listarRemediosDoTratamento(String conn, String tratamentoUuid) {
+    var itens = orm.where<TratamentoRemedio>(conn, "fk_tratamento_uuid", tratamentoUuid)
+    return json.encode(itens)
+}
+
+String registrarTratamento(String conn, String payload) {
+    var req = json.decode<RegistrarTratamentoInput>(payload)
+    if (req.gado_uuid().length == 0 || req.nome_doenca().length == 0) {
+        throw "Animal (gado_uuid) e diagnostico (nome_doenca) sao obrigatorios"
+    }
+
+    var tratId = uuid.v4()
+    var novoTratamento = Tratamento(
+        tratId,
+        req.nome_doenca(),
+        req.gado_uuid(),
+        req.data_inicio(),
+        req.data_fim(),
+        req.observacoes()
+    )
+    orm.save(conn, novoTratamento)
+
+    // Vincula medicamento e dosagem (TRATAMENTO_REMEDIO) e abate do estoque (RF05 + RF06)
+    if (req.fk_remedio_uuid().length > 0) {
+        var vinculo = TratamentoRemedio(
+            uuid.v4(),
+            tratId,
+            req.fk_remedio_uuid(),
+            req.dosagen()
+        )
+        orm.save(conn, vinculo)
+
+        var rem = orm.find<Remedio>(conn, req.fk_remedio_uuid())
+        if (rem != null) {
+            var novoSaldo = rem.estoque - 1
+            if (novoSaldo < 0) {
+                novoSaldo = 0
+            }
+            orm.save(conn, Remedio(
+                rem.id,
+                rem.nome,
+                rem.data_compra,
+                rem.data_vencimento,
+                rem.valor,
+                rem.aplicacao,
+                novoSaldo
+            ))
+        }
+    }
+
+    // Atualiza ponteiro historico_tratamento_uuid no registro do Gado (conforme diagram.png)
+    var g = orm.find<Gado>(conn, req.gado_uuid())
+    if (g != null) {
+        orm.save(conn, Gado(
+            g.id,
+            g.nome,
+            g.vaca_leitera,
+            g.pasto_uuid,
+            g.saudeVaca,
+            g.numero_registro,
+            g.mae,
+            g.sexo,
+            tratId,
+            g.data_nascimento
+        ))
+    }
+
+    return json.encode(novoTratamento)
+}

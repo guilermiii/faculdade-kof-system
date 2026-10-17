@@ -1,0 +1,72 @@
+package handlers
+
+import models.*
+
+// ============================================================================
+// Handlers de Medicamentos e Estoque (RF03 - CRUD, RF06 - Controle de Estoque)
+// ============================================================================
+
+String listarRemedios(String conn) {
+    var lista = orm.all<Remedio>(conn)
+    return json.encode(lista)
+}
+
+String? buscarRemedioPorId(String conn, String id) {
+    var encontrado = orm.find<Remedio>(conn, id)
+    if (encontrado == null) {
+        return null
+    }
+    return json.encode(encontrado)
+}
+
+// RF06 - Consulta detalhada do estoque de medicamentos cadastrados
+String consultarEstoqueRemedios(String conn) {
+    var lista = orm.all<Remedio>(conn)
+    return json.encode(lista)
+}
+
+String criarRemedio(String conn, String payload) {
+    var req = json.decode<CriarRemedioInput>(payload)
+    if (req.nome().length == 0) {
+        throw "Nome do medicamento e obrigatorio"
+    }
+    if (!aplicacaoRemedioValida(req.aplicacao())) {
+        throw "Tipo de aplicacao invalido. Use: INJECAO, CURA_FERIDAS ou SORO_FISIOLOGICO"
+    }
+    if (req.estoque() < 0) {
+        throw "Estoque inicial nao pode ser negativo"
+    }
+    var novo = Remedio(
+        uuid.v4(),
+        req.nome(),
+        req.data_compra(),
+        req.data_vencimento(),
+        req.valor(),
+        req.aplicacao(),
+        req.estoque()
+    )
+    orm.save(conn, novo)
+    return json.encode(novo)
+}
+
+String? atualizarEstoqueRemedio(String conn, String id, String payload) {
+    var atual = orm.find<Remedio>(conn, id)
+    if (atual == null) {
+        return null
+    }
+    var req = json.decode<AtualizarEstoqueInput>(payload)
+    if (req.estoque() < 0) {
+        throw "Estoque nao pode ficar negativo"
+    }
+    var atualizado = Remedio(
+        atual.id,
+        atual.nome,
+        atual.data_compra,
+        atual.data_vencimento,
+        atual.valor,
+        atual.aplicacao,
+        req.estoque()
+    )
+    orm.save(conn, atualizado)
+    return json.encode(atualizado)
+}

@@ -1,0 +1,38 @@
+package handlers
+
+import models.*
+
+// ============================================================================
+// Handlers de Perfil do Usuario (RF04, RNF08, RNF09)
+// Armazena estritamente o necessario para autenticacao OAuth2 e perfil basico
+// ============================================================================
+
+String obterOuCriarPerfil(String conn, String userId, String provedorPadrao) {
+    var encontrado = orm.find<UsuarioPerfil>(conn, userId)
+    if (encontrado != null) {
+        return json.encode(encontrado)
+    }
+    var perfilInicial = UsuarioPerfil(
+        userId,
+        userId,
+        userId + "@oauth.local",
+        provedorPadrao
+    )
+    var salvo = orm.save(conn, perfilInicial)
+    return json.encode(salvo)
+}
+
+String atualizarPerfil(String conn, String userId, String provedorPadrao, String payload) {
+    var req = json.decode<AtualizarPerfilInput>(payload)
+    if (req.nome().length == 0 || req.email().length == 0) {
+        throw "Nome e e-mail sao obrigatorios para atualizar o perfil"
+    }
+    var atualizado = UsuarioPerfil(
+        userId,
+        req.nome(),
+        req.email(),
+        provedorPadrao
+    )
+    var salvo = orm.save(conn, atualizado)
+    return json.encode(salvo)
+}

@@ -1,0 +1,85 @@
+package handlers
+
+import models.*
+
+// ============================================================================
+// Handlers de Gado (RF01 - CRUD Gado, RF07 - Filtragem de Gado por Pasto)
+// ============================================================================
+
+String listarGados(String conn) {
+    var lista = orm.all<Gado>(conn)
+    return json.encode(lista)
+}
+
+String? buscarGadoPorId(String conn, String id) {
+    var encontrado = orm.find<Gado>(conn, id)
+    if (encontrado == null) {
+        return null
+    }
+    return json.encode(encontrado)
+}
+
+// RF07 - Filtrar e visualizar a lista de gados alocados em cada pasto especifico
+String filtrarGadoPorPasto(String conn, String pastoUuid) {
+    var alocados = orm.where<Gado>(conn, "pasto_uuid", pastoUuid)
+    return json.encode(alocados)
+}
+
+String criarGado(String conn, String payload) {
+    var req = json.decode<CriarGadoInput>(payload)
+    if (req.nome().length == 0) {
+        throw "Nome do animal e obrigatorio"
+    }
+    if (!saudeVacaValida(req.saudeVaca())) {
+        throw "Estado de saude invalido. Use: DOENTE, SAUDAVEL, RECUPERACAO ou MORTA"
+    }
+    if (!sexoVacaValido(req.sexo())) {
+        throw "Sexo invalido. Use: MACHO ou FEMEA"
+    }
+    var novo = Gado(
+        uuid.v4(),
+        req.nome(),
+        req.vaca_leitera(),
+        req.pasto_uuid(),
+        req.saudeVaca(),
+        req.numero_registro(),
+        req.mae(),
+        req.sexo(),
+        req.historico_tratamento_uuid(),
+        req.data_nascimento()
+    )
+    var salvo = orm.save(conn, novo)
+    return json.encode(salvo)
+}
+
+String? atualizarGado(String conn, String id, String payload) {
+    var existente = orm.find<Gado>(conn, id)
+    if (existente == null) {
+        return null
+    }
+    var req = json.decode<CriarGadoInput>(payload)
+    if (!saudeVacaValida(req.saudeVaca())) {
+        throw "Estado de saude invalido. Use: DOENTE, SAUDAVEL, RECUPERACAO ou MORTA"
+    }
+    if (!sexoVacaValido(req.sexo())) {
+        throw "Sexo invalido. Use: MACHO ou FEMEA"
+    }
+    var atualizado = Gado(
+        id,
+        req.nome(),
+        req.vaca_leitera(),
+        req.pasto_uuid(),
+        req.saudeVaca(),
+        req.numero_registro(),
+        req.mae(),
+        req.sexo(),
+        req.historico_tratamento_uuid(),
+        req.data_nascimento()
+    )
+    var salvo = orm.save(conn, atualizado)
+    return json.encode(salvo)
+}
+
+Bool removerGado(String conn, String id) {
+    return orm.delete<Gado>(conn, id)
+}

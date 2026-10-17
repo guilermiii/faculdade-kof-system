@@ -1,0 +1,54 @@
+package handlers
+
+import models.*
+
+// ============================================================================
+// Handlers de Pasto (RF02 - Cadastrar, Editar e Consultar Pastos)
+// ============================================================================
+
+String listarPastos(String conn) {
+    var lista = orm.all<Pasto>(conn)
+    return json.encode(lista)
+}
+
+String? buscarPastoPorId(String conn, String id) {
+    var encontrado = orm.find<Pasto>(conn, id)
+    if (encontrado == null) {
+        return null
+    }
+    return json.encode(encontrado)
+}
+
+String criarPasto(String conn, String payload) {
+    var req = json.decode<CriarPastoInput>(payload)
+    if (req.nome().length == 0) {
+        throw "Nome do pasto e obrigatorio"
+    }
+    var novo = Pasto(
+        uuid.v4(),
+        req.nome(),
+        req.dono(),
+        req.valor_cabeca()
+    )
+    var salvo = orm.save(conn, novo)
+    return json.encode(salvo)
+}
+
+String? atualizarPasto(String conn, String id, String payload) {
+    var existente = orm.find<Pasto>(conn, id)
+    if (existente == null) {
+        return null
+    }
+    var req = json.decode<CriarPastoInput>(payload)
+    if (req.nome().length == 0) {
+        throw "Nome do pasto e obrigatorio"
+    }
+    var atualizado = Pasto(
+        id,
+        req.nome(),
+        req.dono(),
+        req.valor_cabeca()
+    )
+    var salvo = orm.save(conn, atualizado)
+    return json.encode(salvo)
+}

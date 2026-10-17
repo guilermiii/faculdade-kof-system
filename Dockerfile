@@ -12,12 +12,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certifi
     && rm -rf /tmp/kof.tar.gz /var/lib/apt/lists/*
 
 COPY . .
-RUN kof build app.kf --target jvm --fat --output /app/out
+RUN kof build app.kf --target jvm --fat --output /app/out \
+    && kof build ui/app_ui.kf --target js --output /app/public
 
 # Stage 2: Minimal JVM Runtime (Java 25 required by kof 0.6.5 bytecode v69.0)
 FROM eclipse-temurin:25-jre-noble
 WORKDIR /app
 COPY --from=builder /app/out/kof-app.jar /app/app.jar
+COPY --from=builder /app/public /app/public
 
 EXPOSE 8080
 ENTRYPOINT ["java", "--enable-native-access=ALL-UNNAMED", "-jar", "/app/app.jar"]

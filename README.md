@@ -21,12 +21,14 @@ Sistema completo (Backend, Persistência Nativa SQLite e Interface Multiplatafor
 │   ├── tratamento_handler.kf    # RF05 - Histórico de Tratamentos, Dosagens e Baixa de Estoque
 │   └── usuario_handler.kf       # RF04, RNF08, RNF09 - Perfil do Usuário OAuth2 com privacidade estrita
 ├── ui/
-│   └── app_ui.kf                # RNF06, RNF07 - Interface Web (KofJS) e Mobile (Android) com escala dinâmica de fonte (+A / -A)
+│   └── app_ui.kf                # RNF06, RNF07 - Frontend completo em KOF (Formulários CRUD + Escala +A/-A)
+├── public/                      # Bundle Web KofJS compilado de ui/app_ui.kf e servido em /ui
 ├── test/
 │   ├── unit_models_test.kf      # RNF14 - Testes unitários de Enums, Entities, Records e JSON
 │   ├── unit_handlers_test.kf    # RNF14 - Testes de regras de negócio e persistência (RF01..RF07)
-│   └── e2e_api_test.kf          # RNF14 - Testes End-to-End HTTP reais com withServer e withDb
-├── Dockerfile                   # RNF10 - Empacotamento enxuto multi-stage com release oficial KofLang/Kof4j
+│   ├── unit_ui_test.kf          # RNF14 - Testes unitários de componentes KOF UI, acessibilidade e bundle Web
+│   └── e2e_api_test.kf          # RNF14 - Testes End-to-End HTTP reais (API + Frontend /ui)
+├── Dockerfile                   # RNF10 - Empacotamento multi-stage (Backend JVM + Frontend KofJS)
 ├── diagram.png                  # RNF05 - Diagrama de classes do modelo de dados
 └── requisitos.md                # Especificação de Requisitos Funcionais (RF) e Não-Funcionais (RNF)
 ```
@@ -50,23 +52,28 @@ export OAUTH_AUDIENCE="kof-gado-api"
 export OAUTH_PROVIDER="google"
 ```
 
-### 3. Rodar o Servidor Backend Localmente
+### 2. Compilar o Frontend KOF e Rodar o Servidor Localmente
 
 ```bash
+# Compila o frontend KOF (ui/app_ui.kf) para o diretório public/
+kof build ui/app_ui.kf --target js --output public
+
+# Inicia o servidor KOF (API + Frontend servido em /ui)
 kof serve app.kf
 ```
 
-A API responderá em `http://localhost:8080`.
+- **API REST:** `http://localhost:8080`
+- **Frontend Web KOF:** `http://localhost:8080/ui`
 
-### 4. Executar a Interface Multiplataforma (Web & Mobile)
+### 3. Executar a Interface Multiplataforma (Web & Mobile)
 
-- **Web (`KofJS` / Webview nativo ou Browser):**
+- **Execução Direta Web (`KofJS`):**
   ```bash
   kof run ui/app_ui.kf --target=js
   ```
-- **Build Estático Web (`index.html` + ES Modules):**
+- **Build Estático Web (`public/index.html` + `Default.mjs`):**
   ```bash
-  kof build ui/app_ui.kf --target=js
+  kof build ui/app_ui.kf --target js --output public
   ```
 - **Mobile Android (`APK`):**
   ```bash
@@ -84,7 +91,7 @@ kof check ui/app_ui.kf
 ### 5. Executar Testes Automatizados (Unitários e E2E)
 
 ```bash
-# Executar todas as suítes do diretório test/ (Unitários + E2E HTTP)
+# Executar todas as 4 suítes do diretório test/ (19 testes: Unitários + UI + E2E HTTP)
 kof test --module-root . test/
 
 # Executar apenas testes unitários por tag
@@ -96,10 +103,11 @@ kof test --module-root . test/ --tag e2e
 
 ---
 
-## 📡 Endpoints Principais da API (`app.kf`)
+## 📡 Endpoints Principais (`app.kf`)
 
 | Método | Rota | Requisito | Descrição |
 | :--- | :--- | :--- | :--- |
+| `GET` | `/ui` | `RNF01`, `RNF06`, `RNF07` | Interface Web completa compilada de `ui/app_ui.kf` |
 | `GET` | `/health` | — | Verificação de saúde do serviço |
 | `GET` | `/perfil` | `RF04`, `RNF08`, `RNF09` | Consulta perfil do usuário autenticado via OAuth2 |
 | `PUT` | `/perfil` | `RF04`, `RNF08`, `RNF09` | Atualiza nome e e-mail do perfil do usuário |

@@ -11,7 +11,7 @@ import kof.test.web
 // Execucao: kof test --module-root . test/e2e_api_test.kf
 // ============================================================================
 
-test "E2E HTTP - Healthcheck e Rota Raiz da API", "e2e" {
+test "E2E HTTP - Healthcheck, Rota Raiz e Frontend KOF Web (/ui)", "e2e" {
     withDb("sqlite::memory:", (conn: String) -> {
         initSchema(conn)
         var app = web.app()
@@ -20,9 +20,16 @@ test "E2E HTTP - Healthcheck e Rota Raiz da API", "e2e" {
         withServer(app, 18101, (base: String) -> {
             var rootRes = http.get(base + "/")
             assert(rootRes.contains("kof-gado-api"), "Rota raiz deve identificar o servico kof-gado-api")
+            assert(rootRes.contains("\"/ui\""), "Rota raiz deve indicar o caminho do frontend /ui")
 
             var healthRes = http.get(base + "/health")
             assert(healthRes.contains("\"status\":\"UP\""), "GET /health deve retornar status UP")
+
+            var uiHtml = http.get(base + "/ui")
+            assert(uiHtml.contains("kof-root") && uiHtml.contains("Default.mjs"), "GET /ui deve servir o index.html do frontend KOF")
+
+            var uiMjs = http.get(base + "/ui/Default.mjs")
+            assert(uiMjs.contains("Sistema de Gestao de Gado"), "GET /ui/Default.mjs deve servir o modulo KofJS compilado")
         })
     })
 }

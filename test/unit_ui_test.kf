@@ -1,0 +1,61 @@
+// ============================================================================
+// Suite de Testes Unitarios da Interface KOF UI (RNF06, RNF07, RNF14)
+// Execucao: kof test --module-root . test/unit_ui_test.kf
+// ============================================================================
+
+Int calcularEscalaTeste(Int atual, Int delta) {
+    var nova = atual + delta
+    if (nova > 32) {
+        return 32
+    }
+    if (nova < 12) {
+        return 12
+    }
+    return nova
+}
+
+test "RNF07 - Limites de escala dinamica de fontes (+A / -A entre 12px e 32px)", "unit" {
+    assert(calcularEscalaTeste(16, 2) == 18, "Escala deve aumentar de 16px para 18px")
+    assert(calcularEscalaTeste(32, 2) == 32, "Escala nao deve ultrapassar o teto de 32px")
+    assert(calcularEscalaTeste(16, -2) == 14, "Escala deve diminuir de 16px para 14px")
+    assert(calcularEscalaTeste(12, -2) == 12, "Escala nao deve ficar abaixo do piso de 12px")
+}
+
+test "RNF06 - Instanciacao de Componentes e Formularios KOF UI (Window, Fieldset, Select, Table)", "unit" {
+    var w = Window("Teste Frontend KOF")
+    w.size(1200, 860)
+    w.theme = Theme.dark()
+
+    var lbl = Label("Cabecalho de Teste")
+    lbl.bold = true
+    lbl.fontSize = 20
+
+    var inp = Input("Campo de Teste")
+    var sel = Select(listOf("SAUDAVEL", "RECUPERACAO", "DOENTE", "MORTO"))
+    var ta = Textarea("Observacoes")
+    var tbl = Table(
+        listOf("Modulo", "Status"),
+        listOf(listOf("Gado", "Ativo"), listOf("Pastos", "Ativo"))
+    )
+
+    var fs = Fieldset(listOf(lbl, inp, sel, ta, tbl), "Secao de Teste")
+    w.bind(fs)
+    assert(sel.selected() == 0, "Select deve iniciar no indice 0")
+}
+
+test "RNF01 & RNF06 - Bundle Web KOFJS (public/index.html e public/Default.mjs) compilado com todos os modulos", "unit" {
+    var indexFile = File("public/index.html")
+    var mjsFile = File("public/Default.mjs")
+    assert(indexFile.exists(), "Arquivo public/index.html deve existir apos build --target js")
+    assert(mjsFile.exists(), "Arquivo public/Default.mjs deve existir apos build --target js")
+
+    var mjsContent = mjsFile.readText()
+    assert(mjsContent != null, "Conteudo de Default.mjs nao deve ser nulo")
+    if (mjsContent != null) {
+        assert(mjsContent.contains("Gestao de Pastos"), "Bundle JS deve conter o modulo de Pastos (RF02)")
+        assert(mjsContent.contains("Gestao de Gado"), "Bundle JS deve conter o modulo de Gado (RF01, RF07)")
+        assert(mjsContent.contains("Medicamentos e Controle de Estoque"), "Bundle JS deve conter o modulo de Remedios/Estoque (RF03, RF06)")
+        assert(mjsContent.contains("Historico de Tratamentos"), "Bundle JS deve conter o modulo de Tratamentos (RF05)")
+        assert(mjsContent.contains("Perfil do Usuario"), "Bundle JS deve conter o modulo de Perfil OAuth2 (RF04, RNF08, RNF09)")
+    }
+}

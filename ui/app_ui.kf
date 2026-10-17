@@ -1,0 +1,120 @@
+// ============================================================================
+// Interface Multiplataforma Web & Mobile em KOF (RNF01, RNF06, RNF07)
+// Targets:
+//   Web (KofJS):   kof run ui/app_ui.kf --target=js
+//   Mobile (APK):  kof build ui/app_ui.kf --target android --apk
+// ============================================================================
+
+class UiState {
+    static Int fontScale = 16
+    static Bool darkTheme = true
+    static String apiBase = "http://localhost:8080"
+    static String pastoFiltro = ""
+}
+
+aplicarEscala(Label titulo, Label subtitulo, Label statusLabel) {
+    titulo.fontSize = UiState.fontScale + 6
+    subtitulo.fontSize = UiState.fontScale
+    statusLabel.fontSize = UiState.fontScale
+}
+
+main() {
+    var w = Window("Sistema de Gestao de Gado - KOF")
+    w.size(1024, 720)
+    w.theme = Theme.dark()
+
+    var titulo = Label("Gestao de Gado (Web & Mobile)")
+    titulo.bold = true
+    titulo.fontSize = 22
+
+    var subtitulo = Label("Backend Unico KOF + PostgreSQL + OAuth2 (Google / GitHub)")
+    subtitulo.fontSize = 16
+
+    var statusLabel = Label("Pronto. Selecione um modulo ou ajuste a escala de acessibilidade.")
+    statusLabel.fontSize = 16
+
+    // ------------------------------------------------------------------------
+    // RNF07 - Barra de Acessibilidade: Aumentar/Diminuir Escala de Fontes e Tema
+    // ------------------------------------------------------------------------
+    var btnAumentarFonte = Button("+A (Aumentar Escala)", () -> {
+        if (UiState.fontScale < 32) {
+            UiState.fontScale = UiState.fontScale + 2
+        }
+        aplicarEscala(titulo, subtitulo, statusLabel)
+        statusLabel.text = "Acessibilidade: Escala de fonte ajustada para " + UiState.fontScale + "px"
+    })
+
+    var btnDiminuirFonte = Button("-A (Diminuir Escala)", () -> {
+        if (UiState.fontScale > 12) {
+            UiState.fontScale = UiState.fontScale - 2
+        }
+        aplicarEscala(titulo, subtitulo, statusLabel)
+        statusLabel.text = "Acessibilidade: Escala de fonte ajustada para " + UiState.fontScale + "px"
+    })
+
+    var btnAlternarTema = Button("Alternar Contraste/Tema", () -> {
+        UiState.darkTheme = !UiState.darkTheme
+        if (UiState.darkTheme) {
+            w.theme = Theme.dark()
+        } else {
+            w.theme = Theme.light()
+        }
+    })
+
+    var barraAcessibilidade = Row(listOf(btnAumentarFonte, btnDiminuirFonte, btnAlternarTema))
+
+    // ------------------------------------------------------------------------
+    // Acoes Operacionais dos Modulos (RF01 a RF07)
+    // ------------------------------------------------------------------------
+    var inputFiltroPasto = Input("UUID do Pasto para filtrar gado (RF07)")
+
+    var btnListarGado = Button("Gados (RF01)", () -> {
+        var res = http.get(UiState.apiBase + "/gados")
+        statusLabel.text = "Gados cadastrados: " + res
+    })
+
+    var btnFiltrarPorPasto = Button("Filtrar por Pasto (RF07)", () -> {
+        var pastoId = inputFiltroPasto.text()
+        var res = http.get(UiState.apiBase + "/pastos/" + pastoId + "/gados")
+        statusLabel.text = "Gados no pasto [" + pastoId + "]: " + res
+    })
+
+    var btnListarPastos = Button("Pastos (RF02)", () -> {
+        var res = http.get(UiState.apiBase + "/pastos")
+        statusLabel.text = "Pastos: " + res
+    })
+
+    var btnEstoqueRemedios = Button("Estoque de Remedios (RF03/RF06)", () -> {
+        var res = http.get(UiState.apiBase + "/remedios/estoque")
+        statusLabel.text = "Estoque de Medicamentos: " + res
+    })
+
+    var btnPerfilOAuth = Button("Meu Perfil OAuth2 (RF04/RNF08)", () -> {
+        var res = http.get(UiState.apiBase + "/perfil")
+        statusLabel.text = "Perfil OAuth2: " + res
+    })
+
+    var barraNavegacao = Row(listOf(
+        btnListarGado,
+        btnListarPastos,
+        btnEstoqueRemedios,
+        btnPerfilOAuth
+    ))
+
+    var barraFiltroPasto = Row(listOf(inputFiltroPasto, btnFiltrarPorPasto))
+
+    var cardStyle = Style("background: #1e293b; padding: 16; border-radius: 8")
+    var painelPrincipal = View(cardStyle)
+    var layout = Column(listOf(
+        titulo,
+        subtitulo,
+        barraAcessibilidade,
+        barraNavegacao,
+        barraFiltroPasto,
+        statusLabel
+    ))
+
+    painelPrincipal.bind(layout)
+    w.bind(painelPrincipal)
+    w.show()
+}

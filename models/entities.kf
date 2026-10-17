@@ -1,0 +1,152 @@
+package models
+
+// ============================================================================
+// Enumeracoes do Dominio (conforme diagram.png - RNF05)
+// ============================================================================
+
+enum SaudeVaca {
+    DOENTE,
+    SAUDAVEL,
+    RECUPERACAO,
+    MORTA
+}
+
+enum SexoVaca {
+    MACHO,
+    FEMEA
+}
+
+enum AplicacaoRemedio {
+    INJECAO,
+    CURA_FERIDAS,
+    SORO_FISIOLOGICO
+}
+
+// ============================================================================
+// Entidades Principais do Dominio (validadas em compile-time pelo kof.orm)
+// ============================================================================
+
+// PASTO (RF02, RNF05)
+entity Pasto {
+    id: String
+    nome: String
+    dono: Bool
+    valor_cabeca: Int
+}
+
+// GADO (RF01, RF07, RNF05)
+entity Gado {
+    id: String
+    nome: String
+    vaca_leitera: Bool
+    pasto_uuid: String
+    saudeVaca: String
+    numero_registro: String
+    mae: String
+    sexo: String
+    historico_tratamento_uuid: String
+    data_nascimento: String
+}
+
+// REMEDIO (RF03, RF06, RNF05)
+entity Remedio {
+    id: String
+    nome: String
+    data_compra: String
+    data_vencimento: String
+    valor: Double
+    aplicacao: String
+    estoque: Int
+}
+
+// TRATAMENTO (RF05, RNF05)
+entity Tratamento {
+    id: String
+    nome_doenca: String
+    gado_uuid: String
+    data_inicio: String
+    data_fim: String
+    observacoes: String
+}
+
+// TRATAMENTO_REMEDIO (RF05, RF06, RNF05)
+entity TratamentoRemedio {
+    id: String
+    fk_tratamento_uuid: String
+    fk_remedio_uuid: String
+    dosagen: Double
+}
+
+// PERFIL DO USUARIO (RF04, RNF08, RNF09 - apenas dados estritamente necessarios)
+entity UsuarioPerfil {
+    id: String
+    nome: String
+    email: String
+    provedor: String
+}
+
+// ============================================================================
+// Records de Requisicao (Payloads de entrada HTTP)
+// ============================================================================
+
+record CriarPastoInput(
+    String nome,
+    Bool dono,
+    Int valor_cabeca
+)
+
+record CriarGadoInput(
+    String nome,
+    Bool vaca_leitera,
+    String pasto_uuid,
+    String saudeVaca,
+    String numero_registro,
+    String mae,
+    String sexo,
+    String historico_tratamento_uuid,
+    String data_nascimento
+)
+
+record CriarRemedioInput(
+    String nome,
+    String data_compra,
+    String data_vencimento,
+    Double valor,
+    String aplicacao,
+    Int estoque
+)
+
+record AtualizarEstoqueInput(
+    Int estoque
+)
+
+record RegistrarTratamentoInput(
+    String nome_doenca,
+    String gado_uuid,
+    String data_inicio,
+    String data_fim,
+    String observacoes,
+    String fk_remedio_uuid,
+    Double dosagen
+)
+
+record AtualizarPerfilInput(
+    String nome,
+    String email
+)
+
+// ============================================================================
+// Validadores simples de Enum (KISS)
+// ============================================================================
+
+Bool saudeVacaValida(String valor) {
+    return valor == "DOENTE" || valor == "SAUDAVEL" || valor == "RECUPERACAO" || valor == "MORTA"
+}
+
+Bool sexoVacaValido(String valor) {
+    return valor == "MACHO" || valor == "FEMEA"
+}
+
+Bool aplicacaoRemedioValida(String valor) {
+    return valor == "INJECAO" || valor == "CURA_FERIDAS" || valor == "SORO_FISIOLOGICO"
+}

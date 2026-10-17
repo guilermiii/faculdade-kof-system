@@ -8,7 +8,12 @@ import handlers.*
 // ============================================================================
 
 main() {
-    var conn = connectDb()
+    var envUrl = secrets.get("DB_URL", "")
+    var conn = if (envUrl != null && envUrl != "") {
+        db.connect(envUrl)
+    } else {
+        db.connect("sqlite:fazenda.db")
+    }
     initSchema(conn)
 
     // Configuracao OAuth2 Resource Server (RNF08 - Provedores Google / GitHub)

@@ -12,7 +12,7 @@ import kof.test.web
 // ============================================================================
 
 test "E2E HTTP - Healthcheck e Rota Raiz da API", "e2e" {
-    withDb("jdbc:h2:mem:e2e_health;DB_CLOSE_DELAY=-1", (conn: String) -> {
+    withDb("sqlite::memory:", (conn: String) -> {
         initSchema(conn)
         var app = web.app()
         registrarRotas(app, conn, "google")
@@ -28,7 +28,7 @@ test "E2E HTTP - Healthcheck e Rota Raiz da API", "e2e" {
 }
 
 test "E2E HTTP - Fluxo Completo Pastos, Gado e Filtragem por Pasto (RF01, RF02, RF07)", "e2e" {
-    withDb("jdbc:h2:mem:e2e_gado;DB_CLOSE_DELAY=-1", (conn: String) -> {
+    withDb("sqlite::memory:", (conn: String) -> {
         initSchema(conn)
         var app = web.app()
         registrarRotas(app, conn, "google")
@@ -73,7 +73,7 @@ test "E2E HTTP - Fluxo Completo Pastos, Gado e Filtragem por Pasto (RF01, RF02, 
 }
 
 test "E2E HTTP - Fluxo Completo Remedios, Estoque e Historico de Tratamentos (RF03, RF05, RF06)", "e2e" {
-    withDb("jdbc:h2:mem:e2e_tratamento;DB_CLOSE_DELAY=-1", (conn: String) -> {
+    withDb("sqlite::memory:", (conn: String) -> {
         initSchema(conn)
         var app = web.app()
         registrarRotas(app, conn, "github")

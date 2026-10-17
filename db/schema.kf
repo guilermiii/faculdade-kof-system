@@ -3,14 +3,15 @@ package db
 import models.*
 
 // ============================================================================
-// Conexao PostgreSQL e Schema (RNF02, RNF05)
+// Conexao com Banco Nativo KOF SQLite e Schema (RNF02, RNF05)
 // ============================================================================
 
 String connectDb() {
-    var url = secrets.get("DB_URL", "jdbc:postgresql://localhost:5432/kof_gado")
-    var user = secrets.get("DB_USER", "postgres")
-    var pass = secrets.get("DB_PASS", "postgres")
-    return db.connect(url, user, pass)
+    var envUrl = secrets.get("DB_URL", "")
+    if (envUrl != null && envUrl != "") {
+        return db.connect(envUrl)
+    }
+    return db.connect("sqlite:fazenda.db")
 }
 
 initSchema(String conn) {

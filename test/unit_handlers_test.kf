@@ -9,7 +9,7 @@ import kof.test.db
 // ============================================================================
 
 test "RF02 - CRUD completo de Pasto e validacao de campos obrigatorios", "unit" {
-    withDb("jdbc:h2:mem:test_pasto;DB_CLOSE_DELAY=-1", (conn: String) -> {
+    withDb("sqlite::memory:", (conn: String) -> {
         initSchema(conn)
 
         var criadoJson = criarPasto(conn, "{\"nome\":\"Pasto da Serra\",\"dono\":true,\"valor_cabeca\":140}")
@@ -46,7 +46,7 @@ test "RF02 - CRUD completo de Pasto e validacao de campos obrigatorios", "unit" 
 }
 
 test "RF01 & RF07 - CRUD completo de Gado e Filtragem de Gado por Pasto", "unit" {
-    withDb("jdbc:h2:mem:test_gado;DB_CLOSE_DELAY=-1", (conn: String) -> {
+    withDb("sqlite::memory:", (conn: String) -> {
         initSchema(conn)
 
         var p1 = json.decode<Pasto>(criarPasto(conn, "{\"nome\":\"Pasto A\",\"dono\":true,\"valor_cabeca\":100}"))
@@ -91,7 +91,7 @@ test "RF01 & RF07 - CRUD completo de Gado e Filtragem de Gado por Pasto", "unit"
 }
 
 test "RF03 & RF06 - Cadastro de Medicamentos e Controle de Estoque", "unit" {
-    withDb("jdbc:h2:mem:test_remedio;DB_CLOSE_DELAY=-1", (conn: String) -> {
+    withDb("sqlite::memory:", (conn: String) -> {
         initSchema(conn)
 
         var r1 = json.decode<Remedio>(criarRemedio(conn, "{\"nome\":\"Soro Vitaminado\",\"data_compra\":\"2026-01-01\",\"data_vencimento\":\"2027-01-01\",\"valor\":35.0,\"aplicacao\":\"SORO_FISIOLOGICO\",\"estoque\":50}"))
@@ -118,7 +118,7 @@ test "RF03 & RF06 - Cadastro de Medicamentos e Controle de Estoque", "unit" {
 }
 
 test "RF05 & RF06 - Historico de Tratamentos, Vinculo de Dosagem e Abatimento de Estoque", "unit" {
-    withDb("jdbc:h2:mem:test_tratamento;DB_CLOSE_DELAY=-1", (conn: String) -> {
+    withDb("sqlite::memory:", (conn: String) -> {
         initSchema(conn)
 
         var p = json.decode<Pasto>(criarPasto(conn, "{\"nome\":\"Pasto Hospital\",\"dono\":true,\"valor_cabeca\":120}"))
@@ -155,7 +155,7 @@ test "RF05 & RF06 - Historico de Tratamentos, Vinculo de Dosagem e Abatimento de
 }
 
 test "RF04 & RNF09 - Gestao de Perfil do Usuario OAuth2 e Privacidade", "unit" {
-    withDb("jdbc:h2:mem:test_perfil;DB_CLOSE_DELAY=-1", (conn: String) -> {
+    withDb("sqlite::memory:", (conn: String) -> {
         initSchema(conn)
 
         var inicialJson = obterOuCriarPerfil(conn, "google-user-42", "google")

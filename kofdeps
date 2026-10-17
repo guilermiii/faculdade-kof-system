@@ -1,0 +1,2 @@
+org.postgresql:postgresql:42.7.4
+com.h2database:h2:2.2.224

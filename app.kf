@@ -1,0 +1,26 @@
+import models.*
+import db.*
+import handlers.*
+
+// ============================================================================
+// Entrypoint Principal - Sistema de Gestao de Gado em KOF (RNF01, RNF03, RNF08)
+// Execucao: kof serve app.kf
+// ============================================================================
+
+main() {
+    var conn = connectDb()
+    initSchema(conn)
+
+    // Configuracao OAuth2 Resource Server (RNF08 - Provedores Google / GitHub)
+    var jwksUrl = secrets.get("OAUTH_JWKS_URL", "https://www.googleapis.com/oauth2/v3/certs")
+    var issuer = secrets.get("OAUTH_ISSUER", "https://accounts.google.com")
+    var audience = secrets.get("OAUTH_AUDIENCE", "kof-gado-api")
+    var oauthProvider = secrets.get("OAUTH_PROVIDER", "google")
+    auth.resourceServer(jwksUrl, issuer, audience)
+
+    var app = web.app()
+    registrarRotas(app, conn, oauthProvider)
+    app.listen(8080)
+    app.close()
+    db.close(conn)
+}
